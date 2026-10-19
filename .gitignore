@@ -1,0 +1,19 @@
+# Bun / JavaScript
+node_modules/
+.next/
+dist/
+*.tsbuildinfo
+
+# Local configuration
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# Go build output
+/apps/server/bin/
+
+# Local tools and OS files
+.DS_Store
+*.log
+plan.md

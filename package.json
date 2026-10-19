@@ -1,0 +1,17 @@
+{
+  "name": "cascadehook",
+  "private": true,
+  "packageManager": "bun@1.3.13",
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": {
+    "dev:api": "cd apps/server && go run ./cmd/api",
+    "dev:worker": "cd apps/server && go run ./cmd/worker",
+    "db:migrate": "cd apps/server && go run ./cmd/migrate",
+    "build:go": "cd apps/server && go build ./...",
+    "fmt:go": "cd apps/server && go fmt ./...",
+    "vet:go": "cd apps/server && go vet ./..."
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  }
+}
