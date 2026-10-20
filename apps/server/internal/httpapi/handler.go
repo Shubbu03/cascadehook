@@ -4,20 +4,23 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"log/slog"
 	"net/http"
 	"time"
+
+	"cascadehook/internal/store"
 )
 
-// Pinger reports whether a dependency is reachable. It is satisfied by
-// *store.Store.
-type Pinger interface {
-	Ping(ctx context.Context) error
+type api struct {
+	db     *store.Store
+	logger *slog.Logger
 }
 
 // readinessTimeout bounds the database check behind /readyz.
 const readinessTimeout = 2 * time.Second
 
-func NewHandler(db Pinger) http.Handler {
+func NewHandler(db *store.Store, logger *slog.Logger) http.Handler {
+	api := &api{db: db, logger: logger}
 	mux := http.NewServeMux()
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Cache-Control", "no-store")
@@ -48,6 +51,8 @@ func NewHandler(db Pinger) http.Handler {
 			_, _ = io.WriteString(w, "{\"status\":\"ok\"}\n")
 		}
 	})
+	mux.HandleFunc("/v1/endpoints", api.withProjectKey(api.endpointCollection))
+	mux.HandleFunc("/v1/endpoints/{endpoint_id}", api.withProjectKey(api.endpointResource))
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		writeProblem(w, r, http.StatusNotFound, "not_found")
 	})

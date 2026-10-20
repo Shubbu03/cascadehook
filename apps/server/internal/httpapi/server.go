@@ -10,15 +10,16 @@ import (
 	"time"
 
 	"cascadehook/internal/config"
+	"cascadehook/internal/store"
 )
 
-func Run(ctx context.Context, cfg config.APIConfig, db Pinger, logger *slog.Logger) error {
+func Run(ctx context.Context, cfg config.APIConfig, db *store.Store, logger *slog.Logger) error {
 	listener, err := (&net.ListenConfig{}).Listen(ctx, "tcp", cfg.HTTPAddr)
 	if err != nil {
 		return fmt.Errorf("listen on %s: %w", cfg.HTTPAddr, err)
 	}
 	server := &http.Server{
-		Handler:           NewHandler(db),
+		Handler:           NewHandler(db, logger),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       15 * time.Second,
 		WriteTimeout:      30 * time.Second,

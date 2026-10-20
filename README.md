@@ -3,6 +3,10 @@
 An outbound webhook delivery platform, starting with a Go backend. See
 [plan.md](plan.md) for the architecture and roadmap.
 
+Implementation is continuing before the first deployment. Railway verification
+will follow a substantial backend slice: endpoint registration, subscriptions,
+and authenticated event ingestion with transactional fan-out.
+
 ## Deployment
 
 Deployment targets Railway, with separate API, worker, and PostgreSQL services.
@@ -11,7 +15,7 @@ root directory.
 
 | Service | Build command | Start command |
 | --- | --- | --- |
-| API | `go build -o bin/api ./cmd/api && go build -o bin/migrate ./cmd/migrate` | `./bin/api` |
+| API | `go build -o bin/api ./cmd/api && go build -o bin/migrate ./cmd/migrate && go build -o bin/seed ./cmd/seed` | `./bin/api` |
 | Worker | `go build -o bin/worker ./cmd/worker` | `./bin/worker` |
 
 Run `./bin/migrate` as the API service's
@@ -25,6 +29,41 @@ Set the API's `HTTP_ADDR` to `0.0.0.0:8080` and its domain target port to `8080`
 The worker does not need a public domain. Keep the database connection details
 in Railway variables; `.env.example` documents the application settings.
 
+## Development account bootstrap
+
+The seed command is implemented for later execution against the development
+database. Apply migrations first, then run the seed binary as an explicit
+one-off operator command:
+
+```sh
+./bin/seed --organization "Development" --project "Example app" --key-name "Development key"
+```
+
+It creates an organization, project, and project-scoped API key in one
+transaction. Names are trimmed and must contain 1–100 characters. All IDs are
+UUIDv7 values generated in Go. The command has a 30-second operation deadline,
+including the initial database connection.
+
+The command prints one JSON object to stdout containing `organization_id`,
+`project_id`, `api_key_id`, `api_key_prefix`, and `api_key`. The full key has the
+form `ch_dev_` followed by 64 random hex characters (256 bits of entropy).
+Only its SHA-256 hash and a display prefix containing the first 12 hex
+characters are stored. The secret cannot be retrieved afterward; save it
+securely when created. Operational logs go to stderr and exclude the secret.
+
+Each invocation creates new records, even when names are repeated. It does not
+reuse accounts, recover existing keys, or revoke earlier keys. If credential
+output fails after commit, the records remain committed and the secret is lost.
+
+Run this command interactively when ready. Keep its credential output out of
+deployment logs, and do not add it to build, start, or pre-deploy hooks. The API
+build command above compiles the seed binary without executing it.
+
+The new tables enforce organization/project ownership with foreign keys, unique
+32-byte key hashes, and cascading deletion of projects and keys with their
+parent records. Keys also have a nullable `revoked_at` field for the upcoming
+authentication work. HTTP API-key authentication is not implemented yet.
+
 ## Configuration
 
 | Variable | Default | Accepted values |
@@ -35,7 +74,8 @@ in Railway variables; `.env.example` documents the application settings.
 | `SHUTDOWN_TIMEOUT` | `10s` | Positive Go duration, such as `10s` or `500ms` |
 
 `HTTP_ADDR` applies to the API only. An explicitly empty variable is rejected.
-Logs are JSON with `service=api`, `service=worker`, or `service=migrate`.
+Logs are JSON with `service=api`, `service=worker`, `service=migrate`, or
+`service=seed`.
 
 ## Deployed behavior
 
@@ -63,7 +103,7 @@ bun run fmt:go
 bun run vet:go
 ```
 
-`dev:api`, `dev:worker`, and `db:migrate` are also available as wrappers for the
+`dev:api`, `dev:worker`, `db:migrate`, and `db:seed` are also available as wrappers for the
 corresponding Go commands when explicitly needed. Application verification is
 performed on Railway.
 
