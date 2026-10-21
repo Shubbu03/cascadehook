@@ -13,8 +13,6 @@ import (
 	"cascadehook/internal/worker"
 )
 
-// The delivery queue does not exist yet; each tick pings PostgreSQL until
-// claiming lands.
 const pollInterval = 5 * time.Second
 
 func main() {
@@ -50,5 +48,8 @@ func run() error {
 	}
 	defer db.Close()
 
-	return worker.Run(ctx, pollInterval, db, logger)
+	return worker.Run(ctx, worker.Options{
+		PollInterval:    pollInterval,
+		ShutdownTimeout: cfg.ShutdownTimeout,
+	}, db, logger)
 }
