@@ -10,6 +10,7 @@ import (
 	"github.com/jackc/pgx/v5"
 
 	"cascadehook/internal/endpoints"
+	"cascadehook/internal/events"
 )
 
 func (s *Store) CreateEndpoint(ctx context.Context, projectID uuid.UUID, input endpoints.Registration) (endpoints.Endpoint, error) {
@@ -25,11 +26,14 @@ func (s *Store) CreateEndpoint(ctx context.Context, projectID uuid.UUID, input e
 	if err != nil {
 		return endpoints.Endpoint{}, fmt.Errorf("generate endpoint ID: %w", err)
 	}
-	tx, err := s.pool.Begin(ctx)
+	tx, err := s.pool.BeginTx(ctx, pgx.TxOptions{IsoLevel: pgx.ReadCommitted})
 	if err != nil {
 		return endpoints.Endpoint{}, fmt.Errorf("begin endpoint registration: %w", err)
 	}
-	defer rollbackEndpointTransaction(tx)
+	defer rollbackTransaction(tx)
+	if err := lockProjectForEndpointChange(ctx, tx, projectID); err != nil {
+		return endpoints.Endpoint{}, err
+	}
 
 	var endpoint endpoints.Endpoint
 	err = tx.QueryRow(ctx,
@@ -64,7 +68,7 @@ func (s *Store) ListEndpoints(ctx context.Context, projectID uuid.UUID, options 
 	if options.Limit < 1 || options.Limit > 100 {
 		return nil, fmt.Errorf("endpoint page limit must be between 1 and 100")
 	}
-	if options.EventType != "" && !endpoints.ValidEventType(options.EventType) {
+	if options.EventType != "" && !events.ValidType(options.EventType) {
 		return nil, endpoints.ErrInvalidEventTypes
 	}
 	var createdBefore *time.Time
@@ -114,11 +118,14 @@ func (s *Store) UpdateEndpoint(ctx context.Context, projectID, id uuid.UUID, inp
 		}
 		input.EventTypes = &types
 	}
-	tx, err := s.pool.Begin(ctx)
+	tx, err := s.pool.BeginTx(ctx, pgx.TxOptions{IsoLevel: pgx.ReadCommitted})
 	if err != nil {
 		return endpoints.Endpoint{}, fmt.Errorf("begin endpoint update: %w", err)
 	}
-	defer rollbackEndpointTransaction(tx)
+	defer rollbackTransaction(tx)
+	if err := lockProjectForEndpointChange(ctx, tx, projectID); err != nil {
+		return endpoints.Endpoint{}, err
+	}
 	var endpoint endpoints.Endpoint
 	row := tx.QueryRow(ctx, `SELECT `+endpointFields+`
 		FROM endpoints e WHERE e.project_id = $1 AND e.id = $2 AND e.deleted_at IS NULL FOR UPDATE OF e`,
@@ -167,16 +174,30 @@ func (s *Store) UpdateEndpoint(ctx context.Context, projectID, id uuid.UUID, inp
 	return endpoint, nil
 }
 
-// DeleteEndpoint soft-deletes configuration. Delivery cancellation will be
-// added to this operation in the same transaction when delivery jobs exist.
+// DeleteEndpoint soft-deletes configuration and cancels pending jobs atomically.
 func (s *Store) DeleteEndpoint(ctx context.Context, projectID, id uuid.UUID) error {
-	result, err := s.pool.Exec(ctx, `UPDATE endpoints SET enabled = false, deleted_at = now(), updated_at = now()
+	tx, err := s.pool.BeginTx(ctx, pgx.TxOptions{IsoLevel: pgx.ReadCommitted})
+	if err != nil {
+		return fmt.Errorf("begin endpoint deletion: %w", err)
+	}
+	defer rollbackTransaction(tx)
+	if err := lockProjectForEndpointChange(ctx, tx, projectID); err != nil {
+		return err
+	}
+	result, err := tx.Exec(ctx, `UPDATE endpoints SET enabled = false, deleted_at = now(), updated_at = now()
 		WHERE project_id = $1 AND id = $2 AND deleted_at IS NULL`, projectID, id)
 	if err != nil {
 		return fmt.Errorf("delete endpoint: %w", err)
 	}
 	if result.RowsAffected() == 0 {
 		return endpoints.ErrNotFound
+	}
+	if _, err := tx.Exec(ctx, `UPDATE deliveries SET state = 'canceled', updated_at = now()
+		WHERE project_id = $1 AND endpoint_id = $2 AND state = 'pending'`, projectID, id); err != nil {
+		return fmt.Errorf("cancel endpoint deliveries: %w", err)
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("commit endpoint deletion: %w", err)
 	}
 	return nil
 }
@@ -197,8 +218,16 @@ func scanEndpoint(row pgx.Row, endpoint *endpoints.Endpoint) error {
 		&endpoint.VerifiedAt, &endpoint.CreatedAt, &endpoint.UpdatedAt, &endpoint.EventTypes)
 }
 
-func rollbackEndpointTransaction(tx pgx.Tx) {
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout)
-	defer cancel()
-	_ = tx.Rollback(ctx)
+// This lock must precede endpoint row locks in every configuration mutation.
+// Publications hold the shared counterpart while reading subscriptions.
+func lockProjectForEndpointChange(ctx context.Context, tx pgx.Tx, projectID uuid.UUID) error {
+	var id uuid.UUID
+	err := tx.QueryRow(ctx, `SELECT id FROM projects WHERE id = $1 FOR UPDATE`, projectID).Scan(&id)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return endpoints.ErrNotFound
+	}
+	if err != nil {
+		return fmt.Errorf("lock endpoint project: %w", err)
+	}
+	return nil
 }

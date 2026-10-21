@@ -4,7 +4,6 @@ import (
 	"errors"
 	"net/netip"
 	"net/url"
-	"regexp"
 	"slices"
 	"strconv"
 	"strings"
@@ -12,6 +11,8 @@ import (
 	"unicode/utf8"
 
 	"github.com/google/uuid"
+
+	"cascadehook/internal/events"
 )
 
 var (
@@ -19,7 +20,6 @@ var (
 	ErrInvalidURL           = errors.New("endpoint URL must be HTTPS without credentials or a fragment")
 	ErrInvalidEventTypes    = errors.New("event types must be 1 to 100 unique exact-match names")
 	ErrVerificationRequired = errors.New("endpoint ownership verification is required before enabling")
-	eventTypePattern        = regexp.MustCompile(`^[a-z0-9][a-z0-9_.-]{2,127}$`)
 )
 
 type Endpoint struct {
@@ -92,10 +92,6 @@ func NormalizeURL(raw string) (string, error) {
 	return result, nil
 }
 
-func ValidEventType(name string) bool {
-	return eventTypePattern.MatchString(name)
-}
-
 func NormalizeEventTypes(types []string) ([]string, error) {
 	if len(types) == 0 || len(types) > 100 {
 		return nil, ErrInvalidEventTypes
@@ -103,7 +99,7 @@ func NormalizeEventTypes(types []string) ([]string, error) {
 	result := slices.Clone(types)
 	slices.Sort(result)
 	for i, name := range result {
-		if !ValidEventType(name) || (i > 0 && name == result[i-1]) {
+		if !events.ValidType(name) || (i > 0 && name == result[i-1]) {
 			return nil, ErrInvalidEventTypes
 		}
 	}

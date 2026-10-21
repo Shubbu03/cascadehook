@@ -13,6 +13,7 @@ import (
 
 	"cascadehook/internal/auth"
 	"cascadehook/internal/endpoints"
+	"cascadehook/internal/events"
 )
 
 func (api *api) endpointCollection(w http.ResponseWriter, r *http.Request, principal auth.Principal) {
@@ -115,7 +116,7 @@ func (api *api) listEndpoints(w http.ResponseWriter, r *http.Request, principal 
 		enabled = &flag
 	}
 	eventType := query.Get("event_type")
-	if query.Has("event_type") && !endpoints.ValidEventType(eventType) {
+	if query.Has("event_type") && !events.ValidType(eventType) {
 		writeProblem(w, r, http.StatusBadRequest, "invalid_filter")
 		return
 	}

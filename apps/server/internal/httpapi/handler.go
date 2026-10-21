@@ -53,6 +53,7 @@ func NewHandler(db *store.Store, logger *slog.Logger) http.Handler {
 	})
 	mux.HandleFunc("/v1/endpoints", api.withProjectKey(api.endpointCollection))
 	mux.HandleFunc("/v1/endpoints/{endpoint_id}", api.withProjectKey(api.endpointResource))
+	mux.HandleFunc("/v1/events", api.withProjectKey(api.publishEvent))
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		writeProblem(w, r, http.StatusNotFound, "not_found")
 	})

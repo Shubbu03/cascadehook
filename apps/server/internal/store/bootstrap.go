@@ -44,11 +44,7 @@ func (s *Store) BootstrapDevelopment(ctx context.Context, params BootstrapParams
 	if err != nil {
 		return BootstrapResult{}, fmt.Errorf("begin development bootstrap: %w", err)
 	}
-	defer func() {
-		rollbackCtx, cancel := context.WithTimeout(context.Background(), connectTimeout)
-		defer cancel()
-		_ = tx.Rollback(rollbackCtx)
-	}()
+	defer rollbackTransaction(tx)
 
 	if _, err := tx.Exec(ctx,
 		`INSERT INTO organizations (id, name) VALUES ($1, $2)`,
