@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"cascadehook/internal/accounts"
 	"cascadehook/internal/auth"
 	"cascadehook/internal/pagination"
 	"cascadehook/internal/store"
@@ -73,8 +74,10 @@ func (api *api) createAPIKey(w http.ResponseWriter, r *http.Request, principal a
 		key.ID,
 		"actor_api_key_id",
 		principal.APIKeyID,
+		"actor_user_id",
+		principal.UserID,
 	)
-	w.Header().Set("Location", "/v1/api-keys/"+key.ID.String())
+	w.Header().Set("Location", projectResourceLocation(r, "api-keys/"+key.ID.String()))
 	// Deliberate one-time disclosure after commit. Credential values never
 	// enter the store, metadata response types, or operational log fields.
 	writeJSON(
@@ -163,6 +166,8 @@ func (api *api) apiKeyResource(w http.ResponseWriter, r *http.Request, principal
 			id,
 			"actor_api_key_id",
 			principal.APIKeyID,
+			"actor_user_id",
+			principal.UserID,
 		)
 		w.WriteHeader(http.StatusNoContent)
 		return
@@ -228,10 +233,12 @@ func (api *api) rotateAPIKey(w http.ResponseWriter, r *http.Request, principal a
 		rotation.Key.ID,
 		"actor_api_key_id",
 		principal.APIKeyID,
+		"actor_user_id",
+		principal.UserID,
 		"previous_key_revokes_at",
 		rotation.RevokesAt,
 	)
-	w.Header().Set("Location", "/v1/api-keys/"+rotation.Key.ID.String())
+	w.Header().Set("Location", projectResourceLocation(r, "api-keys/"+rotation.Key.ID.String()))
 	writeJSON(
 		w,
 		r,
@@ -268,6 +275,8 @@ func emptyAPIKeyAction(w http.ResponseWriter, r *http.Request) bool {
 
 func (api *api) apiKeyProblem(w http.ResponseWriter, r *http.Request, err error) {
 	switch {
+	case errors.Is(err, accounts.ErrNotFound), errors.Is(err, accounts.ErrForbidden):
+		api.accountProblem(w, r, err)
 	case errors.Is(err, auth.ErrInvalidAPIKey):
 		unauthorized(w, r)
 	case errors.Is(err, auth.ErrAPIKeyNotFound):

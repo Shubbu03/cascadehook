@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"cascadehook/internal/auth"
 	"cascadehook/internal/deliveries"
 )
 
@@ -25,6 +26,7 @@ type APIConfig struct {
 	Config
 	HTTPAddr             string
 	SigningEncryptionKey []byte `json:"-"`
+	Clerk                auth.ClerkConfig
 }
 
 type WorkerConfig struct {
@@ -103,6 +105,15 @@ func LoadAPI() (APIConfig, error) {
 		return APIConfig{}, err
 	}
 	cfg.SigningEncryptionKey = key
+	cfg.Clerk = auth.ClerkConfig{
+		IssuerURL:    os.Getenv("CLERK_ISSUER_URL"),
+		JWTPublicKey: os.Getenv("CLERK_JWT_PUBLIC_KEY"),
+	}
+	if parties := os.Getenv("CLERK_AUTHORIZED_PARTIES"); parties != "" {
+		for _, party := range strings.Split(parties, ",") {
+			cfg.Clerk.AuthorizedParties = append(cfg.Clerk.AuthorizedParties, strings.TrimSpace(party))
+		}
+	}
 
 	return cfg, nil
 }

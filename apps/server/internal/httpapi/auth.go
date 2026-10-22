@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"strings"
 	"time"
 
 	"cascadehook/internal/auth"
@@ -15,17 +14,12 @@ type projectHandler func(http.ResponseWriter, *http.Request, auth.Principal)
 func (api *api) withProjectKey(next projectHandler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Cache-Control", "no-store")
-		values := r.Header.Values("Authorization")
-		if len(values) != 1 {
+		token, ok := bearerToken(r)
+		if !ok {
 			unauthorized(w, r)
 			return
 		}
-		parts := strings.Fields(values[0])
-		if len(parts) != 2 || !strings.EqualFold(parts[0], "Bearer") {
-			unauthorized(w, r)
-			return
-		}
-		digest, err := auth.DigestAPIKey(parts[1])
+		digest, err := auth.DigestAPIKey(token)
 		if err != nil {
 			unauthorized(w, r)
 			return

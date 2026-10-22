@@ -75,7 +75,9 @@ func (s *Store) RevokeAPIKey(ctx context.Context, actor auth.Principal, targetID
 	if target.RevokedAt != nil {
 		return nil
 	}
-	if target.Status == auth.KeyActive {
+	// A human administrator can recover through their session even when every
+	// integration credential is revoked. API-key callers need a replacement.
+	if target.Status == auth.KeyActive && actor.UserID == uuid.Nil {
 		var hasReplacement bool
 		err := tx.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM api_keys WHERE project_id = $1 AND id <> $2
 			AND revoked_at IS NULL AND revokes_at IS NULL AND (expires_at IS NULL OR expires_at > $3))`,
@@ -87,8 +89,9 @@ func (s *Store) RevokeAPIKey(ctx context.Context, actor auth.Principal, targetID
 			return auth.ErrLastUsableAPIKey
 		}
 	}
-	_, err = tx.Exec(ctx, `UPDATE api_keys SET revoked_at = $3, revoked_by_api_key_id = $4
-		WHERE project_id = $1 AND id = $2 AND revoked_at IS NULL`, actor.ProjectID, targetID, databaseNow, actor.APIKeyID)
+	_, err = tx.Exec(ctx, `UPDATE api_keys SET revoked_at = $3, revoked_by_api_key_id = $4, revoked_by_user_id = $5
+		WHERE project_id = $1 AND id = $2 AND revoked_at IS NULL`,
+		actor.ProjectID, targetID, databaseNow, nullableUUID(actor.APIKeyID), nullableUUID(actor.UserID))
 	if err != nil {
 		return fmt.Errorf("revoke API key: %w", err)
 	}
@@ -132,8 +135,9 @@ func (s *Store) RotateAPIKey(ctx context.Context, actor auth.Principal, targetID
 	if target.ExpiresAt != nil && target.ExpiresAt.Before(deadline) {
 		deadline = *target.ExpiresAt
 	}
-	_, err = tx.Exec(ctx, `UPDATE api_keys SET rotated_to_id = $3, revokes_at = $4, revoked_by_api_key_id = $5
-		WHERE project_id = $1 AND id = $2`, actor.ProjectID, targetID, replacement.ID, deadline, actor.APIKeyID)
+	_, err = tx.Exec(ctx, `UPDATE api_keys SET rotated_to_id = $3, revokes_at = $4,
+		revoked_by_api_key_id = $5, revoked_by_user_id = $6 WHERE project_id = $1 AND id = $2`,
+		actor.ProjectID, targetID, replacement.ID, deadline, nullableUUID(actor.APIKeyID), nullableUUID(actor.UserID))
 	if err != nil {
 		return APIKeyRotation{}, fmt.Errorf("schedule previous API key revocation: %w", err)
 	}
@@ -156,9 +160,10 @@ func insertAPIKey(ctx context.Context, tx pgx.Tx, actor auth.Principal, params C
 	}
 	var key auth.APIKey
 	err = scanAPIKey(tx.QueryRow(ctx, `INSERT INTO api_keys AS k
-		(id, project_id, name, key_prefix, key_hash, created_at, expires_at, created_by_api_key_id)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING `+apiKeyColumns,
-		id, actor.ProjectID, params.Name, params.Prefix, params.Hash[:], at, params.ExpiresAt, actor.APIKeyID), &key)
+		(id, project_id, name, key_prefix, key_hash, created_at, expires_at, created_by_api_key_id, created_by_user_id)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING `+apiKeyColumns,
+		id, actor.ProjectID, params.Name, params.Prefix, params.Hash[:], at, params.ExpiresAt,
+		nullableUUID(actor.APIKeyID), nullableUUID(actor.UserID)), &key)
 	if err != nil {
 		return auth.APIKey{}, fmt.Errorf("create API key: %w", err)
 	}
@@ -169,9 +174,15 @@ func insertAPIKey(ctx context.Context, tx pgx.Tx, actor auth.Principal, params C
 // All management mutations serialize on the project row, then lock their key
 // rows in ID order and reauthorize using fresh database time. Concurrent mutual
 // revocations cannot both succeed, and a revoked caller cannot create new keys.
+// Human actors first hold and recheck organization access independently.
 func lockAPIKeyMutation(ctx context.Context, tx pgx.Tx, actor auth.Principal, targetID uuid.UUID) (auth.APIKey, auth.APIKey, time.Time, error) {
-	if actor.ProjectID == uuid.Nil || actor.APIKeyID == uuid.Nil {
+	if !actor.Valid() {
 		return auth.APIKey{}, auth.APIKey{}, time.Time{}, auth.ErrInvalidAPIKey
+	}
+	if actor.UserID != uuid.Nil {
+		if _, err := lockHumanProjectAccess(ctx, tx, actor); err != nil {
+			return auth.APIKey{}, auth.APIKey{}, time.Time{}, err
+		}
 	}
 	var projectID uuid.UUID
 	err := tx.QueryRow(ctx, `SELECT id FROM projects WHERE id = $1 FOR UPDATE`, actor.ProjectID).Scan(&projectID)
@@ -181,7 +192,10 @@ func lockAPIKeyMutation(ctx context.Context, tx pgx.Tx, actor auth.Principal, ta
 	if err != nil {
 		return auth.APIKey{}, auth.APIKey{}, time.Time{}, fmt.Errorf("lock API key project: %w", err)
 	}
-	ids := []pgtype.UUID{{Bytes: [16]byte(actor.APIKeyID), Valid: true}}
+	ids := make([]pgtype.UUID, 0, 2)
+	if actor.APIKeyID != uuid.Nil {
+		ids = append(ids, pgtype.UUID{Bytes: [16]byte(actor.APIKeyID), Valid: true})
+	}
 	if targetID != uuid.Nil && targetID != actor.APIKeyID {
 		ids = append(ids, pgtype.UUID{Bytes: [16]byte(targetID), Valid: true})
 	}
@@ -212,11 +226,18 @@ func lockAPIKeyMutation(ctx context.Context, tx pgx.Tx, actor auth.Principal, ta
 			target = key
 		}
 	}
-	if manager.ID == uuid.Nil || manager.Status != auth.KeyActive {
+	if actor.APIKeyID != uuid.Nil && (manager.ID == uuid.Nil || manager.Status != auth.KeyActive) {
 		return auth.APIKey{}, auth.APIKey{}, time.Time{}, auth.ErrInvalidAPIKey
 	}
 	if targetID != uuid.Nil && target.ID == uuid.Nil {
 		return auth.APIKey{}, auth.APIKey{}, time.Time{}, auth.ErrAPIKeyNotFound
 	}
 	return manager, target, databaseNow, nil
+}
+
+func nullableUUID(id uuid.UUID) *uuid.UUID {
+	if id == uuid.Nil {
+		return nil
+	}
+	return &id
 }

@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"time"
 
+	"cascadehook/internal/auth"
 	"cascadehook/internal/config"
 	"cascadehook/internal/deliveries"
 	"cascadehook/internal/delivery"
@@ -17,6 +18,10 @@ import (
 )
 
 func Run(ctx context.Context, cfg config.APIConfig, db *store.Store, logger *slog.Logger) error {
+	sessions, err := auth.NewClerkVerifier(cfg.Clerk)
+	if err != nil {
+		return err
+	}
 	vault, err := signing.NewVault(cfg.SigningEncryptionKey)
 	if err != nil {
 		return err
@@ -31,7 +36,9 @@ func Run(ctx context.Context, cfg config.APIConfig, db *store.Store, logger *slo
 		return fmt.Errorf("listen on %s: %w", cfg.HTTPAddr, err)
 	}
 	server := &http.Server{
-		Handler:           NewHandler(db, logger, vault, outbound),
+		Handler: NewHandler(HandlerOptions{
+			DB: db, Logger: logger, Vault: vault, Outbound: outbound, Sessions: sessions,
+		}),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       15 * time.Second,
 		WriteTimeout:      30 * time.Second,

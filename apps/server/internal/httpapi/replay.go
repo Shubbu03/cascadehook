@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 
+	"cascadehook/internal/accounts"
 	"cascadehook/internal/auth"
 	"cascadehook/internal/deliveries"
 )
@@ -43,14 +44,17 @@ func (api *api) replayDelivery(w http.ResponseWriter, r *http.Request, principal
 		w.Header().Set("Idempotent-Replay", "true")
 	} else {
 		api.logger.Info("delivery replay accepted", "replay_id", receipt.ID, "delivery_id", receipt.DeliveryID,
-			"project_id", principal.ProjectID, "api_key_id", principal.APIKeyID, "from_cycle", receipt.FromCycle, "cycle", receipt.Cycle)
+			"project_id", principal.ProjectID, "api_key_id", principal.APIKeyID, "user_id", principal.UserID,
+			"from_cycle", receipt.FromCycle, "cycle", receipt.Cycle)
 	}
-	w.Header().Set("Location", "/v1/deliveries/"+id.String())
+	w.Header().Set("Location", projectResourceLocation(r, "deliveries/"+id.String()))
 	writeJSON(w, r, http.StatusAccepted, receipt)
 }
 
 func (api *api) replayProblem(w http.ResponseWriter, r *http.Request, err error) {
 	switch {
+	case errors.Is(err, accounts.ErrNotFound), errors.Is(err, accounts.ErrForbidden):
+		api.accountProblem(w, r, err)
 	case errors.Is(err, deliveries.ErrNotFound):
 		writeProblem(w, r, http.StatusNotFound, "delivery_not_found")
 	case errors.Is(err, deliveries.ErrInvalidReplayCycle):

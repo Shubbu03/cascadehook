@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"time"
 
+	"cascadehook/internal/auth"
 	"cascadehook/internal/delivery"
 	"cascadehook/internal/signing"
 	"cascadehook/internal/store"
@@ -18,13 +19,25 @@ type api struct {
 	logger   *slog.Logger
 	vault    *signing.Vault
 	outbound *delivery.Client
+	sessions *auth.ClerkVerifier
+}
+
+type HandlerOptions struct {
+	DB       *store.Store
+	Logger   *slog.Logger
+	Vault    *signing.Vault
+	Outbound *delivery.Client
+	Sessions *auth.ClerkVerifier
 }
 
 // readinessTimeout bounds the database check behind /readyz.
 const readinessTimeout = 2 * time.Second
 
-func NewHandler(db *store.Store, logger *slog.Logger, vault *signing.Vault, outbound *delivery.Client) http.Handler {
-	api := &api{db: db, logger: logger, vault: vault, outbound: outbound}
+func NewHandler(options HandlerOptions) http.Handler {
+	api := &api{
+		db: options.DB, logger: options.Logger, vault: options.Vault,
+		outbound: options.Outbound, sessions: options.Sessions,
+	}
 	mux := http.NewServeMux()
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Cache-Control", "no-store")
@@ -46,7 +59,7 @@ func NewHandler(db *store.Store, logger *slog.Logger, vault *signing.Vault, outb
 		}
 		ctx, cancel := context.WithTimeout(r.Context(), readinessTimeout)
 		defer cancel()
-		if err := db.Ping(ctx); err != nil {
+		if err := api.db.Ping(ctx); err != nil {
 			writeProblem(w, r, http.StatusServiceUnavailable, "not_ready")
 			return
 		}
@@ -68,10 +81,37 @@ func NewHandler(db *store.Store, logger *slog.Logger, vault *signing.Vault, outb
 	mux.HandleFunc("/v1/api-keys", api.withProjectKey(api.apiKeyCollection))
 	mux.HandleFunc("/v1/api-keys/{api_key_id}", api.withProjectKey(api.apiKeyResource))
 	mux.HandleFunc("/v1/api-keys/{api_key_id}/rotate", api.withProjectKey(api.rotateAPIKey))
+	mux.HandleFunc("/v1/me", api.withSession(api.currentUser))
+	mux.HandleFunc("/v1/organizations", api.withSession(api.organizationCollection))
+	mux.HandleFunc("/v1/organizations/{organization_id}", api.withSession(api.organizationResource))
+	mux.HandleFunc("/v1/organizations/{organization_id}/members", api.withSession(api.membershipCollection))
+	mux.HandleFunc("/v1/organizations/{organization_id}/members/{user_id}", api.withSession(api.membershipResource))
+	mux.HandleFunc("/v1/organizations/{organization_id}/projects", api.withSession(api.projectCollection))
+	mux.HandleFunc("/v1/projects/{project_id}", api.withSession(api.projectResource))
+	mux.HandleFunc("/v1/projects/{project_id}/endpoints", api.withSessionProject(api.endpointCollection, false))
+	mux.HandleFunc("/v1/projects/{project_id}/endpoints/{endpoint_id}",
+		api.withSessionProject(api.endpointResource, false))
+	mux.HandleFunc("/v1/projects/{project_id}/endpoints/{endpoint_id}/signing-secret",
+		api.withSessionProject(api.rotateEndpointSecret, false))
+	mux.HandleFunc("/v1/projects/{project_id}/endpoints/{endpoint_id}/verify",
+		api.withSessionProject(api.verifyEndpoint, false))
+	mux.HandleFunc("/v1/projects/{project_id}/events", api.withSessionProject(api.eventCollection, false))
+	mux.HandleFunc("/v1/projects/{project_id}/events/{event_id}", api.withSessionProject(api.eventResource, false))
+	mux.HandleFunc("/v1/projects/{project_id}/deliveries", api.withSessionProject(api.deliveryCollection, false))
+	mux.HandleFunc("/v1/projects/{project_id}/deliveries/{delivery_id}",
+		api.withSessionProject(api.deliveryResource, false))
+	mux.HandleFunc("/v1/projects/{project_id}/deliveries/{delivery_id}/attempts",
+		api.withSessionProject(api.deliveryAttempts, false))
+	mux.HandleFunc("/v1/projects/{project_id}/deliveries/{delivery_id}/replay",
+		api.withSessionProject(api.replayDelivery, false))
+	mux.HandleFunc("/v1/projects/{project_id}/api-keys", api.withSessionProject(api.apiKeyCollection, true))
+	mux.HandleFunc("/v1/projects/{project_id}/api-keys/{api_key_id}", api.withSessionProject(api.apiKeyResource, true))
+	mux.HandleFunc("/v1/projects/{project_id}/api-keys/{api_key_id}/rotate",
+		api.withSessionProject(api.rotateAPIKey, true))
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		writeProblem(w, r, http.StatusNotFound, "not_found")
 	})
-	return mux
+	return api.withCORS(mux)
 }
 
 // allowGetHead reports whether the request uses a supported method, writing a

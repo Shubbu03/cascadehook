@@ -16,7 +16,8 @@ const apiKeyStatus = `CASE WHEN k.revoked_at IS NOT NULL OR k.revokes_at <= now(
 	WHEN k.expires_at <= now() THEN 'expired' ELSE 'active' END`
 
 const apiKeyColumns = `k.id, k.project_id, k.name, k.key_prefix, split_part(k.key_prefix, '_', 2), ` + apiKeyStatus + `,
-	k.created_at, k.expires_at, k.revoked_at, k.revokes_at, k.rotated_to_id, k.created_by_api_key_id, k.revoked_by_api_key_id`
+	k.created_at, k.expires_at, k.revoked_at, k.revokes_at, k.rotated_to_id, k.created_by_api_key_id, k.revoked_by_api_key_id,
+	k.created_by_user_id, k.revoked_by_user_id`
 
 func scanAPIKey(row pgx.Row, key *auth.APIKey) error {
 	return row.Scan(
@@ -33,6 +34,8 @@ func scanAPIKey(row pgx.Row, key *auth.APIKey) error {
 		&key.RotatedToID,
 		&key.CreatedByAPIKeyID,
 		&key.RevokedByAPIKeyID,
+		&key.CreatedByUserID,
+		&key.RevokedByUserID,
 	)
 }
 

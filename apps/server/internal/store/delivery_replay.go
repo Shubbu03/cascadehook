@@ -21,15 +21,21 @@ func (s *Store) ReplayDelivery(ctx context.Context, principal auth.Principal, de
 	if err := deliveries.ValidateReplayCycle(expectedCycle); err != nil {
 		return deliveries.Replay{}, err
 	}
-	if principal.ProjectID == uuid.Nil || principal.APIKeyID == uuid.Nil || deliveryID == uuid.Nil {
-		return deliveries.Replay{}, fmt.Errorf("project, API key, and delivery IDs are required")
+	if !principal.Valid() || deliveryID == uuid.Nil {
+		return deliveries.Replay{}, fmt.Errorf("project, actor, and delivery IDs are required")
 	}
 	tx, err := s.pool.BeginTx(ctx, pgx.TxOptions{IsoLevel: pgx.ReadCommitted})
 	if err != nil {
 		return deliveries.Replay{}, fmt.Errorf("begin delivery replay: %w", err)
 	}
 	defer rollbackTransaction(tx)
-	// Match mutation/lease lock ordering: destination first, then delivery.
+	if principal.UserID != uuid.Nil {
+		if _, err := lockHumanProjectAccess(ctx, tx, principal); err != nil {
+			return deliveries.Replay{}, err
+		}
+	}
+	// After organization authorization, match mutation/lease child ordering:
+	// destination first, then delivery.
 	// No parent project/event/API-key locks are acquired after the child lock.
 	var enabled, verified, deleted, hasSecret bool
 	err = tx.QueryRow(ctx, `SELECT e.enabled, e.verified_at IS NOT NULL, e.deleted_at IS NOT NULL, e.signing_secret IS NOT NULL
@@ -97,10 +103,11 @@ func (s *Store) ReplayDelivery(ctx context.Context, principal auth.Principal, de
 		return deliveries.Replay{}, deliveries.ErrReplayCycleChanged
 	}
 	_, err = tx.Exec(ctx, `INSERT INTO delivery_replays
-		(id, project_id, delivery_id, from_cycle, cycle, from_state, api_key_id, created_at, retry_deadline,
+		(id, project_id, delivery_id, from_cycle, cycle, from_state, api_key_id, user_id, created_at, retry_deadline,
 		from_attempt_count, from_terminal_reason)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`, receipt.ID, principal.ProjectID, deliveryID,
-		receipt.FromCycle, receipt.Cycle, state, principal.APIKeyID, receipt.CreatedAt, receipt.RetryDeadline, attemptCount, terminalReason)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`, receipt.ID, principal.ProjectID, deliveryID,
+		receipt.FromCycle, receipt.Cycle, state, nullableUUID(principal.APIKeyID), nullableUUID(principal.UserID),
+		receipt.CreatedAt, receipt.RetryDeadline, attemptCount, terminalReason)
 	if err != nil {
 		return deliveries.Replay{}, fmt.Errorf("record delivery replay: %w", err)
 	}

@@ -54,6 +54,8 @@ type APIKey struct {
 	RotatedToID       *uuid.UUID     `json:"rotated_to_id"`
 	CreatedByAPIKeyID *uuid.UUID     `json:"created_by_api_key_id"`
 	RevokedByAPIKeyID *uuid.UUID     `json:"revoked_by_api_key_id"`
+	CreatedByUserID   *uuid.UUID     `json:"created_by_user_id"`
+	RevokedByUserID   *uuid.UUID     `json:"revoked_by_user_id"`
 }
 
 func (key APIKey) StatusAt(at time.Time) KeyStatus {
