@@ -48,6 +48,11 @@ func run() error {
 		ProjectName:      strings.TrimSpace(*project),
 		KeyName:          strings.TrimSpace(*keyName),
 	}
+	validatedKeyName, err := auth.NormalizeKeyName(params.KeyName)
+	if err != nil {
+		return err
+	}
+	params.KeyName = validatedKeyName
 	for _, field := range []struct{ name, value string }{
 		{"organization", params.OrganizationName},
 		{"project", params.ProjectName},

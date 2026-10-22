@@ -65,6 +65,9 @@ func NewHandler(db *store.Store, logger *slog.Logger, vault *signing.Vault, outb
 	mux.HandleFunc("/v1/deliveries/{delivery_id}", api.withProjectKey(api.deliveryResource))
 	mux.HandleFunc("/v1/deliveries/{delivery_id}/attempts", api.withProjectKey(api.deliveryAttempts))
 	mux.HandleFunc("/v1/deliveries/{delivery_id}/replay", api.withProjectKey(api.replayDelivery))
+	mux.HandleFunc("/v1/api-keys", api.withProjectKey(api.apiKeyCollection))
+	mux.HandleFunc("/v1/api-keys/{api_key_id}", api.withProjectKey(api.apiKeyResource))
+	mux.HandleFunc("/v1/api-keys/{api_key_id}/rotate", api.withProjectKey(api.rotateAPIKey))
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		writeProblem(w, r, http.StatusNotFound, "not_found")
 	})
