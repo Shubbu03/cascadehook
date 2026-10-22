@@ -11,6 +11,7 @@ import (
 	"github.com/jackc/pgx/v5"
 
 	"cascadehook/internal/auth"
+	"cascadehook/internal/controls"
 	"cascadehook/internal/deliveries"
 )
 
@@ -33,6 +34,10 @@ func (s *Store) ReplayDelivery(ctx context.Context, principal auth.Principal, de
 		if _, err := lockHumanProjectAccess(ctx, tx, principal); err != nil {
 			return deliveries.Replay{}, err
 		}
+	}
+	suspended, err := lockProjectSuspension(ctx, tx, principal.ProjectID)
+	if err != nil {
+		return deliveries.Replay{}, err
 	}
 	// After organization authorization, match mutation/lease child ordering:
 	// destination first, then delivery.
@@ -65,6 +70,9 @@ func (s *Store) ReplayDelivery(ctx context.Context, principal auth.Principal, de
 	// or destination eligibility; it never grants another window.
 	if receipt, found, err := recordedDeliveryReplay(ctx, tx, principal.ProjectID, deliveryID, expectedCycle); err != nil || found {
 		return receipt, err
+	}
+	if suspended {
+		return deliveries.Replay{}, controls.ErrSuspended
 	}
 	if cycle != expectedCycle {
 		return deliveries.Replay{}, deliveries.ErrReplayCycleChanged

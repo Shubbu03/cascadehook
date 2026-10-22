@@ -13,6 +13,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 
 	"cascadehook/internal/auth"
+	"cascadehook/internal/controls"
 	"cascadehook/internal/events"
 )
 
@@ -42,8 +43,9 @@ func (s *Store) PublishEvent(ctx context.Context, projectID uuid.UUID, body []by
 	// Lock the parent before touching its child rows, matching endpoint
 	// mutation ordering and avoiding a race with project deletion. Publishers
 	// share this lock; endpoint changes take the exclusive counterpart.
-	var lockedProject uuid.UUID
-	err = tx.QueryRow(ctx, `SELECT id FROM projects WHERE id = $1 FOR SHARE`, projectID).Scan(&lockedProject)
+	var suspended bool
+	err = tx.QueryRow(ctx, `SELECT suspended_at IS NOT NULL FROM projects WHERE id = $1 FOR SHARE`,
+		projectID).Scan(&suspended)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return events.Accepted{}, auth.ErrInvalidAPIKey
 	}
@@ -84,6 +86,11 @@ func (s *Store) PublishEvent(ctx context.Context, projectID uuid.UUID, body []by
 	}
 	if !errors.Is(err, pgx.ErrNoRows) {
 		return events.Accepted{}, fmt.Errorf("find published event: %w", err)
+	}
+	// A receipt lookup is read-only. Suspension blocks fresh work without
+	// making a previously committed publication acknowledgement ambiguous.
+	if suspended {
+		return events.Accepted{}, controls.ErrSuspended
 	}
 
 	id, err := uuid.NewV7()

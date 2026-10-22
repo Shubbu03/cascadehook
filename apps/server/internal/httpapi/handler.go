@@ -10,33 +10,41 @@ import (
 
 	"cascadehook/internal/auth"
 	"cascadehook/internal/delivery"
+	"cascadehook/internal/limits"
 	"cascadehook/internal/signing"
 	"cascadehook/internal/store"
 )
 
 type api struct {
-	db       *store.Store
-	logger   *slog.Logger
-	vault    *signing.Vault
-	outbound *delivery.Client
-	sessions *auth.ClerkVerifier
+	db            *store.Store
+	logger        *slog.Logger
+	vault         *signing.Vault
+	outbound      *delivery.Client
+	sessions      *auth.ClerkVerifier
+	requestLimits *limits.Limiter
 }
 
 type HandlerOptions struct {
-	DB       *store.Store
-	Logger   *slog.Logger
-	Vault    *signing.Vault
-	Outbound *delivery.Client
-	Sessions *auth.ClerkVerifier
+	DB            *store.Store
+	Logger        *slog.Logger
+	Vault         *signing.Vault
+	Outbound      *delivery.Client
+	Sessions      *auth.ClerkVerifier
+	RequestLimits limits.Config
 }
 
 // readinessTimeout bounds the database check behind /readyz.
 const readinessTimeout = 2 * time.Second
 
-func NewHandler(options HandlerOptions) http.Handler {
+func NewHandler(options HandlerOptions) (http.Handler, error) {
+	requestLimits, err := limits.New(options.RequestLimits)
+	if err != nil {
+		return nil, err
+	}
 	api := &api{
 		db: options.DB, logger: options.Logger, vault: options.Vault,
 		outbound: options.Outbound, sessions: options.Sessions,
+		requestLimits: requestLimits,
 	}
 	mux := http.NewServeMux()
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
@@ -81,6 +89,7 @@ func NewHandler(options HandlerOptions) http.Handler {
 	mux.HandleFunc("/v1/api-keys", api.withProjectKey(api.apiKeyCollection))
 	mux.HandleFunc("/v1/api-keys/{api_key_id}", api.withProjectKey(api.apiKeyResource))
 	mux.HandleFunc("/v1/api-keys/{api_key_id}/rotate", api.withProjectKey(api.rotateAPIKey))
+	mux.HandleFunc("/v1/project-status", api.withProjectKey(api.projectStatus))
 	mux.HandleFunc("/v1/me", api.withSession(api.currentUser))
 	mux.HandleFunc("/v1/organizations", api.withSession(api.organizationCollection))
 	mux.HandleFunc("/v1/organizations/{organization_id}", api.withSession(api.organizationResource))
@@ -88,6 +97,7 @@ func NewHandler(options HandlerOptions) http.Handler {
 	mux.HandleFunc("/v1/organizations/{organization_id}/members/{user_id}", api.withSession(api.membershipResource))
 	mux.HandleFunc("/v1/organizations/{organization_id}/projects", api.withSession(api.projectCollection))
 	mux.HandleFunc("/v1/projects/{project_id}", api.withSession(api.projectResource))
+	mux.HandleFunc("/v1/projects/{project_id}/status", api.withSessionProject(api.projectStatus, false))
 	mux.HandleFunc("/v1/projects/{project_id}/endpoints", api.withSessionProject(api.endpointCollection, false))
 	mux.HandleFunc("/v1/projects/{project_id}/endpoints/{endpoint_id}",
 		api.withSessionProject(api.endpointResource, false))
@@ -111,7 +121,7 @@ func NewHandler(options HandlerOptions) http.Handler {
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		writeProblem(w, r, http.StatusNotFound, "not_found")
 	})
-	return api.withCORS(mux)
+	return api.withCORS(api.withGlobalLimit(mux)), nil
 }
 
 // allowGetHead reports whether the request uses a supported method, writing a

@@ -31,14 +31,19 @@ func Run(ctx context.Context, cfg config.APIConfig, db *store.Store, logger *slo
 		return err
 	}
 	defer outbound.CloseIdleConnections()
+	handler, err := NewHandler(HandlerOptions{
+		DB: db, Logger: logger, Vault: vault, Outbound: outbound, Sessions: sessions,
+		RequestLimits: cfg.RequestLimits,
+	})
+	if err != nil {
+		return err
+	}
 	listener, err := (&net.ListenConfig{}).Listen(ctx, "tcp", cfg.HTTPAddr)
 	if err != nil {
 		return fmt.Errorf("listen on %s: %w", cfg.HTTPAddr, err)
 	}
 	server := &http.Server{
-		Handler: NewHandler(HandlerOptions{
-			DB: db, Logger: logger, Vault: vault, Outbound: outbound, Sessions: sessions,
-		}),
+		Handler:           handler,
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       15 * time.Second,
 		WriteTimeout:      30 * time.Second,

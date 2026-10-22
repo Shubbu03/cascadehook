@@ -85,6 +85,12 @@ func (s *Store) BeginDeliveryAttempt(ctx context.Context, job deliveries.Job) (d
 		return deliveries.Attempt{}, fmt.Errorf("begin delivery attempt: %w", err)
 	}
 	defer rollbackTransaction(tx)
+	// Serialize the final intent check against operator suspension before
+	// acquiring child locks. No database transaction spans the HTTP request.
+	suspended, err := lockProjectSuspension(ctx, tx, job.ProjectID)
+	if err != nil {
+		return deliveries.Attempt{}, err
+	}
 	held, err := lockDeliveryLease(ctx, tx, job.Lease)
 	if err != nil {
 		return deliveries.Attempt{}, err
@@ -95,10 +101,14 @@ func (s *Store) BeginDeliveryAttempt(ctx context.Context, job deliveries.Job) (d
 	if held.ActiveID != nil {
 		return deliveries.Attempt{}, deliveries.ErrAttemptStarted
 	}
-	if held.Deleted || !held.Enabled || !held.Verified || held.ConfigurationVersion != job.ConfigurationVersion ||
-		held.URL != job.URL || held.Count >= deliveries.MaxAttempts ||
-		!held.RetryDeadline.After(held.Now) ||
-		held.ExpiresAt.Sub(held.Now) <= deliveries.AttemptTimeout+10*time.Second {
+	if held.ProjectID != job.ProjectID {
+		return deliveries.Attempt{}, deliveries.ErrLeaseLost
+	}
+	endpointUnavailable := held.Deleted || !held.Enabled || !held.Verified
+	configurationChanged := held.ConfigurationVersion != job.ConfigurationVersion || held.URL != job.URL
+	retryBudgetExhausted := held.Count >= deliveries.MaxAttempts || !held.RetryDeadline.After(held.Now)
+	shortLease := held.ExpiresAt.Sub(held.Now) <= deliveries.AttemptTimeout+10*time.Second
+	if suspended || endpointUnavailable || configurationChanged || retryBudgetExhausted || shortLease {
 		completion := deliveryCompletion(held, deliveries.Result{Outcome: deliveries.OutcomeInterrupted})
 		if err := updateDeliveryLease(ctx, tx, held, completion); err != nil {
 			return deliveries.Attempt{}, err

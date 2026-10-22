@@ -52,6 +52,9 @@ func (api *api) withSessionProject(next projectHandler, credentials bool) http.H
 			api.accountProblem(w, r, err)
 			return
 		}
+		if !api.admitProjectRequest(w, r, project.ID) {
+			return
+		}
 		readOnly := r.Method == http.MethodGet || r.Method == http.MethodHead
 		if (credentials || !readOnly) && !project.Role.CanManageProjects() {
 			api.accountProblem(w, r, accounts.ErrForbidden)

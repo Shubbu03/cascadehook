@@ -34,6 +34,9 @@ func (s *Store) CreateEndpoint(ctx context.Context, projectID uuid.UUID, input e
 	if err := lockProjectForEndpointChange(ctx, tx, projectID); err != nil {
 		return endpoints.Endpoint{}, err
 	}
+	if err := requireActiveProject(ctx, tx, projectID); err != nil {
+		return endpoints.Endpoint{}, err
+	}
 
 	var endpoint endpoints.Endpoint
 	err = tx.QueryRow(ctx,
@@ -125,6 +128,11 @@ func (s *Store) UpdateEndpoint(ctx context.Context, projectID, id uuid.UUID, inp
 	defer rollbackTransaction(tx)
 	if err := lockProjectForEndpointChange(ctx, tx, projectID); err != nil {
 		return endpoints.Endpoint{}, err
+	}
+	if input.Enabled != nil && *input.Enabled {
+		if err := requireActiveProject(ctx, tx, projectID); err != nil {
+			return endpoints.Endpoint{}, err
+		}
 	}
 	var endpoint endpoints.Endpoint
 	row := tx.QueryRow(ctx, `SELECT `+endpointFields+`

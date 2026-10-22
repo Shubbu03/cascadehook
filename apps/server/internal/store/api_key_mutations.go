@@ -42,6 +42,9 @@ func (s *Store) CreateAPIKey(ctx context.Context, actor auth.Principal, params C
 	if err != nil {
 		return auth.APIKey{}, err
 	}
+	if err := requireActiveProject(ctx, tx, actor.ProjectID); err != nil {
+		return auth.APIKey{}, err
+	}
 	if params.ExpiresAt != nil {
 		at := params.ExpiresAt.UTC().Truncate(time.Microsecond)
 		if at.Year() < 1 || at.Year() > 9999 || !at.After(databaseNow) {
@@ -114,6 +117,9 @@ func (s *Store) RotateAPIKey(ctx context.Context, actor auth.Principal, targetID
 	defer rollbackTransaction(tx)
 	_, target, databaseNow, err := lockAPIKeyMutation(ctx, tx, actor, targetID)
 	if err != nil {
+		return APIKeyRotation{}, err
+	}
+	if err := requireActiveProject(ctx, tx, actor.ProjectID); err != nil {
 		return APIKeyRotation{}, err
 	}
 	if target.Status != auth.KeyActive {

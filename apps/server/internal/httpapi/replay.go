@@ -7,6 +7,7 @@ import (
 
 	"cascadehook/internal/accounts"
 	"cascadehook/internal/auth"
+	"cascadehook/internal/controls"
 	"cascadehook/internal/deliveries"
 )
 
@@ -53,6 +54,8 @@ func (api *api) replayDelivery(w http.ResponseWriter, r *http.Request, principal
 
 func (api *api) replayProblem(w http.ResponseWriter, r *http.Request, err error) {
 	switch {
+	case errors.Is(err, controls.ErrSuspended), errors.Is(err, controls.ErrProjectNotFound):
+		api.projectControlProblem(w, r, err)
 	case errors.Is(err, accounts.ErrNotFound), errors.Is(err, accounts.ErrForbidden):
 		api.accountProblem(w, r, err)
 	case errors.Is(err, deliveries.ErrNotFound):

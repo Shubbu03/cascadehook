@@ -12,6 +12,7 @@ import (
 
 	"cascadehook/internal/auth"
 	"cascadehook/internal/deliveries"
+	"cascadehook/internal/limits"
 )
 
 // Config holds settings shared by the API and worker binaries.
@@ -27,6 +28,7 @@ type APIConfig struct {
 	HTTPAddr             string
 	SigningEncryptionKey []byte `json:"-"`
 	Clerk                auth.ClerkConfig
+	RequestLimits        limits.Config
 }
 
 type WorkerConfig struct {
@@ -114,7 +116,38 @@ func LoadAPI() (APIConfig, error) {
 			cfg.Clerk.AuthorizedParties = append(cfg.Clerk.AuthorizedParties, strings.TrimSpace(party))
 		}
 	}
+	cfg.RequestLimits, err = requestLimits()
+	if err != nil {
+		return APIConfig{}, err
+	}
 
+	return cfg, nil
+}
+
+func requestLimits() (limits.Config, error) {
+	cfg := limits.Defaults()
+	settings := []struct {
+		name    string
+		value   *int
+		maximum int
+	}{
+		{name: "API_GLOBAL_RPS", value: &cfg.Global.Rate, maximum: limits.MaxRate},
+		{name: "API_GLOBAL_BURST", value: &cfg.Global.Burst, maximum: limits.MaxBurst},
+		{name: "API_PROJECT_RPS", value: &cfg.Project.Rate, maximum: limits.MaxRate},
+		{name: "API_PROJECT_BURST", value: &cfg.Project.Burst, maximum: limits.MaxBurst},
+	}
+	for _, setting := range settings {
+		value, err := boundedInt(
+			setting.name,
+			*setting.value,
+			1,
+			setting.maximum,
+		)
+		if err != nil {
+			return limits.Config{}, err
+		}
+		*setting.value = value
+	}
 	return cfg, nil
 }
 

@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"cascadehook/internal/auth"
+	"cascadehook/internal/controls"
 	"cascadehook/internal/events"
 )
 
@@ -54,6 +55,13 @@ func (api *api) publishEvent(w http.ResponseWriter, r *http.Request, principal a
 
 func (api *api) publicationProblem(w http.ResponseWriter, r *http.Request, err error) {
 	switch {
+	case errors.Is(err, controls.ErrSuspended):
+		writeProblem(
+			w,
+			r,
+			http.StatusForbidden,
+			"project_suspended",
+		)
 	case errors.Is(err, events.ErrInvalidIdempotencyKey):
 		writeProblem(w, r, http.StatusBadRequest, "invalid_idempotency_key")
 	case errors.Is(err, events.ErrInvalidEvent):

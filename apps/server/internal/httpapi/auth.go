@@ -36,7 +36,11 @@ func (api *api) withProjectKey(next projectHandler) http.HandlerFunc {
 			writeProblem(w, r, http.StatusServiceUnavailable, "authentication_unavailable")
 			return
 		}
-		next(w, r.WithContext(ctx), principal)
+		r = r.WithContext(ctx)
+		if !api.admitProjectRequest(w, r, principal.ProjectID) {
+			return
+		}
+		next(w, r, principal)
 	}
 }
 

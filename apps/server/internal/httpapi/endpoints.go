@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 
 	"cascadehook/internal/auth"
+	"cascadehook/internal/controls"
 	"cascadehook/internal/endpoints"
 	"cascadehook/internal/events"
 )
@@ -128,6 +129,8 @@ func (api *api) listEndpoints(w http.ResponseWriter, r *http.Request, principal 
 
 func (api *api) endpointProblem(w http.ResponseWriter, r *http.Request, err error) {
 	switch {
+	case errors.Is(err, controls.ErrSuspended), errors.Is(err, controls.ErrProjectNotFound):
+		api.projectControlProblem(w, r, err)
 	case errors.Is(err, endpoints.ErrNotFound):
 		writeProblem(w, r, http.StatusNotFound, "endpoint_not_found")
 	case errors.Is(err, endpoints.ErrInvalidURL):

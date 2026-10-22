@@ -66,6 +66,9 @@ func (s *Store) BeginEndpointVerification(ctx context.Context, projectID, endpoi
 	if err := lockProjectForEndpointChange(ctx, tx, projectID); err != nil {
 		return endpoints.VerificationSnapshot{}, err
 	}
+	if err := requireActiveProject(ctx, tx, projectID); err != nil {
+		return endpoints.VerificationSnapshot{}, err
+	}
 	var snapshot endpoints.VerificationSnapshot
 	var coolingDown bool
 	err = tx.QueryRow(ctx, `SELECT url, verification_version, signing_secret,
