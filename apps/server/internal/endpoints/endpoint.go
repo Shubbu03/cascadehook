@@ -23,14 +23,15 @@ var (
 )
 
 type Endpoint struct {
-	ID         uuid.UUID  `json:"id"`
-	ProjectID  uuid.UUID  `json:"project_id"`
-	URL        string     `json:"url"`
-	Enabled    bool       `json:"enabled"`
-	VerifiedAt *time.Time `json:"verified_at"`
-	EventTypes []string   `json:"event_types"`
-	CreatedAt  time.Time  `json:"created_at"`
-	UpdatedAt  time.Time  `json:"updated_at"`
+	ID               uuid.UUID  `json:"id"`
+	ProjectID        uuid.UUID  `json:"project_id"`
+	URL              string     `json:"url"`
+	Enabled          bool       `json:"enabled"`
+	VerifiedAt       *time.Time `json:"verified_at"`
+	HasSigningSecret bool       `json:"has_signing_secret"`
+	EventTypes       []string   `json:"event_types"`
+	CreatedAt        time.Time  `json:"created_at"`
+	UpdatedAt        time.Time  `json:"updated_at"`
 }
 
 type Registration struct {

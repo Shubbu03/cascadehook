@@ -38,10 +38,10 @@ func (s *Store) CreateEndpoint(ctx context.Context, projectID uuid.UUID, input e
 	var endpoint endpoints.Endpoint
 	err = tx.QueryRow(ctx,
 		`INSERT INTO endpoints (id, project_id, url) VALUES ($1, $2, $3)
-		 RETURNING id, project_id, url, enabled, verified_at, created_at, updated_at`,
+		 RETURNING id, project_id, url, enabled, verified_at, created_at, updated_at, signing_secret IS NOT NULL`,
 		id, projectID, address,
 	).Scan(&endpoint.ID, &endpoint.ProjectID, &endpoint.URL, &endpoint.Enabled,
-		&endpoint.VerifiedAt, &endpoint.CreatedAt, &endpoint.UpdatedAt)
+		&endpoint.VerifiedAt, &endpoint.CreatedAt, &endpoint.UpdatedAt, &endpoint.HasSigningSecret)
 	if err != nil {
 		return endpoints.Endpoint{}, fmt.Errorf("create endpoint: %w", err)
 	}
@@ -57,7 +57,7 @@ func (s *Store) CreateEndpoint(ctx context.Context, projectID uuid.UUID, input e
 
 // endpointColumns includes subscriptions in the same query to avoid a database
 // round trip per endpoint. Only endpoints already scoped by project are read.
-const endpointFields = `e.id, e.project_id, e.url, e.enabled, e.verified_at, e.created_at, e.updated_at`
+const endpointFields = `e.id, e.project_id, e.url, e.enabled, e.verified_at, e.created_at, e.updated_at, e.signing_secret IS NOT NULL`
 
 const endpointColumns = endpointFields + `,
 	ARRAY(SELECT event_type FROM endpoint_subscriptions WHERE endpoint_id = e.id ORDER BY event_type)`
@@ -131,7 +131,7 @@ func (s *Store) UpdateEndpoint(ctx context.Context, projectID, id uuid.UUID, inp
 		FROM endpoints e WHERE e.project_id = $1 AND e.id = $2 AND e.deleted_at IS NULL FOR UPDATE OF e`,
 		projectID, id)
 	if err := row.Scan(&endpoint.ID, &endpoint.ProjectID, &endpoint.URL, &endpoint.Enabled,
-		&endpoint.VerifiedAt, &endpoint.CreatedAt, &endpoint.UpdatedAt); err != nil {
+		&endpoint.VerifiedAt, &endpoint.CreatedAt, &endpoint.UpdatedAt, &endpoint.HasSigningSecret); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return endpoints.Endpoint{}, endpoints.ErrNotFound
 		}
@@ -145,6 +145,9 @@ func (s *Store) UpdateEndpoint(ctx context.Context, projectID, id uuid.UUID, inp
 	if input.Enabled != nil {
 		if *input.Enabled && endpoint.VerifiedAt == nil {
 			return endpoints.Endpoint{}, endpoints.ErrVerificationRequired
+		}
+		if *input.Enabled && !endpoint.HasSigningSecret {
+			return endpoints.Endpoint{}, endpoints.ErrSigningSecretRequired
 		}
 		endpoint.Enabled = *input.Enabled
 	}
@@ -161,7 +164,8 @@ func (s *Store) UpdateEndpoint(ctx context.Context, projectID, id uuid.UUID, inp
 			return endpoints.Endpoint{}, fmt.Errorf("read endpoint subscriptions: %w", err)
 		}
 	}
-	err = tx.QueryRow(ctx, `UPDATE endpoints SET url = $3, enabled = $4, verified_at = $5, updated_at = now()
+	err = tx.QueryRow(ctx, `UPDATE endpoints SET url = $3, enabled = $4, verified_at = $5, updated_at = now(),
+		verification_version = verification_version + CASE WHEN url <> $3 THEN 1 ELSE 0 END
 		WHERE project_id = $1 AND id = $2 AND deleted_at IS NULL RETURNING updated_at`,
 		projectID, id, endpoint.URL, endpoint.Enabled, endpoint.VerifiedAt,
 	).Scan(&endpoint.UpdatedAt)
@@ -215,7 +219,7 @@ func replaceSubscriptions(ctx context.Context, tx pgx.Tx, endpointID uuid.UUID, 
 
 func scanEndpoint(row pgx.Row, endpoint *endpoints.Endpoint) error {
 	return row.Scan(&endpoint.ID, &endpoint.ProjectID, &endpoint.URL, &endpoint.Enabled,
-		&endpoint.VerifiedAt, &endpoint.CreatedAt, &endpoint.UpdatedAt, &endpoint.EventTypes)
+		&endpoint.VerifiedAt, &endpoint.CreatedAt, &endpoint.UpdatedAt, &endpoint.HasSigningSecret, &endpoint.EventTypes)
 }
 
 // This lock must precede endpoint row locks in every configuration mutation.

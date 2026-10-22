@@ -8,19 +8,23 @@ import (
 	"net/http"
 	"time"
 
+	"cascadehook/internal/delivery"
+	"cascadehook/internal/signing"
 	"cascadehook/internal/store"
 )
 
 type api struct {
-	db     *store.Store
-	logger *slog.Logger
+	db       *store.Store
+	logger   *slog.Logger
+	vault    *signing.Vault
+	outbound *delivery.Client
 }
 
 // readinessTimeout bounds the database check behind /readyz.
 const readinessTimeout = 2 * time.Second
 
-func NewHandler(db *store.Store, logger *slog.Logger) http.Handler {
-	api := &api{db: db, logger: logger}
+func NewHandler(db *store.Store, logger *slog.Logger, vault *signing.Vault, outbound *delivery.Client) http.Handler {
+	api := &api{db: db, logger: logger, vault: vault, outbound: outbound}
 	mux := http.NewServeMux()
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Cache-Control", "no-store")
@@ -53,6 +57,8 @@ func NewHandler(db *store.Store, logger *slog.Logger) http.Handler {
 	})
 	mux.HandleFunc("/v1/endpoints", api.withProjectKey(api.endpointCollection))
 	mux.HandleFunc("/v1/endpoints/{endpoint_id}", api.withProjectKey(api.endpointResource))
+	mux.HandleFunc("/v1/endpoints/{endpoint_id}/signing-secret", api.withProjectKey(api.rotateEndpointSecret))
+	mux.HandleFunc("/v1/endpoints/{endpoint_id}/verify", api.withProjectKey(api.verifyEndpoint))
 	mux.HandleFunc("/v1/events", api.withProjectKey(api.publishEvent))
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		writeProblem(w, r, http.StatusNotFound, "not_found")

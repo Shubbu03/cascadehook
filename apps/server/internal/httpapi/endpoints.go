@@ -182,6 +182,15 @@ func (api *api) endpointProblem(w http.ResponseWriter, r *http.Request, err erro
 		writeProblem(w, r, http.StatusUnprocessableEntity, "invalid_event_types")
 	case errors.Is(err, endpoints.ErrVerificationRequired):
 		writeProblem(w, r, http.StatusConflict, "endpoint_not_verified")
+	case errors.Is(err, endpoints.ErrSigningSecretRequired):
+		writeProblem(w, r, http.StatusConflict, "signing_secret_required")
+	case errors.Is(err, endpoints.ErrRotationInProgress):
+		writeProblem(w, r, http.StatusConflict, "signing_secret_rotation_in_progress")
+	case errors.Is(err, endpoints.ErrVerificationChanged):
+		writeProblem(w, r, http.StatusConflict, "endpoint_verification_changed")
+	case errors.Is(err, endpoints.ErrVerificationRateLimited):
+		w.Header().Set("Retry-After", strconv.Itoa(int(endpoints.VerificationCooldown.Seconds())))
+		writeProblem(w, r, http.StatusTooManyRequests, "endpoint_verification_rate_limited")
 	case errors.Is(err, context.DeadlineExceeded), errors.Is(err, context.Canceled):
 		writeProblem(w, r, http.StatusServiceUnavailable, "request_timeout")
 	default:

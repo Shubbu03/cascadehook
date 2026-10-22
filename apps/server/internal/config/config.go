@@ -1,6 +1,7 @@
 package config
 
 import (
+	"encoding/base64"
 	"fmt"
 	"log/slog"
 	"net"
@@ -20,7 +21,8 @@ type Config struct {
 // APIConfig adds the HTTP listener settings used only by the API binary.
 type APIConfig struct {
 	Config
-	HTTPAddr string
+	HTTPAddr             string
+	SigningEncryptionKey []byte `json:"-"`
 }
 
 // Load reads the shared environment variables once at startup. An explicitly
@@ -85,6 +87,11 @@ func LoadAPI() (APIConfig, error) {
 	if err != nil || portNumber < 1 || portNumber > 65535 {
 		return APIConfig{}, fmt.Errorf("HTTP_ADDR port must be between 1 and 65535")
 	}
+	key, err := base64.StdEncoding.Strict().DecodeString(os.Getenv("SIGNING_ENCRYPTION_KEY"))
+	if err != nil || len(key) != 32 {
+		return APIConfig{}, fmt.Errorf("SIGNING_ENCRYPTION_KEY must be a base64-encoded 32-byte encryption key")
+	}
+	cfg.SigningEncryptionKey = key
 
 	return cfg, nil
 }
