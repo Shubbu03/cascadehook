@@ -40,12 +40,22 @@ type finishedJob struct {
 
 // Run stops claiming on cancellation, lets active requests drain, then cancels
 // remaining work and releases this process's reservations using a fresh context.
-func Run(ctx context.Context, options Options, db Queue, outbound *delivery.Client, vault *signing.Vault, logger *slog.Logger) error {
-	if options.PollInterval < 100*time.Millisecond || options.PollInterval > time.Minute || options.ShutdownTimeout <= 0 {
+func Run(
+	ctx context.Context,
+	options Options,
+	db Queue,
+	outbound *delivery.Client,
+	vault *signing.Vault,
+	logger *slog.Logger,
+) error {
+	invalidPollInterval := options.PollInterval < 100*time.Millisecond || options.PollInterval > time.Minute
+	if invalidPollInterval || options.ShutdownTimeout <= 0 {
 		return fmt.Errorf("invalid worker poll/shutdown timing")
 	}
-	if options.Concurrency < 1 || options.Concurrency > deliveries.MaxConcurrency || options.DestinationConcurrency < 1 ||
-		options.DestinationConcurrency > options.Concurrency || options.ClaimBatchSize < 1 || options.ClaimBatchSize > deliveries.MaxClaimBatch {
+	invalidConcurrency := options.Concurrency < 1 || options.Concurrency > deliveries.MaxConcurrency
+	invalidDestinationConcurrency := options.DestinationConcurrency < 1 || options.DestinationConcurrency > options.Concurrency
+	invalidBatchSize := options.ClaimBatchSize < 1 || options.ClaimBatchSize > deliveries.MaxClaimBatch
+	if invalidConcurrency || invalidDestinationConcurrency || invalidBatchSize {
 		return fmt.Errorf("invalid worker concurrency or batch size")
 	}
 	ownerID, err := uuid.NewV7()
@@ -53,8 +63,17 @@ func Run(ctx context.Context, options Options, db Queue, outbound *delivery.Clie
 		return fmt.Errorf("generate worker lease owner: %w", err)
 	}
 	logger = logger.With("worker_id", ownerID)
-	logger.Info("worker started", "concurrency", options.Concurrency, "destination_concurrency", options.DestinationConcurrency,
-		"claim_batch_size", options.ClaimBatchSize, "poll_interval", options.PollInterval.String())
+	logger.Info(
+		"worker started",
+		"concurrency",
+		options.Concurrency,
+		"destination_concurrency",
+		options.DestinationConcurrency,
+		"claim_batch_size",
+		options.ClaimBatchSize,
+		"poll_interval",
+		options.PollInterval.String(),
+	)
 	workCtx, cancelWork := context.WithCancel(context.WithoutCancel(ctx))
 	defer cancelWork()
 	done := make(chan finishedJob, options.Concurrency)
@@ -80,7 +99,12 @@ func Run(ctx context.Context, options Options, db Queue, outbound *delivery.Clie
 				}
 				limit := min(options.ClaimBatchSize, options.Concurrency-inFlight)
 				claimCtx, stop := context.WithTimeout(ctx, queueOperationTimeout)
-				jobs, err := db.ClaimDeliveries(claimCtx, ownerID, limit, excluded)
+				jobs, err := db.ClaimDeliveries(
+					claimCtx,
+					ownerID,
+					limit,
+					excluded,
+				)
 				stop()
 				if err != nil {
 					if ctx.Err() == nil {
@@ -97,18 +121,29 @@ func Run(ctx context.Context, options Options, db Queue, outbound *delivery.Clie
 						_, err := db.ReleaseDelivery(releaseCtx, job.Lease, options.PollInterval)
 						releaseCancel()
 						if err != nil && ctx.Err() == nil && !errors.Is(err, deliveries.ErrLeaseLost) {
-							logger.Warn("unsent delivery release failed", "delivery_id", job.DeliveryID, "error", err)
+							logger.Warn(
+								"unsent delivery release failed",
+								"delivery_id",
+								job.DeliveryID,
+								"error",
+								err,
+							)
 						}
 						continue
 					}
 					active[job.EndpointID]++
 					inFlight++
-					workers.Add(1)
-					go func(job deliveries.Job) {
-						defer workers.Done()
-						err := processDelivery(workCtx, db, outbound, vault, job, logger)
+					workers.Go(func() {
+						err := processDelivery(
+							workCtx,
+							db,
+							outbound,
+							vault,
+							job,
+							logger,
+						)
 						done <- finishedJob{endpointID: job.EndpointID, fatal: err}
-					}(job)
+					})
 				}
 				if len(jobs) < limit {
 					break
@@ -131,16 +166,19 @@ func Run(ctx context.Context, options Options, db Queue, outbound *delivery.Clie
 				runErr = result.fatal
 				cancelWork()
 				running = false
-			} else {
-				fill = true
+				break
 			}
+			fill = true
 		case <-maintenance.C:
 			maintainQueue(ctx, db, logger)
 		}
 	}
 	logger.Info("worker stopping claims", "in_flight", inFlight)
 	drained := make(chan struct{})
-	go func() { workers.Wait(); close(drained) }()
+	go func() {
+		workers.Wait()
+		close(drained)
+	}()
 	drainTimer := time.NewTimer(options.ShutdownTimeout)
 	select {
 	case <-drained:

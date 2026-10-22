@@ -34,6 +34,7 @@ func (s *Store) PublishEvent(ctx context.Context, projectID uuid.UUID, body []by
 	// same project/key. A hash collision merely serializes unrelated requests;
 	// the actual identity is still enforced by the table's composite key.
 	lockHash := sha256.Sum256([]byte(projectID.String() + ":" + key))
+	// #nosec G115 -- PostgreSQL lock IDs use the full signed 64-bit hash bit pattern.
 	lockID := int64(binary.BigEndian.Uint64(lockHash[:8]))
 	if _, err := tx.Exec(ctx, `SELECT pg_advisory_xact_lock($1)`, lockID); err != nil {
 		return events.Accepted{}, fmt.Errorf("lock publication key: %w", err)
@@ -49,16 +50,31 @@ func (s *Store) PublishEvent(ctx context.Context, projectID uuid.UUID, body []by
 	if err != nil {
 		return events.Accepted{}, fmt.Errorf("lock publication project: %w", err)
 	}
-	if _, err := tx.Exec(ctx, `DELETE FROM event_idempotency_keys
-		WHERE project_id = $1 AND idempotency_key = $2 AND expires_at <= now()`, projectID, key); err != nil {
+	if _, err := tx.Exec(
+		ctx,
+		`DELETE FROM event_idempotency_keys
+		WHERE project_id = $1 AND idempotency_key = $2 AND expires_at <= now()`,
+		projectID,
+		key,
+	); err != nil {
 		return events.Accepted{}, fmt.Errorf("expire publication key: %w", err)
 	}
 	var result events.Accepted
 	var storedHash []byte
-	err = tx.QueryRow(ctx, `SELECT e.id, e.event_type, e.created_at, e.delivery_count, e.request_hash
+	err = tx.QueryRow(
+		ctx,
+		`SELECT e.id, e.event_type, e.created_at, e.delivery_count, e.request_hash
 		FROM event_idempotency_keys k JOIN events e ON e.project_id = k.project_id AND e.id = k.event_id
-		WHERE k.project_id = $1 AND k.idempotency_key = $2`, projectID, key,
-	).Scan(&result.ID, &result.Type, &result.CreatedAt, &result.DeliveryCount, &storedHash)
+		WHERE k.project_id = $1 AND k.idempotency_key = $2`,
+		projectID,
+		key,
+	).Scan(
+		&result.ID,
+		&result.Type,
+		&result.CreatedAt,
+		&result.DeliveryCount,
+		&storedHash,
+	)
 	if err == nil {
 		if !bytes.Equal(storedHash, digest[:]) {
 			return events.Accepted{}, events.ErrIdempotencyConflict
@@ -74,23 +90,46 @@ func (s *Store) PublishEvent(ctx context.Context, projectID uuid.UUID, body []by
 	if err != nil {
 		return events.Accepted{}, fmt.Errorf("generate event ID: %w", err)
 	}
-	err = tx.QueryRow(ctx, `INSERT INTO events (id, project_id, event_type, payload, request_hash)
+	err = tx.QueryRow(
+		ctx,
+		`INSERT INTO events (id, project_id, event_type, payload, request_hash)
 		VALUES ($1, $2, $3, $4, $5) RETURNING id, event_type, created_at`,
-		id, projectID, eventType, body, digest[:],
+		id,
+		projectID,
+		eventType,
+		body,
+		digest[:],
 	).Scan(&result.ID, &result.Type, &result.CreatedAt)
 	if err != nil {
 		return events.Accepted{}, fmt.Errorf("create event: %w", err)
 	}
-	result.DeliveryCount, err = fanOutEvent(ctx, tx, projectID, id, eventType)
+	result.DeliveryCount, err = fanOutEvent(
+		ctx,
+		tx,
+		projectID,
+		id,
+		eventType,
+	)
 	if err != nil {
 		return events.Accepted{}, err
 	}
-	if _, err := tx.Exec(ctx, `UPDATE events SET delivery_count = $3 WHERE project_id = $1 AND id = $2`,
-		projectID, id, result.DeliveryCount); err != nil {
+	if _, err := tx.Exec(
+		ctx,
+		`UPDATE events SET delivery_count = $3 WHERE project_id = $1 AND id = $2`,
+		projectID,
+		id,
+		result.DeliveryCount,
+	); err != nil {
 		return events.Accepted{}, fmt.Errorf("record event delivery count: %w", err)
 	}
-	if _, err := tx.Exec(ctx, `INSERT INTO event_idempotency_keys (project_id, idempotency_key, event_id)
-		VALUES ($1, $2, $3)`, projectID, key, id); err != nil {
+	if _, err := tx.Exec(
+		ctx,
+		`INSERT INTO event_idempotency_keys (project_id, idempotency_key, event_id)
+		VALUES ($1, $2, $3)`,
+		projectID,
+		key,
+		id,
+	); err != nil {
 		return events.Accepted{}, fmt.Errorf("record publication key: %w", err)
 	}
 	if err := tx.Commit(ctx); err != nil {
@@ -100,10 +139,15 @@ func (s *Store) PublishEvent(ctx context.Context, projectID uuid.UUID, body []by
 }
 
 func fanOutEvent(ctx context.Context, tx pgx.Tx, projectID, eventID uuid.UUID, eventType string) (int, error) {
-	rows, err := tx.Query(ctx, `SELECT e.id FROM endpoints e
+	rows, err := tx.Query(
+		ctx,
+		`SELECT e.id FROM endpoints e
 		JOIN endpoint_subscriptions s ON s.endpoint_id = e.id
 		WHERE e.project_id = $1 AND e.enabled AND e.verified_at IS NOT NULL
-		AND e.deleted_at IS NULL AND s.event_type = $2 ORDER BY e.id`, projectID, eventType)
+		AND e.deleted_at IS NULL AND s.event_type = $2 ORDER BY e.id`,
+		projectID,
+		eventType,
+	)
 	if err != nil {
 		return 0, fmt.Errorf("find event subscribers: %w", err)
 	}
@@ -122,10 +166,16 @@ func fanOutEvent(ctx context.Context, tx pgx.Tx, projectID, eventID uuid.UUID, e
 		}
 		deliveryIDs[i] = pgtype.UUID{Bytes: [16]byte(id), Valid: true}
 	}
-	result, err := tx.Exec(ctx, `INSERT INTO deliveries (id, project_id, event_id, endpoint_id)
+	result, err := tx.Exec(
+		ctx,
+		`INSERT INTO deliveries (id, project_id, event_id, endpoint_id)
 		SELECT jobs.id, $1, $2, jobs.endpoint_id
 		FROM unnest($3::uuid[], $4::uuid[]) AS jobs(id, endpoint_id)`,
-		projectID, eventID, deliveryIDs, endpointIDs)
+		projectID,
+		eventID,
+		deliveryIDs,
+		endpointIDs,
+	)
 	if err != nil {
 		return 0, fmt.Errorf("create event deliveries: %w", err)
 	}

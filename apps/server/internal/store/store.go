@@ -25,7 +25,8 @@ type Store struct {
 func Open(ctx context.Context, databaseURL string) (*Store, error) {
 	config, err := pgxpool.ParseConfig(databaseURL)
 	if err != nil {
-		return nil, fmt.Errorf("parse database URL: %w", err)
+		// Parsing errors can contain the original DSN, including malformed credentials.
+		return nil, fmt.Errorf("invalid DATABASE_URL: check PostgreSQL connection settings")
 	}
 	pool, err := pgxpool.NewWithConfig(ctx, config)
 	if err != nil {

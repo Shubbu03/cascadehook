@@ -93,7 +93,7 @@ No event ingestion or webhook delivery exists yet.
 
 ## Repository tooling
 
-Bun 1.3.13 manages the private root workspace. Go 1.27.2 owns the backend module
+Bun 1.3.13 manages the private root workspace. Go 1.27.3 owns the backend module
 in `apps/server`. Root scripts wrap Go commands:
 
 ```sh
@@ -101,6 +101,7 @@ bun install
 bun run build:go
 bun run fmt:go
 bun run vet:go
+bun run test:go
 ```
 
 `dev:api`, `dev:worker`, `db:migrate`, and `db:seed` are also available as wrappers for the

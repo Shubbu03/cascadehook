@@ -54,11 +54,13 @@ func run() error {
 	}
 	params.KeyName = validatedKeyName
 	for _, field := range []struct{ name, value string }{
-		{"organization", params.OrganizationName},
-		{"project", params.ProjectName},
-		{"key-name", params.KeyName},
+		{name: "organization", value: params.OrganizationName},
+		{name: "project", value: params.ProjectName},
+		{name: "key-name", value: params.KeyName},
 	} {
-		if !utf8.ValidString(field.value) || utf8.RuneCountInString(field.value) < 1 || utf8.RuneCountInString(field.value) > 100 {
+		length := utf8.RuneCountInString(field.value)
+		invalidLength := length < 1 || length > 100
+		if !utf8.ValidString(field.value) || invalidLength {
 			return fmt.Errorf("%s must contain between 1 and 100 characters after trimming whitespace", field.name)
 		}
 	}
@@ -95,6 +97,7 @@ func run() error {
 
 	// The transaction has committed. This is the only disclosure of the token;
 	// it is deliberately absent from the normal log records and stored rows.
+	// #nosec G117 -- Explicit one-time credential output is the seed command contract.
 	if err := json.NewEncoder(os.Stdout).Encode(struct {
 		store.BootstrapResult
 		APIKeyPrefix string `json:"api_key_prefix"`
@@ -106,10 +109,14 @@ func run() error {
 	}); err != nil {
 		return fmt.Errorf("bootstrap committed but credential output failed; the secret cannot be recovered: %w", err)
 	}
-	logger.Info("development bootstrap created",
-		"organization_id", result.OrganizationID,
-		"project_id", result.ProjectID,
-		"api_key_id", result.APIKeyID,
+	logger.Info(
+		"development bootstrap created",
+		"organization_id",
+		result.OrganizationID,
+		"project_id",
+		result.ProjectID,
+		"api_key_id",
+		result.APIKeyID,
 	)
 	return nil
 }

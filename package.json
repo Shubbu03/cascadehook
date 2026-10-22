@@ -10,7 +10,8 @@
     "db:seed": "cd apps/server && go run ./cmd/seed",
     "build:go": "cd apps/server && go build ./...",
     "fmt:go": "cd apps/server && go fmt ./...",
-    "vet:go": "cd apps/server && go vet ./..."
+    "vet:go": "cd apps/server && go vet ./...",
+    "test:go": "cd apps/server && go test -race ./..."
   },
   "devDependencies": {
     "@types/bun": "latest"

@@ -11,6 +11,7 @@ import (
 	"cascadehook/internal/auth"
 )
 
+// #nosec G101 -- This SQL expression computes public key lifecycle status; it contains no credentials.
 const apiKeyStatus = `CASE WHEN k.revoked_at IS NOT NULL OR k.revokes_at <= now() THEN 'revoked'
 	WHEN k.expires_at <= now() THEN 'expired' ELSE 'active' END`
 
@@ -18,14 +19,32 @@ const apiKeyColumns = `k.id, k.project_id, k.name, k.key_prefix, split_part(k.ke
 	k.created_at, k.expires_at, k.revoked_at, k.revokes_at, k.rotated_to_id, k.created_by_api_key_id, k.revoked_by_api_key_id`
 
 func scanAPIKey(row pgx.Row, key *auth.APIKey) error {
-	return row.Scan(&key.ID, &key.ProjectID, &key.Name, &key.Prefix, &key.Environment, &key.Status,
-		&key.CreatedAt, &key.ExpiresAt, &key.RevokedAt, &key.RevokesAt, &key.RotatedToID, &key.CreatedByAPIKeyID, &key.RevokedByAPIKeyID)
+	return row.Scan(
+		&key.ID,
+		&key.ProjectID,
+		&key.Name,
+		&key.Prefix,
+		&key.Environment,
+		&key.Status,
+		&key.CreatedAt,
+		&key.ExpiresAt,
+		&key.RevokedAt,
+		&key.RevokesAt,
+		&key.RotatedToID,
+		&key.CreatedByAPIKeyID,
+		&key.RevokedByAPIKeyID,
+	)
 }
 
 func (s *Store) GetAPIKey(ctx context.Context, projectID, id uuid.UUID) (auth.APIKey, error) {
 	var key auth.APIKey
-	err := scanAPIKey(s.pool.QueryRow(ctx, `SELECT `+apiKeyColumns+`
-		FROM api_keys k WHERE k.project_id = $1 AND k.id = $2`, projectID, id), &key)
+	err := scanAPIKey(s.pool.QueryRow(
+		ctx,
+		`SELECT `+apiKeyColumns+`
+		FROM api_keys k WHERE k.project_id = $1 AND k.id = $2`,
+		projectID,
+		id,
+	), &key)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return auth.APIKey{}, auth.ErrAPIKeyNotFound
 	}
@@ -35,7 +54,11 @@ func (s *Store) GetAPIKey(ctx context.Context, projectID, id uuid.UUID) (auth.AP
 	return key, nil
 }
 
-func (s *Store) ListAPIKeys(ctx context.Context, projectID uuid.UUID, options auth.KeyListOptions) ([]auth.APIKey, error) {
+func (s *Store) ListAPIKeys(
+	ctx context.Context,
+	projectID uuid.UUID,
+	options auth.KeyListOptions,
+) ([]auth.APIKey, error) {
 	if err := options.Options.Validate(); err != nil {
 		return nil, err
 	}

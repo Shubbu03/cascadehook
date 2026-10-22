@@ -16,8 +16,24 @@ import (
 
 // Only credential decryption errors stop the engine. They indicate operator
 // configuration/ciphertext problems; consuming retries would damage good jobs.
-func processDelivery(ctx context.Context, db Queue, outbound *delivery.Client, vault *signing.Vault, job deliveries.Job, logger *slog.Logger) error {
-	logger = logger.With("delivery_id", job.DeliveryID, "event_id", job.EventID, "endpoint_id", job.EndpointID, "cycle", job.Cycle)
+func processDelivery(
+	ctx context.Context,
+	db Queue,
+	outbound *delivery.Client,
+	vault *signing.Vault,
+	job deliveries.Job,
+	logger *slog.Logger,
+) error {
+	logger = logger.With(
+		"delivery_id",
+		job.DeliveryID,
+		"event_id",
+		job.EventID,
+		"endpoint_id",
+		job.EndpointID,
+		"cycle",
+		job.Cycle,
+	)
 	secret, err := vault.Decrypt(job.ProjectID, job.EndpointID, job.SigningSecret)
 	if err != nil {
 		return fmt.Errorf("decrypt endpoint signing secret for delivery %s: %w", job.DeliveryID, err)
@@ -53,12 +69,26 @@ func processDelivery(ctx context.Context, db Queue, outbound *delivery.Client, v
 	var response delivery.Response
 	requestErr := requestCtx.Err()
 	if requestErr == nil {
-		response, requestErr = outbound.PostJSON(requestCtx, job.URL, job.Payload,
-			secret.Headers(job.DeliveryID, job.Payload, attempt.StartedAt, previous))
+		response, requestErr = outbound.PostJSON(
+			requestCtx,
+			job.URL,
+			job.Payload,
+			secret.Headers(
+				job.DeliveryID,
+				job.Payload,
+				attempt.StartedAt,
+				previous,
+			),
+		)
 	}
 	elapsed := time.Since(started)
 	requestCancel()
-	result := delivery.Classify(response, requestErr, attempt.Number, elapsed)
+	result := delivery.Classify(
+		response,
+		requestErr,
+		attempt.Number,
+		elapsed,
+	)
 	// Preserve a received 2xx even when shutdown interrupts response-body reads.
 	if ctx.Err() != nil && result.StatusCode == 0 {
 		result.Outcome, result.ErrorCode = deliveries.OutcomeInterrupted, "worker_shutdown"
@@ -68,7 +98,10 @@ func processDelivery(ctx context.Context, db Queue, outbound *delivery.Client, v
 	persistCtx, persistCancel := context.WithTimeout(context.WithoutCancel(ctx), queueOperationTimeout)
 	defer persistCancel()
 	var completion deliveries.Completion
-	for retry := 0; retry < 3; retry++ {
+	for retry := range 3 {
+		if err = persistCtx.Err(); err != nil {
+			break
+		}
 		completion, err = db.CompleteDelivery(persistCtx, attempt, result)
 		if err == nil {
 			break
@@ -88,13 +121,35 @@ func processDelivery(ctx context.Context, db Queue, outbound *delivery.Client, v
 		}
 	}
 	if err != nil {
-		logger.Error("delivery outcome not persisted; lease recovery will resolve uncertain result", "attempt", attempt.Number, "error", err)
+		logger.Error(
+			"delivery outcome not persisted; lease recovery will resolve uncertain result",
+			"attempt",
+			attempt.Number,
+			"error",
+			err,
+		)
 		return nil
 	}
 	// Recovery may already have finalized an expired intent as interrupted;
 	// distinguish this process's observation from the committed queue state.
-	logger.Info("delivery attempt finalized", "attempt", attempt.Number, "observed_outcome", result.Outcome,
-		"observed_status_code", result.StatusCode, "observed_error_code", result.ErrorCode, "duration_ms", result.Duration.Milliseconds(),
-		"state", completion.State, "terminal_reason", completion.TerminalReason, "next_attempt_at", completion.NextAttemptAt)
+	logger.Info(
+		"delivery attempt finalized",
+		"attempt",
+		attempt.Number,
+		"observed_outcome",
+		result.Outcome,
+		"observed_status_code",
+		result.StatusCode,
+		"observed_error_code",
+		result.ErrorCode,
+		"duration_ms",
+		result.Duration.Milliseconds(),
+		"state",
+		completion.State,
+		"terminal_reason",
+		completion.TerminalReason,
+		"next_attempt_at",
+		completion.NextAttemptAt,
+	)
 	return nil
 }

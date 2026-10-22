@@ -2,24 +2,26 @@ package store
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"log/slog"
 
-	_ "github.com/jackc/pgx/v5/stdlib" // registers the "pgx" driver for database/sql
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/stdlib"
 	"github.com/pressly/goose/v3"
 
 	"cascadehook/migrations"
 )
 
 // Migrate applies every pending SQL migration from the embedded migrations
-// package. goose runs each migration in its own transaction and records
+// package. Goose runs each migration in its own transaction and records
 // applied versions in goose_db_version.
 func Migrate(ctx context.Context, databaseURL string, logger *slog.Logger) error {
-	db, err := sql.Open("pgx", databaseURL)
+	config, err := pgx.ParseConfig(databaseURL)
 	if err != nil {
-		return fmt.Errorf("open database: %w", err)
+		// Parsing errors can contain the original DSN, including malformed credentials.
+		return fmt.Errorf("invalid DATABASE_URL: check PostgreSQL connection settings")
 	}
+	db := stdlib.OpenDB(*config)
 	defer db.Close()
 	pingCtx, cancel := context.WithTimeout(ctx, connectTimeout)
 	err = db.PingContext(pingCtx)
@@ -28,27 +30,18 @@ func Migrate(ctx context.Context, databaseURL string, logger *slog.Logger) error
 		return fmt.Errorf("connect to database: %w", err)
 	}
 
-	goose.SetBaseFS(migrations.FS)
-	if err := goose.SetDialect("postgres"); err != nil {
-		return fmt.Errorf("set migration dialect: %w", err)
+	provider, err := goose.NewProvider(
+		goose.DialectPostgres,
+		db,
+		migrations.FS,
+		goose.WithSlog(logger),
+		goose.WithDisableGlobalRegistry(true),
+	)
+	if err != nil {
+		return fmt.Errorf("initialize migrations: %w", err)
 	}
-	goose.SetLogger(gooseLogger{logger: logger})
-	if err := goose.UpContext(ctx, db, "."); err != nil {
+	if _, err := provider.Up(ctx); err != nil {
 		return fmt.Errorf("apply migrations: %w", err)
 	}
 	return nil
-}
-
-// gooseLogger routes goose output through slog so migration runs keep the
-// same JSON log shape as the other binaries.
-type gooseLogger struct {
-	logger *slog.Logger
-}
-
-func (l gooseLogger) Printf(format string, v ...any) {
-	l.logger.Info(fmt.Sprintf(format, v...))
-}
-
-func (l gooseLogger) Fatalf(format string, v ...any) {
-	l.logger.Error(fmt.Sprintf(format, v...))
 }

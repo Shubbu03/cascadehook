@@ -45,7 +45,9 @@ func (response Response) LogValue() slog.Value {
 }
 
 func NewClient(concurrency, perHost int) (*Client, error) {
-	if concurrency < 1 || concurrency > deliveries.MaxConcurrency || perHost < 1 || perHost > concurrency {
+	invalidConcurrency := concurrency < 1 || concurrency > deliveries.MaxConcurrency
+	invalidPerHost := perHost < 1 || perHost > concurrency
+	if invalidConcurrency || invalidPerHost {
 		return nil, fmt.Errorf("invalid outbound concurrency limits")
 	}
 	transport := &http.Transport{
@@ -86,11 +88,16 @@ func (c *Client) PostJSON(ctx context.Context, address string, body []byte, head
 	case c.slots <- struct{}{}:
 		defer func() { <-c.slots }()
 	case <-ctx.Done():
-		return Response{}, requestError{ctx.Err()}
+		return Response{}, requestError{cause: ctx.Err()}
 	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, address, bytes.NewReader(body))
+	req, err := http.NewRequestWithContext(
+		ctx,
+		http.MethodPost,
+		address,
+		bytes.NewReader(body),
+	)
 	if err != nil {
-		return Response{}, requestError{err}
+		return Response{}, requestError{cause: err}
 	}
 	// Prevent Transport from replaying a request body internally. Delivery
 	// retries belong to the queue and its append-only attempt records.
@@ -111,7 +118,7 @@ func (c *Client) PostJSON(ctx context.Context, address string, body []byte, head
 	// that case into an error before consulting its redirect callback.
 	response, err := c.transport.RoundTrip(req)
 	if err != nil {
-		return Response{}, requestError{err}
+		return Response{}, requestError{cause: err}
 	}
 	defer response.Body.Close()
 	result := Response{StatusCode: response.StatusCode, RetryAfter: response.Header.Get("Retry-After")}
@@ -126,7 +133,7 @@ func (c *Client) PostJSON(ctx context.Context, address string, body []byte, head
 		result.Truncated = true
 	}
 	if err != nil {
-		return result, requestError{err}
+		return result, requestError{cause: err}
 	}
 	return result, nil
 }

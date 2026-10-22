@@ -52,6 +52,7 @@ func Classify(response Response, err error, attemptNumber int, elapsed time.Dura
 		index := min(max(attemptNumber-1, 0), len(retrySchedule)-1)
 		base := retrySchedule[index]
 		spread := base / 5
+		// #nosec G404 -- Retry jitter is scheduling noise, never a credential or security decision.
 		result.RetryDelay = base - spread + time.Duration(rand.Int64N(int64(2*spread)+1))
 		parseRetryAfter(response.RetryAfter, &result)
 	}

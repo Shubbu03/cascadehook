@@ -8,6 +8,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"strconv"
 	"time"
@@ -24,6 +25,10 @@ const (
 type Secret struct{ key [SecretSize]byte }
 
 func (Secret) String() string { return "[redacted signing secret]" }
+
+func (Secret) GoString() string { return "[redacted signing secret]" }
+
+func (Secret) LogValue() slog.Value { return slog.StringValue("[redacted signing secret]") }
 
 func NewSecret() (Secret, error) {
 	var secret Secret
