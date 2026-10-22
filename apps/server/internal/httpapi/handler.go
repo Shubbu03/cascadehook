@@ -59,7 +59,12 @@ func NewHandler(db *store.Store, logger *slog.Logger, vault *signing.Vault, outb
 	mux.HandleFunc("/v1/endpoints/{endpoint_id}", api.withProjectKey(api.endpointResource))
 	mux.HandleFunc("/v1/endpoints/{endpoint_id}/signing-secret", api.withProjectKey(api.rotateEndpointSecret))
 	mux.HandleFunc("/v1/endpoints/{endpoint_id}/verify", api.withProjectKey(api.verifyEndpoint))
-	mux.HandleFunc("/v1/events", api.withProjectKey(api.publishEvent))
+	mux.HandleFunc("/v1/events", api.withProjectKey(api.eventCollection))
+	mux.HandleFunc("/v1/events/{event_id}", api.withProjectKey(api.eventResource))
+	mux.HandleFunc("/v1/deliveries", api.withProjectKey(api.deliveryCollection))
+	mux.HandleFunc("/v1/deliveries/{delivery_id}", api.withProjectKey(api.deliveryResource))
+	mux.HandleFunc("/v1/deliveries/{delivery_id}/attempts", api.withProjectKey(api.deliveryAttempts))
+	mux.HandleFunc("/v1/deliveries/{delivery_id}/replay", api.withProjectKey(api.replayDelivery))
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		writeProblem(w, r, http.StatusNotFound, "not_found")
 	})

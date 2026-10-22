@@ -2,11 +2,8 @@ package httpapi
 
 import (
 	"context"
-	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"net/http"
-	"net/url"
 	"strconv"
 
 	"github.com/google/uuid"
@@ -94,16 +91,9 @@ func (api *api) endpointResource(w http.ResponseWriter, r *http.Request, princip
 }
 
 func (api *api) listEndpoints(w http.ResponseWriter, r *http.Request, principal auth.Principal) {
-	query, err := url.ParseQuery(r.URL.RawQuery)
-	if err != nil {
-		writeProblem(w, r, http.StatusBadRequest, "invalid_pagination")
+	query, limit, ok := readListQuery(w, r, "enabled", "event_type")
+	if !ok {
 		return
-	}
-	for key, values := range query {
-		if (key != "limit" && key != "cursor" && key != "enabled" && key != "event_type") || len(values) != 1 {
-			writeProblem(w, r, http.StatusBadRequest, "invalid_pagination")
-			return
-		}
 	}
 	var enabled *bool
 	if query.Has("enabled") {
@@ -120,32 +110,9 @@ func (api *api) listEndpoints(w http.ResponseWriter, r *http.Request, principal 
 		writeProblem(w, r, http.StatusBadRequest, "invalid_filter")
 		return
 	}
-	limit := 20
-	if query.Has("limit") {
-		limit, err = strconv.Atoi(query.Get("limit"))
-		if err != nil || limit < 1 || limit > 100 {
-			writeProblem(w, r, http.StatusBadRequest, "invalid_pagination")
-			return
-		}
-	}
-	var before *endpoints.Cursor
-	if query.Has("cursor") {
-		value := query.Get("cursor")
-		if len(value) == 0 || len(value) > 512 {
-			writeProblem(w, r, http.StatusBadRequest, "invalid_cursor")
-			return
-		}
-		data, err := base64.RawURLEncoding.DecodeString(value)
-		if err != nil {
-			writeProblem(w, r, http.StatusBadRequest, "invalid_cursor")
-			return
-		}
-		var cursor endpoints.Cursor
-		if err := json.Unmarshal(data, &cursor); err != nil || cursor.CreatedAt.IsZero() || cursor.ID == uuid.Nil {
-			writeProblem(w, r, http.StatusBadRequest, "invalid_cursor")
-			return
-		}
-		before = &cursor
+	before, ok := readPageCursor(w, r, query)
+	if !ok {
+		return
 	}
 	result, err := api.db.ListEndpoints(r.Context(), principal.ProjectID, endpoints.ListOptions{
 		Limit: limit, Before: before, Enabled: enabled, EventType: eventType,
@@ -154,22 +121,9 @@ func (api *api) listEndpoints(w http.ResponseWriter, r *http.Request, principal 
 		api.endpointProblem(w, r, err)
 		return
 	}
-	var nextCursor *string
-	if len(result) > limit {
-		last := result[limit-1]
-		data, err := json.Marshal(endpoints.Cursor{CreatedAt: last.CreatedAt, ID: last.ID})
-		if err != nil {
-			api.endpointProblem(w, r, err)
-			return
-		}
-		encoded := base64.RawURLEncoding.EncodeToString(data)
-		nextCursor = &encoded
-		result = result[:limit]
-	}
-	writeJSON(w, r, http.StatusOK, struct {
-		Data       []endpoints.Endpoint `json:"data"`
-		NextCursor *string              `json:"next_cursor"`
-	}{Data: result, NextCursor: nextCursor})
+	writePage(w, r, result, limit, func(endpoint endpoints.Endpoint) any {
+		return endpoints.Cursor{CreatedAt: endpoint.CreatedAt, ID: endpoint.ID}
+	})
 }
 
 func (api *api) endpointProblem(w http.ResponseWriter, r *http.Request, err error) {

@@ -9,6 +9,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"cascadehook/internal/deliveries"
 )
 
 // Config holds settings shared by the API and worker binaries.
@@ -23,6 +25,15 @@ type APIConfig struct {
 	Config
 	HTTPAddr             string
 	SigningEncryptionKey []byte `json:"-"`
+}
+
+type WorkerConfig struct {
+	Config
+	SigningEncryptionKey   []byte `json:"-"`
+	Concurrency            int
+	DestinationConcurrency int
+	ClaimBatchSize         int
+	PollInterval           time.Duration
 }
 
 // Load reads the shared environment variables once at startup. An explicitly
@@ -87,11 +98,62 @@ func LoadAPI() (APIConfig, error) {
 	if err != nil || portNumber < 1 || portNumber > 65535 {
 		return APIConfig{}, fmt.Errorf("HTTP_ADDR port must be between 1 and 65535")
 	}
-	key, err := base64.StdEncoding.Strict().DecodeString(os.Getenv("SIGNING_ENCRYPTION_KEY"))
-	if err != nil || len(key) != 32 {
-		return APIConfig{}, fmt.Errorf("SIGNING_ENCRYPTION_KEY must be a base64-encoded 32-byte encryption key")
+	key, err := signingEncryptionKey()
+	if err != nil {
+		return APIConfig{}, err
 	}
 	cfg.SigningEncryptionKey = key
 
 	return cfg, nil
+}
+
+func LoadWorker() (WorkerConfig, error) {
+	shared, err := Load()
+	if err != nil {
+		return WorkerConfig{}, err
+	}
+	cfg := WorkerConfig{Config: shared, PollInterval: time.Second}
+	cfg.SigningEncryptionKey, err = signingEncryptionKey()
+	if err != nil {
+		return WorkerConfig{}, err
+	}
+	cfg.Concurrency, err = boundedInt("WORKER_CONCURRENCY", deliveries.DefaultConcurrency, 1, deliveries.MaxConcurrency)
+	if err != nil {
+		return WorkerConfig{}, err
+	}
+	cfg.DestinationConcurrency, err = boundedInt("WORKER_DESTINATION_CONCURRENCY", min(deliveries.DefaultDestinationConcurrency, cfg.Concurrency), 1, cfg.Concurrency)
+	if err != nil {
+		return WorkerConfig{}, err
+	}
+	cfg.ClaimBatchSize, err = boundedInt("WORKER_CLAIM_BATCH_SIZE", deliveries.DefaultClaimBatch, 1, deliveries.MaxClaimBatch)
+	if err != nil {
+		return WorkerConfig{}, err
+	}
+	if value, ok := os.LookupEnv("WORKER_POLL_INTERVAL"); ok {
+		cfg.PollInterval, err = time.ParseDuration(value)
+		if err != nil || cfg.PollInterval < 100*time.Millisecond || cfg.PollInterval > time.Minute {
+			return WorkerConfig{}, fmt.Errorf("WORKER_POLL_INTERVAL must be between 100ms and 1m")
+		}
+	}
+	return cfg, nil
+}
+
+func signingEncryptionKey() ([]byte, error) {
+	key, err := base64.StdEncoding.Strict().DecodeString(os.Getenv("SIGNING_ENCRYPTION_KEY"))
+	if err != nil || len(key) != 32 {
+		return nil, fmt.Errorf("SIGNING_ENCRYPTION_KEY must be a base64-encoded 32-byte encryption key")
+	}
+	return key, nil
+}
+
+func boundedInt(name string, fallback, minimum, maximum int) (int, error) {
+	value, ok := os.LookupEnv(name)
+	if !ok {
+		return fallback, nil
+	}
+	parsed, err := strconv.Atoi(value)
+	if err != nil || parsed < minimum || parsed > maximum {
+		return 0, fmt.Errorf("%s must be between %d and %d", name, minimum, maximum)
+	}
+	return parsed, nil
 }

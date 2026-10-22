@@ -13,6 +13,7 @@ import (
 	"github.com/google/uuid"
 
 	"cascadehook/internal/events"
+	"cascadehook/internal/pagination"
 )
 
 var (
@@ -46,10 +47,7 @@ type Update struct {
 	EventTypes *[]string
 }
 
-type Cursor struct {
-	CreatedAt time.Time `json:"created_at"`
-	ID        uuid.UUID `json:"id"`
-}
+type Cursor = pagination.Cursor
 
 type ListOptions struct {
 	Limit     int

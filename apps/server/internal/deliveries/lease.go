@@ -9,19 +9,27 @@ import (
 )
 
 const (
-	DefaultClaimBatch = 10
-	MaxClaimBatch     = 100
-	LeaseDuration     = 90 * time.Second
-	MaxAttempts       = 8
-	RetryHorizon      = 72 * time.Hour
+	DefaultClaimBatch             = 10
+	MaxClaimBatch                 = 100
+	LeaseDuration                 = 90 * time.Second
+	MaxAttempts                   = 8
+	RetryHorizon                  = 72 * time.Hour
+	DefaultConcurrency            = 32
+	DefaultDestinationConcurrency = 4
+	MaxConcurrency                = 256
+	AttemptTimeout                = 30 * time.Second
 )
 
-var ErrLeaseLost = errors.New("delivery lease expired or no longer owned")
+var (
+	ErrLeaseLost      = errors.New("delivery lease expired or no longer owned")
+	ErrAttemptStarted = errors.New("delivery lease already has an active attempt")
+)
 
 type State string
 
 const (
 	Pending   State = "pending"
+	Leased    State = "leased"
 	Succeeded State = "succeeded"
 	Failed    State = "failed"
 	Canceled  State = "canceled"
@@ -40,22 +48,26 @@ type Lease struct {
 // HTTP attempt. The sender must recheck destination eligibility before sending.
 type Job struct {
 	Lease
-	ProjectID      uuid.UUID
-	EventID        uuid.UUID
-	EndpointID     uuid.UUID
-	URL            string
-	EventType      string
-	Payload        []byte
-	EventCreatedAt time.Time
-	LeaseExpiresAt time.Time
-	AttemptCount   int
-	Cycle          int
+	ProjectID               uuid.UUID
+	EventID                 uuid.UUID
+	EndpointID              uuid.UUID
+	URL                     string
+	EventType               string
+	Payload                 []byte
+	EventCreatedAt          time.Time
+	LeaseExpiresAt          time.Time
+	AttemptCount            int
+	Cycle                   int
+	ConfigurationVersion    int64
+	SigningSecret           []byte `json:"-"`
+	PreviousSigningSecret   []byte `json:"-"`
+	PreviousSecretExpiresAt *time.Time
 }
 
-// Completion describes only the queue transition. Attempt counting and the
-// append-only attempt log will be integrated with completion by the sender.
-// Pending requires a positive RetryAfter; terminal states require zero.
+// Completion is the committed queue transition, including the retry timestamp
+// chosen from database time. A nil NextAttemptAt denotes a terminal state.
 type Completion struct {
-	State      State
-	RetryAfter time.Duration
+	State          State
+	NextAttemptAt  *time.Time
+	TerminalReason string
 }

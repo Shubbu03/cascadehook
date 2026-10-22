@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"cascadehook/internal/config"
+	"cascadehook/internal/deliveries"
 	"cascadehook/internal/delivery"
 	"cascadehook/internal/signing"
 	"cascadehook/internal/store"
@@ -20,7 +21,10 @@ func Run(ctx context.Context, cfg config.APIConfig, db *store.Store, logger *slo
 	if err != nil {
 		return err
 	}
-	outbound := delivery.NewClient()
+	outbound, err := delivery.NewClient(deliveries.DefaultConcurrency, deliveries.DefaultDestinationConcurrency)
+	if err != nil {
+		return err
+	}
 	defer outbound.CloseIdleConnections()
 	listener, err := (&net.ListenConfig{}).Listen(ctx, "tcp", cfg.HTTPAddr)
 	if err != nil {
