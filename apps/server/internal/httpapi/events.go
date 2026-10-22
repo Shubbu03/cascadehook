@@ -11,12 +11,19 @@ import (
 	"cascadehook/internal/events"
 )
 
-func (api *api) publishEvent(w http.ResponseWriter, r *http.Request, principal auth.Principal) {
-	if r.Method != http.MethodPost {
-		w.Header().Set("Allow", "POST")
+func (api *api) eventCollection(w http.ResponseWriter, r *http.Request, principal auth.Principal) {
+	switch r.Method {
+	case http.MethodGet, http.MethodHead:
+		api.listEvents(w, r, principal)
+	case http.MethodPost:
+		api.publishEvent(w, r, principal)
+	default:
+		w.Header().Set("Allow", "GET, HEAD, POST")
 		writeProblem(w, r, http.StatusMethodNotAllowed, "method_not_allowed")
-		return
 	}
+}
+
+func (api *api) publishEvent(w http.ResponseWriter, r *http.Request, principal auth.Principal) {
 	keys := r.Header.Values("Idempotency-Key")
 	if len(keys) != 1 {
 		writeProblem(w, r, http.StatusBadRequest, "invalid_idempotency_key")

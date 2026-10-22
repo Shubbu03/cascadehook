@@ -12,13 +12,13 @@ import (
 	"net/http"
 	"time"
 
+	"cascadehook/internal/deliveries"
 	"cascadehook/internal/endpoints"
 	"cascadehook/internal/events"
 )
 
 const (
 	connectTimeout  = 5 * time.Second
-	requestTimeout  = 30 * time.Second
 	maxResponseBody = 4 << 10
 )
 
@@ -44,7 +44,10 @@ func (response Response) LogValue() slog.Value {
 	return slog.GroupValue(slog.Int("status_code", response.StatusCode), slog.Bool("body_truncated", response.Truncated))
 }
 
-func NewClient() *Client {
+func NewClient(concurrency, perHost int) (*Client, error) {
+	if concurrency < 1 || concurrency > deliveries.MaxConcurrency || perHost < 1 || perHost > concurrency {
+		return nil, fmt.Errorf("invalid outbound concurrency limits")
+	}
 	transport := &http.Transport{
 		Proxy:                  nil,
 		DialContext:            dialPublic,
@@ -52,13 +55,13 @@ func NewClient() *Client {
 		TLSHandshakeTimeout:    5 * time.Second,
 		ResponseHeaderTimeout:  25 * time.Second,
 		MaxResponseHeaderBytes: 32 << 10,
-		MaxConnsPerHost:        4,
-		MaxIdleConns:           64,
-		MaxIdleConnsPerHost:    2,
+		MaxConnsPerHost:        perHost,
+		MaxIdleConns:           concurrency * 2,
+		MaxIdleConnsPerHost:    min(perHost, 2),
 		IdleConnTimeout:        60 * time.Second,
 		DisableCompression:     true,
 	}
-	return &Client{slots: make(chan struct{}, 32), transport: transport}
+	return &Client{slots: make(chan struct{}, concurrency), transport: transport}, nil
 }
 
 func (c *Client) CloseIdleConnections() {
@@ -77,7 +80,7 @@ func (c *Client) PostJSON(ctx context.Context, address string, body []byte, head
 	}
 	// Bound all outbound calls, including verification requests arriving on
 	// different hosts. Waiting for capacity is part of the total deadline.
-	ctx, cancel := context.WithTimeout(ctx, requestTimeout)
+	ctx, cancel := context.WithTimeout(ctx, deliveries.AttemptTimeout)
 	defer cancel()
 	select {
 	case c.slots <- struct{}{}:

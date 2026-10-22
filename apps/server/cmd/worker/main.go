@@ -6,14 +6,13 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
 	"cascadehook/internal/config"
+	"cascadehook/internal/delivery"
+	"cascadehook/internal/signing"
 	"cascadehook/internal/store"
 	"cascadehook/internal/worker"
 )
-
-const pollInterval = 5 * time.Second
 
 func main() {
 	if err := run(); err != nil {
@@ -25,7 +24,7 @@ func main() {
 func run() error {
 	// Configuration failures also use structured logging.
 	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)).With("service", "worker"))
-	cfg, err := config.Load()
+	cfg, err := config.LoadWorker()
 	if err != nil {
 		return err
 	}
@@ -33,6 +32,15 @@ func run() error {
 		Level: cfg.LogLevel,
 	})).With("service", "worker")
 	slog.SetDefault(logger)
+	vault, err := signing.NewVault(cfg.SigningEncryptionKey)
+	if err != nil {
+		return err
+	}
+	outbound, err := delivery.NewClient(cfg.Concurrency, cfg.DestinationConcurrency)
+	if err != nil {
+		return err
+	}
+	defer outbound.CloseIdleConnections()
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
@@ -49,7 +57,10 @@ func run() error {
 	defer db.Close()
 
 	return worker.Run(ctx, worker.Options{
-		PollInterval:    pollInterval,
-		ShutdownTimeout: cfg.ShutdownTimeout,
-	}, db, logger)
+		PollInterval:           cfg.PollInterval,
+		ShutdownTimeout:        cfg.ShutdownTimeout,
+		Concurrency:            cfg.Concurrency,
+		DestinationConcurrency: cfg.DestinationConcurrency,
+		ClaimBatchSize:         cfg.ClaimBatchSize,
+	}, db, outbound, vault, logger)
 }

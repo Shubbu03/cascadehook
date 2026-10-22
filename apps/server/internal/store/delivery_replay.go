@@ -42,10 +42,12 @@ func (s *Store) ReplayDelivery(ctx context.Context, principal auth.Principal, de
 	if err != nil {
 		return deliveries.Replay{}, fmt.Errorf("lock replay destination: %w", err)
 	}
-	var cycle int
+	var cycle, attemptCount int
 	var state deliveries.State
-	err = tx.QueryRow(ctx, `SELECT cycle, state FROM deliveries WHERE project_id = $1 AND id = $2 FOR UPDATE`,
-		principal.ProjectID, deliveryID).Scan(&cycle, &state)
+	var terminalReason *string
+	err = tx.QueryRow(ctx, `SELECT cycle, state, attempt_count, terminal_reason
+		FROM deliveries WHERE project_id = $1 AND id = $2 FOR UPDATE`,
+		principal.ProjectID, deliveryID).Scan(&cycle, &state, &attemptCount, &terminalReason)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return deliveries.Replay{}, deliveries.ErrNotFound
 	}
@@ -95,9 +97,10 @@ func (s *Store) ReplayDelivery(ctx context.Context, principal auth.Principal, de
 		return deliveries.Replay{}, deliveries.ErrReplayCycleChanged
 	}
 	_, err = tx.Exec(ctx, `INSERT INTO delivery_replays
-		(id, project_id, delivery_id, from_cycle, cycle, from_state, api_key_id, created_at, retry_deadline)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`, receipt.ID, principal.ProjectID, deliveryID,
-		receipt.FromCycle, receipt.Cycle, state, principal.APIKeyID, receipt.CreatedAt, receipt.RetryDeadline)
+		(id, project_id, delivery_id, from_cycle, cycle, from_state, api_key_id, created_at, retry_deadline,
+		from_attempt_count, from_terminal_reason)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`, receipt.ID, principal.ProjectID, deliveryID,
+		receipt.FromCycle, receipt.Cycle, state, principal.APIKeyID, receipt.CreatedAt, receipt.RetryDeadline, attemptCount, terminalReason)
 	if err != nil {
 		return deliveries.Replay{}, fmt.Errorf("record delivery replay: %w", err)
 	}
