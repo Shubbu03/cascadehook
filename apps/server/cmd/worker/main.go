@@ -11,6 +11,7 @@ import (
 	"cascadehook/internal/delivery"
 	"cascadehook/internal/signing"
 	"cascadehook/internal/store"
+	"cascadehook/internal/telemetry"
 	"cascadehook/internal/worker"
 )
 
@@ -56,11 +57,34 @@ func run() error {
 	}
 	defer db.Close()
 
-	return worker.Run(ctx, worker.Options{
-		PollInterval:           cfg.PollInterval,
-		ShutdownTimeout:        cfg.ShutdownTimeout,
-		Concurrency:            cfg.Concurrency,
-		DestinationConcurrency: cfg.DestinationConcurrency,
-		ClaimBatchSize:         cfg.ClaimBatchSize,
-	}, db, outbound, vault, logger)
+	var metrics *telemetry.Metrics
+	var workerMetrics *telemetry.Worker
+	if cfg.Metrics.Enabled() {
+		metrics = telemetry.New("worker", db.PoolStats)
+		workerMetrics = metrics.Worker(cfg.Concurrency)
+		metrics.Queue(db)
+	}
+	return telemetry.Run(
+		ctx,
+		cfg.Metrics,
+		metrics,
+		logger,
+		func(serviceCtx context.Context) error {
+			return worker.Run(
+				serviceCtx,
+				worker.Options{
+					PollInterval:           cfg.PollInterval,
+					ShutdownTimeout:        cfg.ShutdownTimeout,
+					Concurrency:            cfg.Concurrency,
+					DestinationConcurrency: cfg.DestinationConcurrency,
+					ClaimBatchSize:         cfg.ClaimBatchSize,
+					Metrics:                workerMetrics,
+				},
+				db,
+				outbound,
+				vault,
+				logger,
+			)
+		},
+	)
 }

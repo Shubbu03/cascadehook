@@ -16,9 +16,10 @@ import (
 func (s *Store) FindAPIKey(ctx context.Context, digest [sha256.Size]byte) (auth.Principal, error) {
 	var principal auth.Principal
 	err := s.pool.QueryRow(ctx,
-		`SELECT project_id, id FROM api_keys WHERE key_hash = $1 AND revoked_at IS NULL
-		AND (expires_at IS NULL OR expires_at > clock_timestamp())
-		AND (revokes_at IS NULL OR revokes_at > clock_timestamp())`,
+		`SELECT k.project_id, k.id FROM api_keys k JOIN projects p ON p.id = k.project_id
+		WHERE k.key_hash = $1 AND k.revoked_at IS NULL AND p.deletion_requested_at IS NULL
+		AND (k.expires_at IS NULL OR k.expires_at > clock_timestamp())
+		AND (k.revokes_at IS NULL OR k.revokes_at > clock_timestamp())`,
 		digest[:],
 	).Scan(&principal.ProjectID, &principal.APIKeyID)
 	if errors.Is(err, pgx.ErrNoRows) {

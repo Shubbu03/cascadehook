@@ -14,6 +14,7 @@ import (
 	"cascadehook/internal/deliveries"
 	"cascadehook/internal/delivery"
 	"cascadehook/internal/signing"
+	"cascadehook/internal/telemetry"
 )
 
 type Queue interface {
@@ -29,6 +30,7 @@ type Queue interface {
 type Options struct {
 	PollInterval, ShutdownTimeout                       time.Duration
 	Concurrency, DestinationConcurrency, ClaimBatchSize int
+	Metrics                                             *telemetry.Worker
 }
 
 const queueOperationTimeout = 5 * time.Second
@@ -84,7 +86,12 @@ func Run(
 	defer poll.Stop()
 	maintenance := time.NewTicker(5 * time.Second)
 	defer maintenance.Stop()
-	maintainQueue(ctx, db, logger)
+	maintainQueue(
+		ctx,
+		db,
+		logger,
+		options.Metrics,
+	)
 	var runErr error
 	fill := true
 	running := true
@@ -99,6 +106,7 @@ func Run(
 				}
 				limit := min(options.ClaimBatchSize, options.Concurrency-inFlight)
 				claimCtx, stop := context.WithTimeout(ctx, queueOperationTimeout)
+				claimStarted := time.Now()
 				jobs, err := db.ClaimDeliveries(
 					claimCtx,
 					ownerID,
@@ -106,20 +114,24 @@ func Run(
 					excluded,
 				)
 				stop()
+				options.Metrics.Operation("claim", claimStarted, err)
 				if err != nil {
 					if ctx.Err() == nil {
 						logger.Warn("delivery claim failed", "error", err)
 					}
 					break
 				}
+				options.Metrics.Claimed(len(jobs))
 				for _, job := range jobs {
 					if ctx.Err() != nil {
 						break
 					}
 					if active[job.EndpointID] >= options.DestinationConcurrency {
 						releaseCtx, releaseCancel := context.WithTimeout(ctx, queueOperationTimeout)
+						releaseStarted := time.Now()
 						_, err := db.ReleaseDelivery(releaseCtx, job.Lease, options.PollInterval)
 						releaseCancel()
+						options.Metrics.Operation("release_reservation", releaseStarted, err)
 						if err != nil && ctx.Err() == nil && !errors.Is(err, deliveries.ErrLeaseLost) {
 							logger.Warn(
 								"unsent delivery release failed",
@@ -133,7 +145,9 @@ func Run(
 					}
 					active[job.EndpointID]++
 					inFlight++
+					options.Metrics.JobStarted()
 					workers.Go(func() {
+						defer options.Metrics.JobFinished()
 						err := processDelivery(
 							workCtx,
 							db,
@@ -141,7 +155,11 @@ func Run(
 							vault,
 							job,
 							logger,
+							options.Metrics,
 						)
+						if err != nil {
+							options.Metrics.Error("credential_decryption")
+						}
 						done <- finishedJob{endpointID: job.EndpointID, fatal: err}
 					})
 				}
@@ -170,7 +188,12 @@ func Run(
 			}
 			fill = true
 		case <-maintenance.C:
-			maintainQueue(ctx, db, logger)
+			maintainQueue(
+				ctx,
+				db,
+				logger,
+				options.Metrics,
+			)
 		}
 	}
 	logger.Info("worker stopping claims", "in_flight", inFlight)
@@ -198,18 +221,24 @@ func Run(
 	cancelWork()
 	cleanupCtx, cleanupCancel := context.WithTimeout(context.Background(), queueOperationTimeout)
 	defer cleanupCancel()
+	cleanupStarted := time.Now()
 	released, cleanupErr := db.ReleaseWorkerLeases(cleanupCtx, ownerID)
+	options.Metrics.Operation("release_worker", cleanupStarted, cleanupErr)
+	options.Metrics.Maintenance("release_worker", released)
 	logger.Info("worker stopped", "leases_released", released)
 	return errors.Join(runErr, cleanupErr)
 }
 
-func maintainQueue(ctx context.Context, db Queue, logger *slog.Logger) {
+func maintainQueue(ctx context.Context, db Queue, logger *slog.Logger, metrics *telemetry.Worker) {
 	if ctx.Err() != nil {
 		return
 	}
 	opCtx, cancel := context.WithTimeout(ctx, queueOperationTimeout)
+	started := time.Now()
 	recovered, err := db.RecoverDeliveryLeases(opCtx, deliveries.MaxClaimBatch)
 	cancel()
+	metrics.Operation("recover_leases", started, err)
+	metrics.Maintenance("recover_leases", recovered)
 	if err != nil && ctx.Err() == nil {
 		logger.Warn("delivery lease recovery failed", "error", err)
 	} else if recovered > 0 {
@@ -219,8 +248,11 @@ func maintainQueue(ctx context.Context, db Queue, logger *slog.Logger) {
 		return
 	}
 	opCtx, cancel = context.WithTimeout(ctx, queueOperationTimeout)
+	started = time.Now()
 	expired, err := db.ExpirePendingDeliveries(opCtx, deliveries.MaxClaimBatch)
 	cancel()
+	metrics.Operation("expire_pending", started, err)
+	metrics.Maintenance("expire_pending", expired)
 	if err != nil && ctx.Err() == nil {
 		logger.Warn("pending delivery expiry failed", "error", err)
 	} else if expired > 0 {

@@ -12,6 +12,7 @@ import (
 	"cascadehook/internal/deliveries"
 	"cascadehook/internal/delivery"
 	"cascadehook/internal/signing"
+	"cascadehook/internal/telemetry"
 )
 
 // Only credential decryption errors stop the engine. They indicate operator
@@ -23,6 +24,7 @@ func processDelivery(
 	vault *signing.Vault,
 	job deliveries.Job,
 	logger *slog.Logger,
+	metrics *telemetry.Worker,
 ) error {
 	logger = logger.With(
 		"delivery_id",
@@ -50,6 +52,7 @@ func processDelivery(
 	opCtx, cancel := context.WithTimeout(ctx, queueOperationTimeout)
 	attempt, err := db.BeginDeliveryAttempt(opCtx, job)
 	cancel()
+	metrics.Operation("begin_attempt", intentStarted, err)
 	if err != nil {
 		if !errors.Is(err, deliveries.ErrLeaseLost) && !errors.Is(err, deliveries.ErrAttemptStarted) && ctx.Err() == nil {
 			logger.Warn("delivery intent was not confirmed; reservation left for recovery", "error", err)
@@ -59,6 +62,7 @@ func processDelivery(
 	if attempt.ID == uuid.Nil {
 		return nil
 	}
+	metrics.AttemptStarted(job, attempt)
 	if !attempt.UsePreviousSecret {
 		previous = nil
 	}
@@ -94,6 +98,7 @@ func processDelivery(
 		result.Outcome, result.ErrorCode = deliveries.OutcomeInterrupted, "worker_shutdown"
 		result.RetryDelay, result.RetryAfterDelay, result.RetryAfterAt = 0, 0, nil
 	}
+	metrics.AttemptObserved(result)
 	// A fresh deadline allows results to commit after forced request cancellation.
 	persistCtx, persistCancel := context.WithTimeout(context.WithoutCancel(ctx), queueOperationTimeout)
 	defer persistCancel()
@@ -102,7 +107,9 @@ func processDelivery(
 		if err = persistCtx.Err(); err != nil {
 			break
 		}
+		completionStarted := time.Now()
 		completion, err = db.CompleteDelivery(persistCtx, attempt, result)
+		metrics.Operation("complete_attempt", completionStarted, err)
 		if err == nil {
 			break
 		}
@@ -121,6 +128,7 @@ func processDelivery(
 		}
 	}
 	if err != nil {
+		metrics.Error("outcome_unpersisted")
 		logger.Error(
 			"delivery outcome not persisted; lease recovery will resolve uncertain result",
 			"attempt",
@@ -130,6 +138,7 @@ func processDelivery(
 		)
 		return nil
 	}
+	metrics.CompletionObserved(completion)
 	// Recovery may already have finalized an expired intent as interrupted;
 	// distinguish this process's observation from the committed queue state.
 	logger.Info(

@@ -64,7 +64,7 @@ func run() error {
 		logger,
 	)
 	logger.Info(
-		"retention run finished",
+		"janitor run finished",
 		"status",
 		report.Status,
 		"dry_run",

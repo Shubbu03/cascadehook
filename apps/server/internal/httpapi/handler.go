@@ -13,6 +13,7 @@ import (
 	"cascadehook/internal/limits"
 	"cascadehook/internal/signing"
 	"cascadehook/internal/store"
+	"cascadehook/internal/telemetry"
 )
 
 type api struct {
@@ -31,6 +32,7 @@ type HandlerOptions struct {
 	Outbound      *delivery.Client
 	Sessions      *auth.ClerkVerifier
 	RequestLimits limits.Config
+	Metrics       *telemetry.Metrics
 }
 
 // readinessTimeout bounds the database check behind /readyz.
@@ -47,7 +49,12 @@ func NewHandler(options HandlerOptions) (http.Handler, error) {
 		requestLimits: requestLimits,
 	}
 	mux := http.NewServeMux()
-	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
+	routes := make([]string, 0)
+	handle := func(pattern string, handler http.HandlerFunc) {
+		routes = append(routes, pattern)
+		mux.HandleFunc(pattern, handler)
+	}
+	handle("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Cache-Control", "no-store")
 		if !allowGetHead(w, r) {
 			return
@@ -60,7 +67,7 @@ func NewHandler(options HandlerOptions) (http.Handler, error) {
 	// /readyz is the readiness probe: it fails while the database is
 	// unreachable so load balancers stop routing traffic here, while
 	// /healthz keeps reporting liveness.
-	mux.HandleFunc("/readyz", func(w http.ResponseWriter, r *http.Request) {
+	handle("/readyz", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Cache-Control", "no-store")
 		if !allowGetHead(w, r) {
 			return
@@ -76,52 +83,56 @@ func NewHandler(options HandlerOptions) (http.Handler, error) {
 			_, _ = io.WriteString(w, "{\"status\":\"ok\"}\n")
 		}
 	})
-	mux.HandleFunc("/v1/endpoints", api.withProjectKey(api.endpointCollection))
-	mux.HandleFunc("/v1/endpoints/{endpoint_id}", api.withProjectKey(api.endpointResource))
-	mux.HandleFunc("/v1/endpoints/{endpoint_id}/signing-secret", api.withProjectKey(api.rotateEndpointSecret))
-	mux.HandleFunc("/v1/endpoints/{endpoint_id}/verify", api.withProjectKey(api.verifyEndpoint))
-	mux.HandleFunc("/v1/events", api.withProjectKey(api.eventCollection))
-	mux.HandleFunc("/v1/events/{event_id}", api.withProjectKey(api.eventResource))
-	mux.HandleFunc("/v1/deliveries", api.withProjectKey(api.deliveryCollection))
-	mux.HandleFunc("/v1/deliveries/{delivery_id}", api.withProjectKey(api.deliveryResource))
-	mux.HandleFunc("/v1/deliveries/{delivery_id}/attempts", api.withProjectKey(api.deliveryAttempts))
-	mux.HandleFunc("/v1/deliveries/{delivery_id}/replay", api.withProjectKey(api.replayDelivery))
-	mux.HandleFunc("/v1/api-keys", api.withProjectKey(api.apiKeyCollection))
-	mux.HandleFunc("/v1/api-keys/{api_key_id}", api.withProjectKey(api.apiKeyResource))
-	mux.HandleFunc("/v1/api-keys/{api_key_id}/rotate", api.withProjectKey(api.rotateAPIKey))
-	mux.HandleFunc("/v1/project-status", api.withProjectKey(api.projectStatus))
-	mux.HandleFunc("/v1/me", api.withSession(api.currentUser))
-	mux.HandleFunc("/v1/organizations", api.withSession(api.organizationCollection))
-	mux.HandleFunc("/v1/organizations/{organization_id}", api.withSession(api.organizationResource))
-	mux.HandleFunc("/v1/organizations/{organization_id}/members", api.withSession(api.membershipCollection))
-	mux.HandleFunc("/v1/organizations/{organization_id}/members/{user_id}", api.withSession(api.membershipResource))
-	mux.HandleFunc("/v1/organizations/{organization_id}/projects", api.withSession(api.projectCollection))
-	mux.HandleFunc("/v1/projects/{project_id}", api.withSession(api.projectResource))
-	mux.HandleFunc("/v1/projects/{project_id}/status", api.withSessionProject(api.projectStatus, false))
-	mux.HandleFunc("/v1/projects/{project_id}/endpoints", api.withSessionProject(api.endpointCollection, false))
-	mux.HandleFunc("/v1/projects/{project_id}/endpoints/{endpoint_id}",
+	handle("/v1/endpoints", api.withProjectKey(api.endpointCollection))
+	handle("/v1/endpoints/{endpoint_id}", api.withProjectKey(api.endpointResource))
+	handle("/v1/endpoints/{endpoint_id}/signing-secret", api.withProjectKey(api.rotateEndpointSecret))
+	handle("/v1/endpoints/{endpoint_id}/verify", api.withProjectKey(api.verifyEndpoint))
+	handle("/v1/events", api.withProjectKey(api.eventCollection))
+	handle("/v1/events/{event_id}", api.withProjectKey(api.eventResource))
+	handle("/v1/deliveries", api.withProjectKey(api.deliveryCollection))
+	handle("/v1/deliveries/{delivery_id}", api.withProjectKey(api.deliveryResource))
+	handle("/v1/deliveries/{delivery_id}/attempts", api.withProjectKey(api.deliveryAttempts))
+	handle("/v1/deliveries/{delivery_id}/replay", api.withProjectKey(api.replayDelivery))
+	handle("/v1/api-keys", api.withProjectKey(api.apiKeyCollection))
+	handle("/v1/api-keys/{api_key_id}", api.withProjectKey(api.apiKeyResource))
+	handle("/v1/api-keys/{api_key_id}/rotate", api.withProjectKey(api.rotateAPIKey))
+	handle("/v1/project-status", api.withProjectKey(api.projectStatus))
+	handle("/v1/me", api.withSession(api.currentUser))
+	handle("/v1/organizations", api.withSession(api.organizationCollection))
+	handle("/v1/organizations/{organization_id}", api.withSession(api.organizationResource))
+	handle("/v1/organizations/{organization_id}/members", api.withSession(api.membershipCollection))
+	handle("/v1/organizations/{organization_id}/members/{user_id}", api.withSession(api.membershipResource))
+	handle("/v1/organizations/{organization_id}/projects", api.withSession(api.projectCollection))
+	handle("/v1/projects/{project_id}", api.withSession(api.projectResource))
+	handle("/v1/projects/{project_id}/status", api.withSessionProject(api.projectStatus, false))
+	handle("/v1/projects/{project_id}/endpoints", api.withSessionProject(api.endpointCollection, false))
+	handle("/v1/projects/{project_id}/endpoints/{endpoint_id}",
 		api.withSessionProject(api.endpointResource, false))
-	mux.HandleFunc("/v1/projects/{project_id}/endpoints/{endpoint_id}/signing-secret",
+	handle("/v1/projects/{project_id}/endpoints/{endpoint_id}/signing-secret",
 		api.withSessionProject(api.rotateEndpointSecret, false))
-	mux.HandleFunc("/v1/projects/{project_id}/endpoints/{endpoint_id}/verify",
+	handle("/v1/projects/{project_id}/endpoints/{endpoint_id}/verify",
 		api.withSessionProject(api.verifyEndpoint, false))
-	mux.HandleFunc("/v1/projects/{project_id}/events", api.withSessionProject(api.eventCollection, false))
-	mux.HandleFunc("/v1/projects/{project_id}/events/{event_id}", api.withSessionProject(api.eventResource, false))
-	mux.HandleFunc("/v1/projects/{project_id}/deliveries", api.withSessionProject(api.deliveryCollection, false))
-	mux.HandleFunc("/v1/projects/{project_id}/deliveries/{delivery_id}",
+	handle("/v1/projects/{project_id}/events", api.withSessionProject(api.eventCollection, false))
+	handle("/v1/projects/{project_id}/events/{event_id}", api.withSessionProject(api.eventResource, false))
+	handle("/v1/projects/{project_id}/deliveries", api.withSessionProject(api.deliveryCollection, false))
+	handle("/v1/projects/{project_id}/deliveries/{delivery_id}",
 		api.withSessionProject(api.deliveryResource, false))
-	mux.HandleFunc("/v1/projects/{project_id}/deliveries/{delivery_id}/attempts",
+	handle("/v1/projects/{project_id}/deliveries/{delivery_id}/attempts",
 		api.withSessionProject(api.deliveryAttempts, false))
-	mux.HandleFunc("/v1/projects/{project_id}/deliveries/{delivery_id}/replay",
+	handle("/v1/projects/{project_id}/deliveries/{delivery_id}/replay",
 		api.withSessionProject(api.replayDelivery, false))
-	mux.HandleFunc("/v1/projects/{project_id}/api-keys", api.withSessionProject(api.apiKeyCollection, true))
-	mux.HandleFunc("/v1/projects/{project_id}/api-keys/{api_key_id}", api.withSessionProject(api.apiKeyResource, true))
-	mux.HandleFunc("/v1/projects/{project_id}/api-keys/{api_key_id}/rotate",
+	handle("/v1/projects/{project_id}/api-keys", api.withSessionProject(api.apiKeyCollection, true))
+	handle("/v1/projects/{project_id}/api-keys/{api_key_id}", api.withSessionProject(api.apiKeyResource, true))
+	handle("/v1/projects/{project_id}/api-keys/{api_key_id}/rotate",
 		api.withSessionProject(api.rotateAPIKey, true))
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	handle("/", func(w http.ResponseWriter, r *http.Request) {
 		writeProblem(w, r, http.StatusNotFound, "not_found")
 	})
-	return api.withCORS(api.withGlobalLimit(mux)), nil
+	handler := api.withCORS(api.withGlobalLimit(mux))
+	if options.Metrics != nil {
+		handler = options.Metrics.HTTP(handler, routes)
+	}
+	return handler, nil
 }
 
 // allowGetHead reports whether the request uses a supported method, writing a

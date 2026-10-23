@@ -15,6 +15,7 @@ import (
 	"cascadehook/internal/delivery"
 	"cascadehook/internal/signing"
 	"cascadehook/internal/store"
+	"cascadehook/internal/telemetry"
 )
 
 func Run(ctx context.Context, cfg config.APIConfig, db *store.Store, logger *slog.Logger) error {
@@ -31,16 +32,16 @@ func Run(ctx context.Context, cfg config.APIConfig, db *store.Store, logger *slo
 		return err
 	}
 	defer outbound.CloseIdleConnections()
+	var metrics *telemetry.Metrics
+	if cfg.Metrics.Enabled() {
+		metrics = telemetry.New("api", db.PoolStats)
+	}
 	handler, err := NewHandler(HandlerOptions{
 		DB: db, Logger: logger, Vault: vault, Outbound: outbound, Sessions: sessions,
-		RequestLimits: cfg.RequestLimits,
+		RequestLimits: cfg.RequestLimits, Metrics: metrics,
 	})
 	if err != nil {
 		return err
-	}
-	listener, err := (&net.ListenConfig{}).Listen(ctx, "tcp", cfg.HTTPAddr)
-	if err != nil {
-		return fmt.Errorf("listen on %s: %w", cfg.HTTPAddr, err)
 	}
 	server := &http.Server{
 		Handler:           handler,
@@ -51,7 +52,25 @@ func Run(ctx context.Context, cfg config.APIConfig, db *store.Store, logger *slo
 		MaxHeaderBytes:    64 << 10,
 		ErrorLog:          slog.NewLogLogger(logger.Handler(), slog.LevelError),
 	}
-	return serve(ctx, server, listener, cfg.ShutdownTimeout, logger)
+	return telemetry.Run(
+		ctx,
+		cfg.Metrics,
+		metrics,
+		logger,
+		func(serviceCtx context.Context) error {
+			listener, err := (&net.ListenConfig{}).Listen(serviceCtx, "tcp", cfg.HTTPAddr)
+			if err != nil {
+				return fmt.Errorf("listen on %s: %w", cfg.HTTPAddr, err)
+			}
+			return serve(
+				serviceCtx,
+				server,
+				listener,
+				cfg.ShutdownTimeout,
+				logger,
+			)
+		},
+	)
 }
 
 func serve(ctx context.Context, server *http.Server, listener net.Listener, timeout time.Duration, logger *slog.Logger) error {

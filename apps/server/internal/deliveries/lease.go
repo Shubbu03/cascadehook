@@ -55,6 +55,7 @@ type Job struct {
 	EventType               string
 	Payload                 []byte
 	EventCreatedAt          time.Time
+	NextAttemptAt           time.Time
 	LeaseExpiresAt          time.Time
 	AttemptCount            int
 	Cycle                   int

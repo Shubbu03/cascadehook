@@ -14,6 +14,7 @@ import (
 	"cascadehook/internal/deliveries"
 	"cascadehook/internal/limits"
 	"cascadehook/internal/retention"
+	"cascadehook/internal/telemetry"
 )
 
 // Config holds settings shared by the API and worker binaries.
@@ -30,6 +31,7 @@ type APIConfig struct {
 	SigningEncryptionKey []byte `json:"-"`
 	Clerk                auth.ClerkConfig
 	RequestLimits        limits.Config
+	Metrics              telemetry.Config
 }
 
 type WorkerConfig struct {
@@ -39,6 +41,7 @@ type WorkerConfig struct {
 	DestinationConcurrency int
 	ClaimBatchSize         int
 	PollInterval           time.Duration
+	Metrics                telemetry.Config
 }
 
 type JanitorConfig struct {
@@ -126,6 +129,10 @@ func LoadAPI() (APIConfig, error) {
 	if err != nil {
 		return APIConfig{}, err
 	}
+	cfg.Metrics, err = metricsConfig()
+	if err != nil {
+		return APIConfig{}, err
+	}
 
 	return cfg, nil
 }
@@ -185,7 +192,16 @@ func LoadWorker() (WorkerConfig, error) {
 			return WorkerConfig{}, fmt.Errorf("WORKER_POLL_INTERVAL must be between 100ms and 1m")
 		}
 	}
+	cfg.Metrics, err = metricsConfig()
+	if err != nil {
+		return WorkerConfig{}, err
+	}
 	return cfg, nil
+}
+
+func metricsConfig() (telemetry.Config, error) {
+	cfg := telemetry.Config{Address: os.Getenv("METRICS_ADDR"), Token: os.Getenv("METRICS_TOKEN")}
+	return cfg, cfg.Validate()
 }
 
 func signingEncryptionKey() ([]byte, error) {

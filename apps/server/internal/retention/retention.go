@@ -1,4 +1,4 @@
-// Package retention defines bounded cleanup of completed event histories.
+// Package retention defines bounded history retention and requested project deletion.
 package retention
 
 import (
@@ -56,10 +56,11 @@ const (
 	DeleteReplays    Phase = "delivery_replays"
 	DeleteDeliveries Phase = "deliveries"
 	DeleteEvents     Phase = "events"
+	DeleteProjects   Phase = "project_deletion_rows"
 )
 
 func Phases() []Phase {
-	return []Phase{ExpireKeys, MarkEvents, DeleteAttempts, DeleteReplays, DeleteDeliveries, DeleteEvents}
+	return []Phase{ExpireKeys, MarkEvents, DeleteAttempts, DeleteReplays, DeleteDeliveries, DeleteEvents, DeleteProjects}
 }
 
 type Batch struct {

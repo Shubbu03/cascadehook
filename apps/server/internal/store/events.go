@@ -45,7 +45,8 @@ func (s *Store) PublishEvent(ctx context.Context, projectID uuid.UUID, body []by
 	// mutation ordering and avoiding a race with project deletion. Publishers
 	// share this lock; endpoint changes take the exclusive counterpart.
 	var suspended bool
-	err = tx.QueryRow(ctx, `SELECT suspended_at IS NOT NULL FROM projects WHERE id = $1 FOR SHARE`,
+	err = tx.QueryRow(ctx, `SELECT suspended_at IS NOT NULL FROM projects
+		WHERE id = $1 AND deletion_requested_at IS NULL FOR SHARE`,
 		projectID).Scan(&suspended)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return events.Accepted{}, auth.ErrInvalidAPIKey

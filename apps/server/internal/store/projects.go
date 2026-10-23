@@ -17,7 +17,7 @@ func (s *Store) GetProject(ctx context.Context, userID, id uuid.UUID) (accounts.
 	var project accounts.Project
 	err := scanProject(s.pool.QueryRow(ctx, `SELECT p.id, p.organization_id, p.name, m.role, p.created_at, p.updated_at
 		FROM projects p JOIN memberships m ON m.organization_id = p.organization_id
-		WHERE p.id = $1 AND m.user_id = $2`, id, userID), &project)
+		WHERE p.id = $1 AND m.user_id = $2 AND p.deletion_requested_at IS NULL`, id, userID), &project)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return accounts.Project{}, accounts.ErrNotFound
 	}
@@ -40,7 +40,7 @@ func (s *Store) ListProjects(
 	}
 	query := `SELECT p.id, p.organization_id, p.name, m.role, p.created_at, p.updated_at
 		FROM projects p JOIN memberships m ON m.organization_id = p.organization_id
-		WHERE p.organization_id = $1 AND m.user_id = $2`
+		WHERE p.organization_id = $1 AND m.user_id = $2 AND p.deletion_requested_at IS NULL`
 	args := []any{organizationID, userID}
 	if options.Before != nil {
 		args = append(args, options.Before.CreatedAt, options.Before.ID)
@@ -122,8 +122,12 @@ func (s *Store) RenameProject(ctx context.Context, userID, id uuid.UUID, name st
 	}
 	project := accounts.Project{Role: role}
 	err = tx.QueryRow(ctx, `UPDATE projects SET name = $2, updated_at = clock_timestamp()
-		WHERE id = $1 RETURNING id, organization_id, name, created_at, updated_at`, id, name,
+		WHERE id = $1 AND deletion_requested_at IS NULL
+		RETURNING id, organization_id, name, created_at, updated_at`, id, name,
 	).Scan(&project.ID, &project.OrganizationID, &project.Name, &project.CreatedAt, &project.UpdatedAt)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return accounts.Project{}, accounts.ErrNotFound
+	}
 	if err != nil {
 		return accounts.Project{}, fmt.Errorf("rename project: %w", err)
 	}

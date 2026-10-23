@@ -127,7 +127,14 @@ func (api *api) projectCollection(w http.ResponseWriter, r *http.Request, user a
 }
 
 func (api *api) projectResource(w http.ResponseWriter, r *http.Request, user accounts.User) {
-	if !accountResourceMethod(w, r) {
+	switch r.Method {
+	case http.MethodDelete:
+		api.deleteProject(w, r, user)
+		return
+	case http.MethodGet, http.MethodHead, http.MethodPatch:
+	default:
+		w.Header().Set("Allow", "GET, HEAD, PATCH, DELETE")
+		writeProblem(w, r, http.StatusMethodNotAllowed, "method_not_allowed")
 		return
 	}
 	id, ok := readResourceID(w, r, "project_id")
@@ -154,6 +161,28 @@ func (api *api) projectResource(w http.ResponseWriter, r *http.Request, user acc
 		return
 	}
 	writeJSON(w, r, http.StatusOK, project)
+}
+
+func (api *api) deleteProject(w http.ResponseWriter, r *http.Request, user accounts.User) {
+	id, ok := readResourceID(w, r, "project_id")
+	if !ok || !emptyAccountAction(w, r) {
+		return
+	}
+	deletion, err := api.db.RequestProjectDeletion(r.Context(), user.ID, id)
+	if err != nil {
+		api.accountProblem(w, r, err)
+		return
+	}
+	api.logger.Info(
+		"project deletion accepted",
+		"project_id",
+		id,
+		"actor_user_id",
+		user.ID,
+		"deletion_requested_at",
+		deletion.RequestedAt,
+	)
+	writeJSON(w, r, http.StatusAccepted, deletion)
 }
 
 func accountResourceMethod(w http.ResponseWriter, r *http.Request) bool {

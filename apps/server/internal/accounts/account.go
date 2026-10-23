@@ -68,6 +68,11 @@ type Project struct {
 	UpdatedAt      time.Time `json:"updated_at"`
 }
 
+type ProjectDeletion struct {
+	ProjectID   uuid.UUID `json:"project_id"`
+	RequestedAt time.Time `json:"deletion_requested_at"`
+}
+
 func NormalizeName(value string) (string, error) {
 	value = strings.TrimSpace(value)
 	length := utf8.RuneCountInString(value)

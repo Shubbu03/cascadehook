@@ -31,7 +31,7 @@ func (s *Store) ClaimDeliveries(ctx context.Context, ownerID uuid.UUID, limit in
 	}
 	defer rollbackTransaction(tx)
 	rows, err := tx.Query(ctx, `SELECT d.id, d.project_id, d.event_id, d.endpoint_id,
-		e.url, v.event_type, v.payload, v.created_at, d.attempt_count, d.cycle,
+		e.url, v.event_type, v.payload, v.created_at, d.next_attempt_at, d.attempt_count, d.cycle,
 		e.verification_version, e.signing_secret,
 		CASE WHEN e.previous_secret_expires_at > now() THEN e.previous_signing_secret ELSE NULL END,
 		e.previous_secret_expires_at
@@ -40,13 +40,13 @@ func (s *Store) ClaimDeliveries(ctx context.Context, ownerID uuid.UUID, limit in
 		JOIN events v ON v.project_id = d.project_id AND v.id = d.event_id
 		JOIN projects p ON p.id = d.project_id
 		WHERE d.state = 'pending' AND d.next_attempt_at <= now()
-		AND p.suspended_at IS NULL
+		AND p.suspended_at IS NULL AND p.deletion_requested_at IS NULL
 		AND v.purge_started_at IS NULL
 		AND e.enabled AND e.verified_at IS NOT NULL AND e.deleted_at IS NULL AND e.signing_secret IS NOT NULL
 		AND d.attempt_count < $2 AND d.retry_deadline > now()
 		AND NOT (d.endpoint_id = ANY($3::uuid[]))
 		ORDER BY d.next_attempt_at, d.id LIMIT $1
-		FOR UPDATE OF d SKIP LOCKED FOR SHARE OF e SKIP LOCKED`,
+		FOR UPDATE OF d SKIP LOCKED FOR SHARE OF p, e SKIP LOCKED`,
 		limit, deliveries.MaxAttempts, excludedIDs)
 	if err != nil {
 		return nil, fmt.Errorf("select due deliveries: %w", err)
@@ -54,7 +54,7 @@ func (s *Store) ClaimDeliveries(ctx context.Context, ownerID uuid.UUID, limit in
 	jobs, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (deliveries.Job, error) {
 		var job deliveries.Job
 		err := row.Scan(&job.DeliveryID, &job.ProjectID, &job.EventID, &job.EndpointID,
-			&job.URL, &job.EventType, &job.Payload, &job.EventCreatedAt, &job.AttemptCount, &job.Cycle,
+			&job.URL, &job.EventType, &job.Payload, &job.EventCreatedAt, &job.NextAttemptAt, &job.AttemptCount, &job.Cycle,
 			&job.ConfigurationVersion, &job.SigningSecret, &job.PreviousSigningSecret, &job.PreviousSecretExpiresAt)
 		return job, err
 	})
@@ -107,6 +107,9 @@ func (s *Store) ReleaseDelivery(ctx context.Context, lease deliveries.Lease, del
 		return deliveries.Completion{}, fmt.Errorf("begin delivery release: %w", err)
 	}
 	defer rollbackTransaction(tx)
+	if err := lockDeliveryProject(ctx, tx, lease.DeliveryID); err != nil {
+		return deliveries.Completion{}, err
+	}
 	held, err := lockDeliveryLease(ctx, tx, lease)
 	if err != nil {
 		return deliveries.Completion{}, err

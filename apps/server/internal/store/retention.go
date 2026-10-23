@@ -39,6 +39,9 @@ func (s *Store) RetentionClock(ctx context.Context) (time.Time, error) {
 	if _, err := s.pool.Exec(ctx, `SELECT purge_started_at FROM events LIMIT 0`); err != nil {
 		return time.Time{}, fmt.Errorf("retention schema unavailable; apply migrations first: %w", err)
 	}
+	if _, err := s.pool.Exec(ctx, `SELECT deletion_requested_at FROM projects LIMIT 0`); err != nil {
+		return time.Time{}, fmt.Errorf("project deletion schema unavailable; apply migrations first: %w", err)
+	}
 	var now time.Time
 	if err := s.pool.QueryRow(ctx, `SELECT clock_timestamp()`).Scan(&now); err != nil {
 		return time.Time{}, fmt.Errorf("read cleanup database time: %w", err)
@@ -53,7 +56,6 @@ func (s *Store) PreviewRetentionBatch(ctx context.Context, batch retention.Batch
 	if err := batch.Validate(); err != nil {
 		return 0, err
 	}
-	selection := retentionCandidates(batch)
 	tx, err := s.pool.BeginTx(ctx, pgx.TxOptions{AccessMode: pgx.ReadOnly})
 	if err != nil {
 		return 0, fmt.Errorf("begin retention preview: %w", err)
@@ -62,6 +64,15 @@ func (s *Store) PreviewRetentionBatch(ctx context.Context, batch retention.Batch
 	if _, err := tx.Exec(ctx, `SELECT set_config('statement_timeout', '10s', true)`); err != nil {
 		return 0, fmt.Errorf("bound retention preview: %w", err)
 	}
+	if batch.Phase == retention.DeleteProjects {
+		return cleanupProjectData(
+			ctx,
+			tx,
+			batch.Limit,
+			true,
+		)
+	}
+	selection := retentionCandidates(batch)
 	var count int64
 	err = tx.QueryRow(ctx, `SELECT count(*) FROM (`+selection.query+`) candidates`, selection.args...).Scan(&count)
 	if err != nil {
@@ -92,9 +103,17 @@ func (s *Store) CleanupRetentionBatch(ctx context.Context, batch retention.Batch
 		return retention.BatchResult{Busy: true}, nil
 	}
 	var affected int64
-	if batch.Phase == retention.MarkEvents {
+	switch batch.Phase {
+	case retention.MarkEvents:
 		affected, err = retireEventGroups(ctx, tx, batch)
-	} else {
+	case retention.DeleteProjects:
+		affected, err = cleanupProjectData(
+			ctx,
+			tx,
+			batch.Limit,
+			false,
+		)
+	default:
 		selection := retentionCandidates(batch)
 		// Table, aliases, joins, and matching keys come only from the fixed
 		// phase allowlist below. All time boundaries and limits are bound.

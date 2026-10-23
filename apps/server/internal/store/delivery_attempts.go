@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 
+	"cascadehook/internal/controls"
 	"cascadehook/internal/deliveries"
 )
 
@@ -30,6 +31,21 @@ const lockedDeliveryColumns = `d.id, d.lease_owner, d.lease_token, d.project_id,
 
 const deliveryJoins = ` FROM deliveries d
 	JOIN endpoints e ON e.project_id = d.project_id AND e.id = d.endpoint_id `
+
+// Completion/release must acquire the project before child locks. Deletion's
+// exclusive counterpart prevents new attempt rows after its marker commits.
+func lockDeliveryProject(ctx context.Context, tx pgx.Tx, deliveryID uuid.UUID) error {
+	var id uuid.UUID
+	err := tx.QueryRow(ctx, `SELECT p.id FROM projects p JOIN deliveries d ON d.project_id = p.id
+		WHERE d.id = $1 AND p.deletion_requested_at IS NULL FOR SHARE OF p`, deliveryID).Scan(&id)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return deliveries.ErrLeaseLost
+	}
+	if err != nil {
+		return fmt.Errorf("lock delivery project: %w", err)
+	}
+	return nil
+}
 
 func scanLockedDelivery(row pgx.Row, held *lockedDelivery) error {
 	return row.Scan(&held.DeliveryID, &held.OwnerID, &held.Token, &held.ProjectID, &held.EventID, &held.EndpointID,
@@ -88,6 +104,9 @@ func (s *Store) BeginDeliveryAttempt(ctx context.Context, job deliveries.Job) (d
 	// Serialize the final intent check against operator suspension before
 	// acquiring child locks. No database transaction spans the HTTP request.
 	suspended, err := lockProjectSuspension(ctx, tx, job.ProjectID)
+	if errors.Is(err, controls.ErrProjectNotFound) {
+		return deliveries.Attempt{}, deliveries.ErrLeaseLost
+	}
 	if err != nil {
 		return deliveries.Attempt{}, err
 	}
@@ -160,6 +179,9 @@ func (s *Store) CompleteDelivery(ctx context.Context, attempt deliveries.Attempt
 		return deliveries.Completion{}, fmt.Errorf("begin delivery completion: %w", err)
 	}
 	defer rollbackTransaction(tx)
+	if err := lockDeliveryProject(ctx, tx, attempt.DeliveryID); err != nil {
+		return deliveries.Completion{}, err
+	}
 	if completion, found, err := recordedCompletion(ctx, tx, attempt); err != nil || found {
 		return completion, err
 	}

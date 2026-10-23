@@ -44,7 +44,8 @@ func (s *Store) GetAPIKey(ctx context.Context, projectID, id uuid.UUID) (auth.AP
 	err := scanAPIKey(s.pool.QueryRow(
 		ctx,
 		`SELECT `+apiKeyColumns+`
-		FROM api_keys k WHERE k.project_id = $1 AND k.id = $2`,
+		FROM api_keys k JOIN projects p ON p.id = k.project_id
+		WHERE k.project_id = $1 AND p.deletion_requested_at IS NULL AND k.id = $2`,
 		projectID,
 		id,
 	), &key)
@@ -71,7 +72,8 @@ func (s *Store) ListAPIKeys(
 	if options.Status != "" && !auth.ValidKeyStatus(options.Status) {
 		return nil, fmt.Errorf("invalid API key status")
 	}
-	query := `SELECT ` + apiKeyColumns + ` FROM api_keys k WHERE k.project_id = $1`
+	query := `SELECT ` + apiKeyColumns + ` FROM api_keys k JOIN projects p ON p.id = k.project_id
+		WHERE k.project_id = $1 AND p.deletion_requested_at IS NULL`
 	args := []any{projectID}
 	if options.Environment != "" {
 		args = append(args, options.Environment)

@@ -21,7 +21,8 @@ func (s *Store) ListEvents(ctx context.Context, projectID uuid.UUID, options eve
 	if options.EventType != "" && !events.ValidType(options.EventType) {
 		return nil, events.ErrInvalidType
 	}
-	query := `SELECT ` + eventSummaryColumns + ` FROM events e WHERE e.project_id = $1 AND e.purge_started_at IS NULL`
+	query := `SELECT ` + eventSummaryColumns + ` FROM events e WHERE e.project_id = $1 AND e.purge_started_at IS NULL
+		AND EXISTS (SELECT 1 FROM projects p WHERE p.id = e.project_id AND p.deletion_requested_at IS NULL)`
 	args := []any{projectID}
 	if options.EventType != "" {
 		args = append(args, options.EventType)
@@ -52,7 +53,8 @@ func (s *Store) GetEvent(ctx context.Context, projectID, id uuid.UUID) (events.E
 	var event events.Event
 	var payload []byte
 	err := s.pool.QueryRow(ctx, `SELECT `+eventSummaryColumns+`, e.payload FROM events e
-		WHERE e.project_id = $1 AND e.id = $2 AND e.purge_started_at IS NULL`, projectID, id,
+		WHERE e.project_id = $1 AND e.id = $2 AND e.purge_started_at IS NULL
+		AND EXISTS (SELECT 1 FROM projects p WHERE p.id = e.project_id AND p.deletion_requested_at IS NULL)`, projectID, id,
 	).Scan(&event.ID, &event.ProjectID, &event.Type, &event.DeliveryCount, &event.CreatedAt, &payload)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return events.Event{}, events.ErrNotFound
