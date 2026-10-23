@@ -13,6 +13,7 @@ import (
 	"cascadehook/internal/auth"
 	"cascadehook/internal/deliveries"
 	"cascadehook/internal/limits"
+	"cascadehook/internal/retention"
 )
 
 // Config holds settings shared by the API and worker binaries.
@@ -38,6 +39,11 @@ type WorkerConfig struct {
 	DestinationConcurrency int
 	ClaimBatchSize         int
 	PollInterval           time.Duration
+}
+
+type JanitorConfig struct {
+	Config
+	Retention retention.Config
 }
 
 // Load reads the shared environment variables once at startup. An explicitly
@@ -188,6 +194,51 @@ func signingEncryptionKey() ([]byte, error) {
 		return nil, fmt.Errorf("SIGNING_ENCRYPTION_KEY must be a base64-encoded 32-byte encryption key")
 	}
 	return key, nil
+}
+
+// Cleanup needs only database access; signing and Clerk configuration are not
+// required. The job is one-shot, with explicit row, operation, and run bounds.
+func LoadJanitor() (JanitorConfig, error) {
+	shared, err := Load()
+	if err != nil {
+		return JanitorConfig{}, err
+	}
+	cfg := JanitorConfig{Config: shared, Retention: retention.Defaults()}
+	settings := []struct {
+		name    string
+		value   *int
+		minimum int
+		maximum int
+	}{
+		{name: "RETENTION_DAYS", value: &cfg.Retention.Days, minimum: 1, maximum: retention.MaxDays},
+		{name: "JANITOR_BATCH_SIZE", value: &cfg.Retention.BatchSize, minimum: 1, maximum: retention.MaxBatchSize},
+		{
+			name: "JANITOR_MAX_BATCHES", value: &cfg.Retention.MaxBatches,
+			minimum: len(retention.Phases()), maximum: retention.MaxBatches,
+		},
+	}
+	for _, setting := range settings {
+		value, err := boundedInt(
+			setting.name,
+			*setting.value,
+			setting.minimum,
+			setting.maximum,
+		)
+		if err != nil {
+			return JanitorConfig{}, err
+		}
+		*setting.value = value
+	}
+	if value, ok := os.LookupEnv("JANITOR_RUN_TIMEOUT"); ok {
+		cfg.Retention.RunTimeout, err = time.ParseDuration(value)
+		if err != nil {
+			return JanitorConfig{}, fmt.Errorf("JANITOR_RUN_TIMEOUT must be a duration between 10s and 1h")
+		}
+	}
+	if err := cfg.Retention.Validate(); err != nil {
+		return JanitorConfig{}, err
+	}
+	return cfg, nil
 }
 
 func boundedInt(name string, fallback, minimum, maximum int) (int, error) {

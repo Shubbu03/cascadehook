@@ -7,6 +7,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -52,12 +53,20 @@ func (s *Store) PublishEvent(ctx context.Context, projectID uuid.UUID, body []by
 	if err != nil {
 		return events.Accepted{}, fmt.Errorf("lock publication project: %w", err)
 	}
+	// Cleanup and key reuse use actual database time after contended locks.
+	// Transaction-start now() could otherwise preserve a key already expired
+	// (and removed by the janitor) while this request waited for its lock.
+	var databaseNow time.Time
+	if err := tx.QueryRow(ctx, `SELECT clock_timestamp()`).Scan(&databaseNow); err != nil {
+		return events.Accepted{}, fmt.Errorf("read publication database time: %w", err)
+	}
 	if _, err := tx.Exec(
 		ctx,
 		`DELETE FROM event_idempotency_keys
-		WHERE project_id = $1 AND idempotency_key = $2 AND expires_at <= now()`,
+		WHERE project_id = $1 AND idempotency_key = $2 AND expires_at <= $3`,
 		projectID,
 		key,
+		databaseNow,
 	); err != nil {
 		return events.Accepted{}, fmt.Errorf("expire publication key: %w", err)
 	}
@@ -67,7 +76,7 @@ func (s *Store) PublishEvent(ctx context.Context, projectID uuid.UUID, body []by
 		ctx,
 		`SELECT e.id, e.event_type, e.created_at, e.delivery_count, e.request_hash
 		FROM event_idempotency_keys k JOIN events e ON e.project_id = k.project_id AND e.id = k.event_id
-		WHERE k.project_id = $1 AND k.idempotency_key = $2`,
+		WHERE k.project_id = $1 AND k.idempotency_key = $2 AND e.purge_started_at IS NULL`,
 		projectID,
 		key,
 	).Scan(
@@ -131,11 +140,13 @@ func (s *Store) PublishEvent(ctx context.Context, projectID uuid.UUID, body []by
 	}
 	if _, err := tx.Exec(
 		ctx,
-		`INSERT INTO event_idempotency_keys (project_id, idempotency_key, event_id)
-		VALUES ($1, $2, $3)`,
+		`INSERT INTO event_idempotency_keys (project_id, idempotency_key, event_id, created_at, expires_at)
+		VALUES ($1, $2, $3, $4, $5)`,
 		projectID,
 		key,
 		id,
+		databaseNow,
+		databaseNow.Add(24*time.Hour),
 	); err != nil {
 		return events.Accepted{}, fmt.Errorf("record publication key: %w", err)
 	}

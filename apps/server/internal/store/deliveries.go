@@ -41,6 +41,7 @@ func (s *Store) ClaimDeliveries(ctx context.Context, ownerID uuid.UUID, limit in
 		JOIN projects p ON p.id = d.project_id
 		WHERE d.state = 'pending' AND d.next_attempt_at <= now()
 		AND p.suspended_at IS NULL
+		AND v.purge_started_at IS NULL
 		AND e.enabled AND e.verified_at IS NOT NULL AND e.deleted_at IS NULL AND e.signing_secret IS NOT NULL
 		AND d.attempt_count < $2 AND d.retry_deadline > now()
 		AND NOT (d.endpoint_id = ANY($3::uuid[]))

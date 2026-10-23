@@ -25,7 +25,8 @@ func scanDelivery(row pgx.Row, delivery *deliveries.Delivery) error {
 func (s *Store) GetDelivery(ctx context.Context, projectID, id uuid.UUID) (deliveries.Delivery, error) {
 	var delivery deliveries.Delivery
 	err := scanDelivery(s.pool.QueryRow(ctx, `SELECT `+deliveryReadColumns+`
-		FROM deliveries d WHERE d.project_id = $1 AND d.id = $2`, projectID, id), &delivery)
+		FROM deliveries d JOIN events v ON v.project_id = d.project_id AND v.id = d.event_id
+		WHERE d.project_id = $1 AND d.id = $2 AND v.purge_started_at IS NULL`, projectID, id), &delivery)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return deliveries.Delivery{}, deliveries.ErrNotFound
 	}
@@ -45,7 +46,9 @@ func (s *Store) ListDeliveries(ctx context.Context, projectID uuid.UUID, options
 	if (options.EventID != nil && *options.EventID == uuid.Nil) || (options.EndpointID != nil && *options.EndpointID == uuid.Nil) {
 		return nil, fmt.Errorf("invalid delivery filter ID")
 	}
-	query := `SELECT ` + deliveryReadColumns + ` FROM deliveries d WHERE d.project_id = $1`
+	query := `SELECT ` + deliveryReadColumns + ` FROM deliveries d
+		JOIN events v ON v.project_id = d.project_id AND v.id = d.event_id
+		WHERE d.project_id = $1 AND v.purge_started_at IS NULL`
 	args := []any{projectID}
 	// Only fixed column names are assembled; every request value is bound.
 	if options.EventID != nil {
@@ -93,7 +96,13 @@ func (s *Store) ListDeliveryAttempts(ctx context.Context, projectID, deliveryID 
 	}
 	defer rollbackTransaction(tx)
 	var id uuid.UUID
-	err = tx.QueryRow(ctx, `SELECT id FROM deliveries WHERE project_id = $1 AND id = $2`, projectID, deliveryID).Scan(&id)
+	err = tx.QueryRow(
+		ctx,
+		`SELECT d.id FROM deliveries d JOIN events v ON v.project_id = d.project_id AND v.id = d.event_id
+		WHERE d.project_id = $1 AND d.id = $2 AND v.purge_started_at IS NULL`,
+		projectID,
+		deliveryID,
+	).Scan(&id)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, deliveries.ErrNotFound
 	}

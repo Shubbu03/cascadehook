@@ -45,7 +45,9 @@ func (s *Store) ReplayDelivery(ctx context.Context, principal auth.Principal, de
 	var enabled, verified, deleted, hasSecret bool
 	err = tx.QueryRow(ctx, `SELECT e.enabled, e.verified_at IS NOT NULL, e.deleted_at IS NOT NULL, e.signing_secret IS NOT NULL
 		FROM endpoints e JOIN deliveries d ON d.project_id = e.project_id AND d.endpoint_id = e.id
-		WHERE d.project_id = $1 AND d.id = $2 FOR SHARE OF e`, principal.ProjectID, deliveryID,
+		JOIN events v ON v.project_id = d.project_id AND v.id = d.event_id
+		WHERE d.project_id = $1 AND d.id = $2 AND v.purge_started_at IS NULL FOR SHARE OF e`,
+		principal.ProjectID, deliveryID,
 	).Scan(&enabled, &verified, &deleted, &hasSecret)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return deliveries.Replay{}, deliveries.ErrNotFound

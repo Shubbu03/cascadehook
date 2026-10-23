@@ -8,6 +8,7 @@
     "dev:worker": "cd apps/server && go run ./cmd/worker",
     "db:migrate": "cd apps/server && go run ./cmd/migrate",
     "db:seed": "cd apps/server && go run ./cmd/seed",
+    "db:cleanup": "cd apps/server && go run ./cmd/janitor",
     "ops:project": "cd apps/server && go run ./cmd/projectctl",
     "build:go": "cd apps/server && go build ./...",
     "fmt:go": "cd apps/server && go fmt ./...",
