@@ -3,12 +3,12 @@ ALTER TABLE deliveries
     ADD CONSTRAINT deliveries_project_id_id_key UNIQUE (project_id, id),
     ADD COLUMN active_attempt_id uuid,
     ADD COLUMN active_attempt_started_at timestamptz,
-    ADD COLUMN terminal_reason text CHECK (terminal_reason ~ '^[a-z_]{1,64}$'),
+    ADD COLUMN terminal_reason text CONSTRAINT deliveries_terminal_reason_format_check CHECK (terminal_reason ~ '^[a-z_]{1,64}$'),
     ADD CONSTRAINT deliveries_active_attempt_check CHECK (
         (active_attempt_id IS NULL AND active_attempt_started_at IS NULL)
         OR (state = 'leased' AND active_attempt_id IS NOT NULL AND active_attempt_started_at IS NOT NULL AND attempt_count > 0)
     ),
-    ADD CONSTRAINT deliveries_terminal_reason_check CHECK (terminal_reason IS NULL OR state = 'failed');
+    ADD CONSTRAINT deliveries_terminal_reason_state_check CHECK (terminal_reason IS NULL OR state = 'failed');
 
 -- Completed/interrupted records are inserted once. In-flight intent is stored
 -- on deliveries so crash recovery can append a result without rewriting history.
@@ -43,7 +43,7 @@ CREATE INDEX delivery_attempts_delivery_history_idx ON delivery_attempts (projec
 -- +goose Down
 DROP TABLE delivery_attempts;
 ALTER TABLE deliveries
-    DROP CONSTRAINT deliveries_terminal_reason_check,
+    DROP CONSTRAINT deliveries_terminal_reason_state_check,
     DROP CONSTRAINT deliveries_active_attempt_check,
     DROP COLUMN terminal_reason,
     DROP COLUMN active_attempt_started_at,

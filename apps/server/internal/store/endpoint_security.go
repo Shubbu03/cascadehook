@@ -8,19 +8,21 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 
+	"cascadehook/internal/auth"
 	"cascadehook/internal/endpoints"
 	"cascadehook/internal/signing"
 )
 
 // RotateEndpointSecret stores only authenticated ciphertext. An existing key
 // remains available for dual signing for five minutes; rotations cannot overlap.
-func (s *Store) RotateEndpointSecret(ctx context.Context, projectID, endpointID uuid.UUID, encrypted []byte) (endpoints.SecretRotation, error) {
+func (s *Store) RotateEndpointSecret(ctx context.Context, actor auth.Principal, endpointID uuid.UUID, encrypted []byte) (endpoints.SecretRotation, error) {
+	projectID := actor.ProjectID
 	tx, err := s.pool.BeginTx(ctx, pgx.TxOptions{IsoLevel: pgx.ReadCommitted})
 	if err != nil {
 		return endpoints.SecretRotation{}, fmt.Errorf("begin signing secret rotation: %w", err)
 	}
 	defer rollbackTransaction(tx)
-	if err := lockProjectForEndpointChange(ctx, tx, projectID); err != nil {
+	if err := lockProjectForEndpointChange(ctx, tx, actor); err != nil {
 		return endpoints.SecretRotation{}, err
 	}
 	var rotating bool
@@ -57,13 +59,14 @@ func (s *Store) RotateEndpointSecret(ctx context.Context, projectID, endpointID 
 
 // BeginEndpointVerification persists a cooldown and reserves a configuration
 // version. The transaction ends before any DNS lookup or outbound request.
-func (s *Store) BeginEndpointVerification(ctx context.Context, projectID, endpointID uuid.UUID) (endpoints.VerificationSnapshot, error) {
+func (s *Store) BeginEndpointVerification(ctx context.Context, actor auth.Principal, endpointID uuid.UUID) (endpoints.VerificationSnapshot, error) {
+	projectID := actor.ProjectID
 	tx, err := s.pool.BeginTx(ctx, pgx.TxOptions{IsoLevel: pgx.ReadCommitted})
 	if err != nil {
 		return endpoints.VerificationSnapshot{}, fmt.Errorf("begin endpoint verification: %w", err)
 	}
 	defer rollbackTransaction(tx)
-	if err := lockProjectForEndpointChange(ctx, tx, projectID); err != nil {
+	if err := lockProjectForEndpointChange(ctx, tx, actor); err != nil {
 		return endpoints.VerificationSnapshot{}, err
 	}
 	if err := requireActiveProject(ctx, tx, projectID); err != nil {
@@ -104,13 +107,14 @@ func (s *Store) BeginEndpointVerification(ctx context.Context, projectID, endpoi
 
 // ConfirmEndpointVerification accepts only a proof for the same URL/secret
 // generation. Verification never enables delivery; enabling is a separate PATCH.
-func (s *Store) ConfirmEndpointVerification(ctx context.Context, projectID, endpointID uuid.UUID, version int64) (endpoints.Endpoint, error) {
+func (s *Store) ConfirmEndpointVerification(ctx context.Context, actor auth.Principal, endpointID uuid.UUID, version int64) (endpoints.Endpoint, error) {
+	projectID := actor.ProjectID
 	tx, err := s.pool.BeginTx(ctx, pgx.TxOptions{IsoLevel: pgx.ReadCommitted})
 	if err != nil {
 		return endpoints.Endpoint{}, fmt.Errorf("begin endpoint verification confirmation: %w", err)
 	}
 	defer rollbackTransaction(tx)
-	if err := lockProjectForEndpointChange(ctx, tx, projectID); err != nil {
+	if err := lockProjectForEndpointChange(ctx, tx, actor); err != nil {
 		return endpoints.Endpoint{}, err
 	}
 	var currentVersion int64

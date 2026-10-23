@@ -26,7 +26,7 @@ func (api *api) endpointCollection(w http.ResponseWriter, r *http.Request, princ
 			jsonProblem(w, r, err)
 			return
 		}
-		endpoint, err := api.db.CreateEndpoint(r.Context(), principal.ProjectID, endpoints.Registration{
+		endpoint, err := api.db.CreateEndpoint(r.Context(), principal, endpoints.Registration{
 			URL: body.URL, EventTypes: body.EventTypes,
 		})
 		if err != nil {
@@ -72,7 +72,7 @@ func (api *api) endpointResource(w http.ResponseWriter, r *http.Request, princip
 		return
 	}
 	if r.Method == http.MethodDelete {
-		if err := api.db.DeleteEndpoint(r.Context(), principal.ProjectID, id); err != nil {
+		if err := api.db.DeleteEndpoint(r.Context(), principal, id); err != nil {
 			api.endpointProblem(w, r, err)
 			return
 		}
@@ -102,7 +102,7 @@ func (api *api) endpointResource(w http.ResponseWriter, r *http.Request, princip
 	if body.EventTypes.Set {
 		update.EventTypes = &body.EventTypes.Value
 	}
-	endpoint, err := api.db.UpdateEndpoint(r.Context(), principal.ProjectID, id, update)
+	endpoint, err := api.db.UpdateEndpoint(r.Context(), principal, id, update)
 	if err != nil {
 		api.endpointProblem(w, r, err)
 		return
@@ -148,7 +148,10 @@ func (api *api) listEndpoints(w http.ResponseWriter, r *http.Request, principal 
 
 func (api *api) endpointProblem(w http.ResponseWriter, r *http.Request, err error) {
 	switch {
-	case errors.Is(err, accounts.ErrQuotaExceeded):
+	case errors.Is(err, auth.ErrInvalidAPIKey):
+		unauthorized(w, r)
+	case errors.Is(err, accounts.ErrQuotaExceeded), errors.Is(err, accounts.ErrAccountDeleted),
+		errors.Is(err, accounts.ErrNotFound), errors.Is(err, accounts.ErrForbidden):
 		api.accountProblem(w, r, err)
 	case errors.Is(err, controls.ErrSuspended), errors.Is(err, controls.ErrProjectNotFound):
 		api.projectControlProblem(w, r, err)

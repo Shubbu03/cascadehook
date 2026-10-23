@@ -29,7 +29,7 @@ func (api *api) rotateEndpointSecret(w http.ResponseWriter, r *http.Request, pri
 		return
 	}
 	encrypted := api.vault.Encrypt(principal.ProjectID, id, secret)
-	result, err := api.db.RotateEndpointSecret(r.Context(), principal.ProjectID, id, encrypted)
+	result, err := api.db.RotateEndpointSecret(r.Context(), principal, id, encrypted)
 	if err != nil {
 		api.endpointProblem(w, r, err)
 		return
@@ -46,7 +46,7 @@ func (api *api) verifyEndpoint(w http.ResponseWriter, r *http.Request, principal
 	if !ok {
 		return
 	}
-	snapshot, err := api.db.BeginEndpointVerification(r.Context(), principal.ProjectID, id)
+	snapshot, err := api.db.BeginEndpointVerification(r.Context(), principal, id)
 	if err != nil {
 		api.endpointProblem(w, r, err)
 		return
@@ -121,7 +121,7 @@ func (api *api) verifyEndpoint(w http.ResponseWriter, r *http.Request, principal
 		writeProblem(w, r, http.StatusUnprocessableEntity, "invalid_verification_proof")
 		return
 	}
-	endpoint, err := api.db.ConfirmEndpointVerification(r.Context(), principal.ProjectID, id, snapshot.Version)
+	endpoint, err := api.db.ConfirmEndpointVerification(r.Context(), principal, id, snapshot.Version)
 	if err != nil {
 		api.endpointProblem(w, r, err)
 		return

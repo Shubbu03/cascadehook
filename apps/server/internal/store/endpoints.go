@@ -9,11 +9,13 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 
+	"cascadehook/internal/auth"
 	"cascadehook/internal/endpoints"
 	"cascadehook/internal/events"
 )
 
-func (s *Store) CreateEndpoint(ctx context.Context, projectID uuid.UUID, input endpoints.Registration) (endpoints.Endpoint, error) {
+func (s *Store) CreateEndpoint(ctx context.Context, actor auth.Principal, input endpoints.Registration) (endpoints.Endpoint, error) {
+	projectID := actor.ProjectID
 	address, err := endpoints.NormalizeURL(input.URL)
 	if err != nil {
 		return endpoints.Endpoint{}, err
@@ -31,7 +33,7 @@ func (s *Store) CreateEndpoint(ctx context.Context, projectID uuid.UUID, input e
 		return endpoints.Endpoint{}, fmt.Errorf("begin endpoint registration: %w", err)
 	}
 	defer rollbackTransaction(tx)
-	if err := lockProjectForEndpointChange(ctx, tx, projectID); err != nil {
+	if err := lockProjectForEndpointChange(ctx, tx, actor); err != nil {
 		return endpoints.Endpoint{}, err
 	}
 	if err := requireActiveProject(ctx, tx, projectID); err != nil {
@@ -116,7 +118,8 @@ func (s *Store) ListEndpoints(ctx context.Context, projectID uuid.UUID, options 
 	return result, nil
 }
 
-func (s *Store) UpdateEndpoint(ctx context.Context, projectID, id uuid.UUID, input endpoints.Update) (endpoints.Endpoint, error) {
+func (s *Store) UpdateEndpoint(ctx context.Context, actor auth.Principal, id uuid.UUID, input endpoints.Update) (endpoints.Endpoint, error) {
+	projectID := actor.ProjectID
 	if input.URL != nil {
 		address, err := endpoints.NormalizeURL(*input.URL)
 		if err != nil {
@@ -136,7 +139,7 @@ func (s *Store) UpdateEndpoint(ctx context.Context, projectID, id uuid.UUID, inp
 		return endpoints.Endpoint{}, fmt.Errorf("begin endpoint update: %w", err)
 	}
 	defer rollbackTransaction(tx)
-	if err := lockProjectForEndpointChange(ctx, tx, projectID); err != nil {
+	if err := lockProjectForEndpointChange(ctx, tx, actor); err != nil {
 		return endpoints.Endpoint{}, err
 	}
 	if input.Enabled != nil && *input.Enabled {
@@ -197,13 +200,14 @@ func (s *Store) UpdateEndpoint(ctx context.Context, projectID, id uuid.UUID, inp
 }
 
 // DeleteEndpoint soft-deletes configuration and cancels pending jobs atomically.
-func (s *Store) DeleteEndpoint(ctx context.Context, projectID, id uuid.UUID) error {
+func (s *Store) DeleteEndpoint(ctx context.Context, actor auth.Principal, id uuid.UUID) error {
+	projectID := actor.ProjectID
 	tx, err := s.pool.BeginTx(ctx, pgx.TxOptions{IsoLevel: pgx.ReadCommitted})
 	if err != nil {
 		return fmt.Errorf("begin endpoint deletion: %w", err)
 	}
 	defer rollbackTransaction(tx)
-	if err := lockProjectForEndpointChange(ctx, tx, projectID); err != nil {
+	if err := lockProjectForEndpointChange(ctx, tx, actor); err != nil {
 		return err
 	}
 	result, err := tx.Exec(ctx, `UPDATE endpoints SET enabled = false, deleted_at = now(), updated_at = now()
@@ -240,20 +244,9 @@ func scanEndpoint(row pgx.Row, endpoint *endpoints.Endpoint) error {
 		&endpoint.VerifiedAt, &endpoint.CreatedAt, &endpoint.UpdatedAt, &endpoint.HasSigningSecret, &endpoint.EventTypes)
 }
 
-// This lock must precede endpoint row locks in every configuration mutation.
-// Publications hold the shared counterpart while reading subscriptions.
-func lockProjectForEndpointChange(ctx context.Context, tx pgx.Tx, projectID uuid.UUID) error {
-	if err := lockProjectOrganization(ctx, tx, projectID); err != nil {
-		return err
-	}
-	var id uuid.UUID
-	err := tx.QueryRow(ctx, `SELECT id FROM projects
-		WHERE id = $1 AND deletion_requested_at IS NULL FOR UPDATE`, projectID).Scan(&id)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return endpoints.ErrNotFound
-	}
-	if err != nil {
-		return fmt.Errorf("lock endpoint project: %w", err)
-	}
-	return nil
+// Reuse credential-management authorization and lock ordering so endpoint
+// writes serialize with key revocation and membership changes before child locks.
+func lockProjectForEndpointChange(ctx context.Context, tx pgx.Tx, actor auth.Principal) error {
+	_, _, _, err := lockAPIKeyMutation(ctx, tx, actor, uuid.Nil)
+	return err
 }
