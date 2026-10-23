@@ -3,6 +3,10 @@
 An outbound webhook delivery platform, starting with a Go backend. See
 [plan.md](plan.md) for the architecture and roadmap.
 
+The Next.js frontend lives in [apps/web](apps/web/README.md). Start it with
+`bun run dev:web` after configuring its environment. It includes the public landing
+page, Clerk account access, and initial organization/project setup through Go.
+
 Implementation is continuing before the first deployment. Railway verification
 will follow a substantial backend slice: endpoint registration, subscriptions,
 and authenticated event ingestion with transactional fan-out.

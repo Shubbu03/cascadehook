@@ -1,0 +1,165 @@
+@layer theme, base, clerk, components, utilities;
+@import "tailwindcss";
+@import "./site.css";
+
+:root {
+  color-scheme: light;
+  --background: #f6f5f2;
+  --surface: #ffffff;
+  --surface-hover: #eeede9;
+  --foreground: #1c1d20;
+  --muted: #626569;
+  --border: #dedcd7;
+  --input-border: #7d8188;
+  --accent: #b45332;
+  --accent-hover: #9e4528;
+  --accent-foreground: #ffffff;
+  --accent-subtle: #f4e7df;
+  --success: #147d55;
+  --success-subtle: #e9f3ed;
+  --warning: #926100;
+  --warning-subtle: #f8efd9;
+  --danger: #c43845;
+  --danger-subtle: #faebed;
+  --shadow-popover: 0 8px 32px #1c1d2012, 0 2px 6px #1c1d2008;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --background: #111214;
+  --surface: #191a1d;
+  --surface-hover: #232428;
+  --foreground: #f0efec;
+  --muted: #a3a5aa;
+  --border: #303236;
+  --input-border: #777b85;
+  --accent: #ed9c72;
+  --accent-hover: #f3ad89;
+  --accent-foreground: #1a1411;
+  --accent-subtle: #33251f;
+  --success: #60c99a;
+  --success-subtle: #172b23;
+  --warning: #e8b55b;
+  --warning-subtle: #302719;
+  --danger: #f08b95;
+  --danger-subtle: #352026;
+  --shadow-popover: 0 8px 32px #00000038, 0 2px 6px #00000020;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]):not([data-theme="dark"]) {
+    color-scheme: dark;
+    --background: #111214;
+    --surface: #191a1d;
+    --surface-hover: #232428;
+    --foreground: #f0efec;
+    --muted: #a3a5aa;
+    --border: #303236;
+    --input-border: #777b85;
+    --accent: #ed9c72;
+    --accent-hover: #f3ad89;
+    --accent-foreground: #1a1411;
+    --accent-subtle: #33251f;
+    --success: #60c99a;
+    --success-subtle: #172b23;
+    --warning: #e8b55b;
+    --warning-subtle: #302719;
+    --danger: #f08b95;
+    --danger-subtle: #352026;
+    --shadow-popover: 0 8px 32px #00000038, 0 2px 6px #00000020;
+  }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --font-sans: var(--font-plex-sans);
+  --font-mono: var(--font-plex-mono);
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+  html {
+    scroll-padding-top: 24px;
+  }
+  body {
+    margin: 0;
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-plex-sans), sans-serif;
+    font-size: 16px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+  }
+  button,
+  summary,
+  select {
+    cursor: pointer;
+  }
+  button:disabled {
+    cursor: not-allowed;
+    opacity: 0.65;
+  }
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+  button,
+  a,
+  input,
+  select,
+  summary {
+    -webkit-tap-highlight-color: transparent;
+  }
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 4px;
+  }
+  ::selection {
+    background: var(--accent);
+    color: var(--accent-foreground);
+  }
+  h1,
+  h2,
+  h3,
+  p,
+  figure {
+    margin: 0;
+  }
+  h1,
+  h2,
+  h3 {
+    font-weight: 500;
+    line-height: 1.15;
+  }
+  svg {
+    flex-shrink: 0;
+  }
+  code,
+  pre {
+    font-family: var(--font-plex-mono), monospace;
+  }
+  section[id] {
+    scroll-margin-top: 36px;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
