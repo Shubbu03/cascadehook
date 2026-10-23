@@ -22,8 +22,9 @@ type ClerkConfig struct {
 // SessionIdentity contains only verified provider identity. Provider organization
 // claims and email addresses never grant access to a CascadeHook organization.
 type SessionIdentity struct {
-	Issuer  string
-	Subject string
+	Issuer    string
+	Subject   string
+	SessionID string
 }
 
 type ClerkVerifier struct {
@@ -100,7 +101,7 @@ func (verifier *ClerkVerifier) Verify(token string) (SessionIdentity, error) {
 	if !claims.ExpiresAt.After(claims.IssuedAt.Time) {
 		return SessionIdentity{}, ErrInvalidSession
 	}
-	return SessionIdentity{Issuer: verifier.issuer, Subject: claims.Subject}, nil
+	return SessionIdentity{Issuer: verifier.issuer, Subject: claims.Subject, SessionID: claims.SessionID}, nil
 }
 
 func (verifier *ClerkVerifier) AllowsOrigin(origin string) bool {

@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"cascadehook/internal/auth"
+	"cascadehook/internal/clerk"
 	"cascadehook/internal/config"
 	"cascadehook/internal/deliveries"
 	"cascadehook/internal/delivery"
@@ -23,7 +24,18 @@ func Run(ctx context.Context, cfg config.APIConfig, db *store.Store, logger *slo
 	if err != nil {
 		return err
 	}
-	vault, err := signing.NewVault(cfg.SigningEncryptionKey)
+	identityWebhook, err := clerk.NewWebhook(cfg.ClerkWebhookSecrets)
+	if err != nil {
+		return err
+	}
+	clerkBackend, err := clerk.New(cfg.ClerkBackend)
+	if err != nil {
+		return err
+	}
+	if clerkBackend != nil {
+		defer clerkBackend.CloseIdleConnections()
+	}
+	vault, err := signing.NewVaultWithPrevious(cfg.SigningEncryptionKey, cfg.PreviousEncryptionKey)
 	if err != nil {
 		return err
 	}
@@ -39,6 +51,8 @@ func Run(ctx context.Context, cfg config.APIConfig, db *store.Store, logger *slo
 	handler, err := NewHandler(HandlerOptions{
 		DB: db, Logger: logger, Vault: vault, Outbound: outbound, Sessions: sessions,
 		RequestLimits: cfg.RequestLimits, Metrics: metrics,
+		IdentityWebhook: identityWebhook, ClerkIssuer: cfg.Clerk.IssuerURL, ClerkBackend: clerkBackend,
+		InvitationURL: cfg.InvitationURL,
 	})
 	if err != nil {
 		return err

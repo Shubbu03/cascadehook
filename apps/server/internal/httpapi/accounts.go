@@ -250,6 +250,49 @@ func emptyAccountAction(w http.ResponseWriter, r *http.Request) bool {
 
 func (api *api) accountProblem(w http.ResponseWriter, r *http.Request, err error) {
 	switch {
+	case errors.Is(err, accounts.ErrInvitationRateLimited):
+		w.Header().Set("Retry-After", "5")
+		writeProblem(
+			w,
+			r,
+			http.StatusTooManyRequests,
+			"invitation_lookup_rate_limited",
+		)
+	case errors.Is(err, accounts.ErrInvalidEmail):
+		writeProblem(
+			w,
+			r,
+			http.StatusUnprocessableEntity,
+			"invalid_invitation_email",
+		)
+	case errors.Is(err, accounts.ErrInvitationConflict):
+		writeProblem(
+			w,
+			r,
+			http.StatusConflict,
+			"invitation_pending",
+		)
+	case errors.Is(err, accounts.ErrInvitationInvalid):
+		writeProblem(
+			w,
+			r,
+			http.StatusConflict,
+			"invitation_unavailable",
+		)
+	case errors.Is(err, accounts.ErrInvitationEmail):
+		writeProblem(
+			w,
+			r,
+			http.StatusForbidden,
+			"invitation_email_mismatch",
+		)
+	case errors.Is(err, accounts.ErrQuotaExceeded):
+		writeProblem(
+			w,
+			r,
+			http.StatusConflict,
+			"quota_exceeded",
+		)
 	case errors.Is(err, accounts.ErrAccountDeleted):
 		writeProblem(w, r, http.StatusGone, "account_deleted")
 	case errors.Is(err, accounts.ErrOwnsOrganizations):

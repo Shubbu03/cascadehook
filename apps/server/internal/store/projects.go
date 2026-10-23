@@ -97,6 +97,14 @@ func (s *Store) CreateProject(
 	if !role.CanManageProjects() {
 		return accounts.Project{}, accounts.ErrForbidden
 	}
+	if err := checkResourceQuota(
+		ctx,
+		tx,
+		params.OrganizationID,
+		"projects",
+	); err != nil {
+		return accounts.Project{}, err
+	}
 	project := accounts.Project{ID: id, OrganizationID: params.OrganizationID, Name: name, Role: role}
 	err = tx.QueryRow(ctx, `INSERT INTO projects (id, organization_id, name) VALUES ($1,$2,$3)
 		RETURNING created_at, updated_at`, id, params.OrganizationID, name,

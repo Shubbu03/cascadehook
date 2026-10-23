@@ -57,6 +57,13 @@ func cleanupProjectData(ctx context.Context, tx pgx.Tx, limit int, preview bool)
 			}
 			continue
 		}
+		if selection.table == "events" {
+			count, err := deleteEventsWithStorage(ctx, tx, selection.retentionSelection)
+			if err != nil || count > 0 {
+				return count, err
+			}
+			continue
+		}
 		// Table, keys, and aliases are fixed below; project/limit are bound.
 		query := `WITH candidates AS (` + selection.query + ` FOR UPDATE OF ` + selection.lockAlias + ` SKIP LOCKED) `
 		if selection.detachRotation {
@@ -80,6 +87,12 @@ func cleanupProjectData(ctx context.Context, tx pgx.Tx, limit int, preview bool)
 func projectCleanupSelections(projectID uuid.UUID, limit int) []projectCleanupSelection {
 	args := []any{projectID, limit}
 	return []projectCleanupSelection{
+		{retentionSelection: retentionSelection{
+			query: `SELECT u.project_id, u.period FROM project_usage_months u WHERE u.project_id = $1
+				ORDER BY u.period LIMIT $2`,
+			table: "project_usage_months", lockAlias: "u", match: `t.project_id = c.project_id AND t.period = c.period`,
+			args: args,
+		}},
 		{retentionSelection: retentionSelection{
 			query: `SELECT a.id FROM delivery_attempts a WHERE a.project_id = $1
 				ORDER BY a.delivery_id, a.cycle, a.attempt_number LIMIT $2`,
@@ -146,6 +159,7 @@ func projectCleanupSelections(projectID uuid.UUID, limit int) []projectCleanupSe
 				AND NOT EXISTS (SELECT 1 FROM events e WHERE e.project_id = p.id)
 				AND NOT EXISTS (SELECT 1 FROM endpoints e WHERE e.project_id = p.id)
 				AND NOT EXISTS (SELECT 1 FROM api_keys k WHERE k.project_id = p.id)
+				AND NOT EXISTS (SELECT 1 FROM project_usage_months u WHERE u.project_id = p.id)
 				AND NOT EXISTS (SELECT 1 FROM project_control_actions a WHERE a.project_id = p.id) LIMIT $2`,
 			table: "projects", lockAlias: "p", match: `t.id = c.id`, args: args,
 		}},

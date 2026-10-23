@@ -136,6 +136,9 @@ func (s *Store) CreateOrganization(ctx context.Context, userID uuid.UUID, name s
 	if err := lockActiveUsers(ctx, tx, userID); err != nil {
 		return accounts.Organization{}, err
 	}
+	if err := checkUserOrganizationQuota(ctx, tx, userID); err != nil {
+		return accounts.Organization{}, err
+	}
 	organization := accounts.Organization{ID: id, Name: name, Role: accounts.Owner}
 	err = tx.QueryRow(ctx, `INSERT INTO organizations (id, name) VALUES ($1, $2)
 		RETURNING created_at, updated_at`, id, name).Scan(&organization.CreatedAt, &organization.UpdatedAt)

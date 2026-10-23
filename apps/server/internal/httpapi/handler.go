@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"cascadehook/internal/auth"
+	"cascadehook/internal/clerk"
 	"cascadehook/internal/delivery"
 	"cascadehook/internal/limits"
 	"cascadehook/internal/signing"
@@ -17,22 +18,30 @@ import (
 )
 
 type api struct {
-	db            *store.Store
-	logger        *slog.Logger
-	vault         *signing.Vault
-	outbound      *delivery.Client
-	sessions      *auth.ClerkVerifier
-	requestLimits *limits.Limiter
+	db              *store.Store
+	logger          *slog.Logger
+	vault           *signing.Vault
+	outbound        *delivery.Client
+	sessions        *auth.ClerkVerifier
+	requestLimits   *limits.Limiter
+	identityWebhook *clerk.Webhook
+	clerkIssuer     string
+	clerkBackend    *clerk.Client
+	invitationURL   string
 }
 
 type HandlerOptions struct {
-	DB            *store.Store
-	Logger        *slog.Logger
-	Vault         *signing.Vault
-	Outbound      *delivery.Client
-	Sessions      *auth.ClerkVerifier
-	RequestLimits limits.Config
-	Metrics       *telemetry.Metrics
+	DB              *store.Store
+	Logger          *slog.Logger
+	Vault           *signing.Vault
+	Outbound        *delivery.Client
+	Sessions        *auth.ClerkVerifier
+	RequestLimits   limits.Config
+	Metrics         *telemetry.Metrics
+	IdentityWebhook *clerk.Webhook
+	ClerkIssuer     string
+	ClerkBackend    *clerk.Client
+	InvitationURL   string
 }
 
 // readinessTimeout bounds the database check behind /readyz.
@@ -46,7 +55,10 @@ func NewHandler(options HandlerOptions) (http.Handler, error) {
 	api := &api{
 		db: options.DB, logger: options.Logger, vault: options.Vault,
 		outbound: options.Outbound, sessions: options.Sessions,
-		requestLimits: requestLimits,
+		requestLimits:   requestLimits,
+		identityWebhook: options.IdentityWebhook, clerkIssuer: options.ClerkIssuer,
+		clerkBackend:  options.ClerkBackend,
+		invitationURL: options.InvitationURL,
 	}
 	mux := http.NewServeMux()
 	routes := make([]string, 0)
@@ -74,7 +86,7 @@ func NewHandler(options HandlerOptions) (http.Handler, error) {
 		}
 		ctx, cancel := context.WithTimeout(r.Context(), readinessTimeout)
 		defer cancel()
-		if err := api.db.Ping(ctx); err != nil {
+		if err := api.db.Ready(ctx); err != nil {
 			writeProblem(w, r, http.StatusServiceUnavailable, "not_ready")
 			return
 		}
@@ -98,13 +110,19 @@ func NewHandler(options HandlerOptions) (http.Handler, error) {
 	handle("/v1/api-keys/{api_key_id}/rotate", api.withProjectKey(api.rotateAPIKey))
 	handle("/v1/project-status", api.withProjectKey(api.projectStatus))
 	handle("/v1/me", api.accountResource)
+	handle("/v1/webhooks/clerk", api.clerkWebhook)
 	handle("/v1/organizations", api.withSession(api.organizationCollection))
 	handle("/v1/organizations/{organization_id}", api.withSession(api.organizationResource))
+	handle("/v1/organizations/{organization_id}/usage", api.withSession(api.organizationUsage))
 	handle("/v1/organizations/{organization_id}/members", api.withSession(api.membershipCollection))
+	handle("/v1/organizations/{organization_id}/invitations", api.withSession(api.invitationCollection))
+	handle("/v1/organizations/{organization_id}/invitations/{invitation_id}", api.withSession(api.revokeInvitation))
+	handle("/v1/invitations/accept", api.withSession(api.acceptInvitation))
 	handle("/v1/organizations/{organization_id}/members/{user_id}", api.withSession(api.membershipResource))
 	handle("/v1/organizations/{organization_id}/projects", api.withSession(api.projectCollection))
 	handle("/v1/projects/{project_id}", api.withSession(api.projectResource))
 	handle("/v1/projects/{project_id}/status", api.withSessionProject(api.projectStatus, false))
+	handle("/v1/projects/{project_id}/usage", api.withSessionProject(api.projectUsage, true))
 	handle("/v1/projects/{project_id}/endpoints", api.withSessionProject(api.endpointCollection, false))
 	handle("/v1/projects/{project_id}/endpoints/{endpoint_id}",
 		api.withSessionProject(api.endpointResource, false))

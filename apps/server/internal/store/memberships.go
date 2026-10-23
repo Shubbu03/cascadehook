@@ -96,6 +96,17 @@ func (s *Store) AddMembership(
 	if targetErr != nil {
 		return accounts.Membership{}, targetErr
 	}
+	if err := checkUserOrganizationQuota(ctx, tx, params.UserID); err != nil {
+		return accounts.Membership{}, err
+	}
+	if err := checkResourceQuota(
+		ctx,
+		tx,
+		params.OrganizationID,
+		"members",
+	); err != nil {
+		return accounts.Membership{}, err
+	}
 	var member accounts.Membership
 	err = scanMembership(tx.QueryRow(ctx, `INSERT INTO memberships (organization_id, user_id, role)
 		VALUES ($1,$2,$3) ON CONFLICT (organization_id, user_id) DO NOTHING

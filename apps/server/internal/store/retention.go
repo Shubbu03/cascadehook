@@ -49,6 +49,11 @@ func (s *Store) RetentionClock(ctx context.Context) (time.Time, error) {
 	if _, err := s.pool.Exec(ctx, `SELECT identity_hash FROM deleted_account_identities LIMIT 0`); err != nil {
 		return time.Time{}, fmt.Errorf("identity suppression schema unavailable; apply migrations first: %w", err)
 	}
+	const lifecycleSchema = `SELECT r.message_hash, i.token_hash, s.payload_bytes
+		FROM identity_webhook_receipts r CROSS JOIN organization_invitations i CROSS JOIN project_storage s LIMIT 0`
+	if _, err := s.pool.Exec(ctx, lifecycleSchema); err != nil {
+		return time.Time{}, fmt.Errorf("usage/invitation cleanup schema unavailable; apply migrations through 00018: %w", err)
+	}
 	var now time.Time
 	if err := s.pool.QueryRow(ctx, `SELECT clock_timestamp()`).Scan(&now); err != nil {
 		return time.Time{}, fmt.Errorf("read cleanup database time: %w", err)
@@ -70,6 +75,15 @@ func (s *Store) PreviewRetentionBatch(ctx context.Context, batch retention.Batch
 	defer rollbackTransaction(tx)
 	if _, err := tx.Exec(ctx, `SELECT set_config('statement_timeout', '10s', true)`); err != nil {
 		return 0, fmt.Errorf("bound retention preview: %w", err)
+	}
+	if batch.Phase == retention.DeleteMetadata {
+		return cleanupMetadata(
+			ctx,
+			tx,
+			batch.Reference,
+			batch.Limit,
+			true,
+		)
 	}
 	if batch.Phase == retention.DeleteProjects {
 		return cleanupProjectData(
@@ -127,6 +141,14 @@ func (s *Store) CleanupRetentionBatch(ctx context.Context, batch retention.Batch
 	}
 	var affected int64
 	switch batch.Phase {
+	case retention.DeleteMetadata:
+		affected, err = cleanupMetadata(
+			ctx,
+			tx,
+			batch.Reference,
+			batch.Limit,
+			false,
+		)
 	case retention.MarkEvents:
 		affected, err = retireEventGroups(ctx, tx, batch)
 	case retention.DeleteProjects:
@@ -152,6 +174,8 @@ func (s *Store) CleanupRetentionBatch(ctx context.Context, batch retention.Batch
 		)
 	case retention.DeleteProviderAccounts:
 		return retention.BatchResult{}, fmt.Errorf("provider cleanup must run outside a database transaction")
+	case retention.DeleteEvents:
+		affected, err = deleteEventsWithStorage(ctx, tx, retentionCandidates(batch))
 	default:
 		selection := retentionCandidates(batch)
 		// Table, aliases, joins, and matching keys come only from the fixed

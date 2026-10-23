@@ -37,6 +37,21 @@ func (api *api) withAccountSession(next sessionHandler, allowDeleting bool) http
 		}
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
+		revoked, err := api.db.SessionRevoked(ctx, identity)
+		if err != nil {
+			api.logger.Error("session revocation lookup failed", "error", err)
+			writeProblem(
+				w,
+				r,
+				http.StatusServiceUnavailable,
+				"authentication_unavailable",
+			)
+			return
+		}
+		if revoked {
+			invalidSession(w, r)
+			return
+		}
 		user, err := api.db.EnsureUser(ctx, identity)
 		if errors.Is(err, accounts.ErrAccountDeleted) {
 			api.accountProblem(w, r, err)

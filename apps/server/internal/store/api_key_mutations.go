@@ -45,6 +45,14 @@ func (s *Store) CreateAPIKey(ctx context.Context, actor auth.Principal, params C
 	if err := requireActiveProject(ctx, tx, actor.ProjectID); err != nil {
 		return auth.APIKey{}, err
 	}
+	if err := checkResourceQuota(
+		ctx,
+		tx,
+		actor.ProjectID,
+		"api_keys",
+	); err != nil {
+		return auth.APIKey{}, err
+	}
 	if params.ExpiresAt != nil {
 		at := params.ExpiresAt.UTC().Truncate(time.Microsecond)
 		if at.Year() < 1 || at.Year() > 9999 || !at.After(databaseNow) {
@@ -127,6 +135,14 @@ func (s *Store) RotateAPIKey(ctx context.Context, actor auth.Principal, targetID
 	}
 	if target.RotatedToID != nil {
 		return APIKeyRotation{}, auth.ErrAPIKeyRotationPending
+	}
+	if err := checkResourceQuota(
+		ctx,
+		tx,
+		actor.ProjectID,
+		"retained_api_keys",
+	); err != nil {
+		return APIKeyRotation{}, err
 	}
 	if !validAPIKeyPrefix(prefix, target.Environment) {
 		return APIKeyRotation{}, auth.ErrInvalidKeyEnvironment

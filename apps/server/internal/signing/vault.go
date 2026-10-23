@@ -12,9 +12,30 @@ const ciphertextVersion = 1
 
 // Vault encrypts each secret with a fresh nonce and authenticated tenant/endpoint
 // identity. Copying ciphertext between endpoints or projects fails decryption.
-type Vault struct{ aead cipher.AEAD }
+type Vault struct{ aead, previous cipher.AEAD }
 
 func NewVault(key []byte) (*Vault, error) {
+	return NewVaultWithPrevious(key, nil)
+}
+
+// New writes use the current key. A previous key permits a rolling deployment
+// and bounded ciphertext rewrapping without changing receiver credentials.
+func NewVaultWithPrevious(key, previous []byte) (*Vault, error) {
+	aead, err := newEncryption(key)
+	if err != nil {
+		return nil, err
+	}
+	vault := &Vault{aead: aead}
+	if len(previous) > 0 {
+		vault.previous, err = newEncryption(previous)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return vault, nil
+}
+
+func newEncryption(key []byte) (cipher.AEAD, error) {
 	if len(key) != SecretSize {
 		return nil, fmt.Errorf("signing encryption key must contain 32 bytes")
 	}
@@ -26,7 +47,7 @@ func NewVault(key []byte) (*Vault, error) {
 	if err != nil {
 		return nil, fmt.Errorf("initialize signing encryption: %w", err)
 	}
-	return &Vault{aead: aead}, nil
+	return aead, nil
 }
 
 func (vault *Vault) Encrypt(projectID, endpointID uuid.UUID, secret Secret) []byte {
@@ -49,6 +70,14 @@ func (vault *Vault) Decrypt(projectID, endpointID uuid.UUID, encrypted []byte) (
 		encrypted[1:],
 		secretIdentity(projectID, endpointID),
 	)
+	if err != nil && vault.previous != nil {
+		plaintext, err = vault.previous.Open(
+			nil,
+			nil,
+			encrypted[1:],
+			secretIdentity(projectID, endpointID),
+		)
+	}
 	if err != nil || len(plaintext) != SecretSize {
 		return Secret{}, fmt.Errorf("cannot decrypt signing secret")
 	}
@@ -56,6 +85,30 @@ func (vault *Vault) Decrypt(projectID, endpointID uuid.UUID, encrypted []byte) (
 	copy(secret.key[:], plaintext)
 	clear(plaintext)
 	return secret, nil
+}
+
+func (vault *Vault) Rewrap(projectID, endpointID uuid.UUID, encrypted []byte) ([]byte, bool, error) {
+	if len(encrypted) == 0 {
+		return nil, false, nil
+	}
+	if len(encrypted) != 1+SecretSize+vault.aead.Overhead() || encrypted[0] != ciphertextVersion {
+		return nil, false, fmt.Errorf("invalid encrypted signing secret")
+	}
+	plaintext, err := vault.aead.Open(
+		nil,
+		nil,
+		encrypted[1:],
+		secretIdentity(projectID, endpointID),
+	)
+	if err == nil {
+		clear(plaintext)
+		return encrypted, false, nil
+	}
+	secret, err := vault.Decrypt(projectID, endpointID, encrypted)
+	if err != nil {
+		return nil, false, err
+	}
+	return vault.Encrypt(projectID, endpointID, secret), true, nil
 }
 
 func secretIdentity(projectID, endpointID uuid.UUID) []byte {

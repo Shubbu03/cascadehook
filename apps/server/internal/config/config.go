@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -28,16 +29,21 @@ type Config struct {
 // APIConfig adds the HTTP listener settings used only by the API binary.
 type APIConfig struct {
 	Config
-	HTTPAddr             string
-	SigningEncryptionKey []byte `json:"-"`
-	Clerk                auth.ClerkConfig
-	RequestLimits        limits.Config
-	Metrics              telemetry.Config
+	HTTPAddr              string
+	SigningEncryptionKey  []byte `json:"-"`
+	PreviousEncryptionKey []byte `json:"-"`
+	Clerk                 auth.ClerkConfig
+	RequestLimits         limits.Config
+	Metrics               telemetry.Config
+	ClerkBackend          clerk.Config
+	ClerkWebhookSecrets   []string `json:"-"`
+	InvitationURL         string
 }
 
 type WorkerConfig struct {
 	Config
 	SigningEncryptionKey   []byte `json:"-"`
+	PreviousEncryptionKey  []byte `json:"-"`
 	Concurrency            int
 	DestinationConcurrency int
 	ClaimBatchSize         int
@@ -118,9 +124,39 @@ func LoadAPI() (APIConfig, error) {
 		return APIConfig{}, err
 	}
 	cfg.SigningEncryptionKey = key
+	cfg.PreviousEncryptionKey, err = previousEncryptionKey()
+	if err != nil {
+		return APIConfig{}, err
+	}
 	cfg.Clerk = auth.ClerkConfig{
 		IssuerURL:    os.Getenv("CLERK_ISSUER_URL"),
 		JWTPublicKey: os.Getenv("CLERK_JWT_PUBLIC_KEY"),
+	}
+	cfg.ClerkBackend = clerk.Config{IssuerURL: cfg.Clerk.IssuerURL, SecretKey: os.Getenv("CLERK_SECRET_KEY")}
+	if err := cfg.ClerkBackend.Validate(); err != nil {
+		return APIConfig{}, err
+	}
+	cfg.ClerkWebhookSecrets = make([]string, 0)
+	if value := os.Getenv("CLERK_WEBHOOK_SIGNING_SECRETS"); value != "" {
+		for _, secret := range strings.Split(value, ",") {
+			cfg.ClerkWebhookSecrets = append(cfg.ClerkWebhookSecrets, strings.TrimSpace(secret))
+		}
+		if cfg.Clerk.IssuerURL == "" {
+			return APIConfig{}, fmt.Errorf("CLERK_ISSUER_URL is required for identity webhooks")
+		}
+	}
+	if _, err := clerk.NewWebhook(cfg.ClerkWebhookSecrets); err != nil {
+		return APIConfig{}, err
+	}
+	cfg.InvitationURL = os.Getenv("INVITATION_ACCEPT_URL")
+	if cfg.InvitationURL != "" {
+		u, err := url.Parse(cfg.InvitationURL)
+		if err != nil || u.Scheme != "https" || u.Hostname() == "" {
+			return APIConfig{}, fmt.Errorf("INVITATION_ACCEPT_URL must be an HTTPS application URL")
+		}
+		if u.User != nil || u.RawQuery != "" || u.ForceQuery || u.Fragment != "" || len(cfg.InvitationURL) > 2048 {
+			return APIConfig{}, fmt.Errorf("INVITATION_ACCEPT_URL cannot contain credentials, query or fragment")
+		}
 	}
 	if parties := os.Getenv("CLERK_AUTHORIZED_PARTIES"); parties != "" {
 		for _, party := range strings.Split(parties, ",") {
@@ -176,6 +212,10 @@ func LoadWorker() (WorkerConfig, error) {
 	if err != nil {
 		return WorkerConfig{}, err
 	}
+	cfg.PreviousEncryptionKey, err = previousEncryptionKey()
+	if err != nil {
+		return WorkerConfig{}, err
+	}
 	cfg.Concurrency, err = boundedInt("WORKER_CONCURRENCY", deliveries.DefaultConcurrency, 1, deliveries.MaxConcurrency)
 	if err != nil {
 		return WorkerConfig{}, err
@@ -210,6 +250,18 @@ func signingEncryptionKey() ([]byte, error) {
 	key, err := base64.StdEncoding.Strict().DecodeString(os.Getenv("SIGNING_ENCRYPTION_KEY"))
 	if err != nil || len(key) != 32 {
 		return nil, fmt.Errorf("SIGNING_ENCRYPTION_KEY must be a base64-encoded 32-byte encryption key")
+	}
+	return key, nil
+}
+
+func previousEncryptionKey() ([]byte, error) {
+	value := os.Getenv("SIGNING_ENCRYPTION_PREVIOUS_KEY")
+	if value == "" {
+		return nil, nil
+	}
+	key, err := base64.StdEncoding.DecodeString(value)
+	if err != nil || len(key) != 32 {
+		return nil, fmt.Errorf("SIGNING_ENCRYPTION_PREVIOUS_KEY must be a base64-encoded 32-byte key")
 	}
 	return key, nil
 }

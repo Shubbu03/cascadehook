@@ -7,6 +7,7 @@ import (
 	"mime"
 	"net/http"
 
+	"cascadehook/internal/accounts"
 	"cascadehook/internal/auth"
 	"cascadehook/internal/controls"
 	"cascadehook/internal/events"
@@ -55,6 +56,8 @@ func (api *api) publishEvent(w http.ResponseWriter, r *http.Request, principal a
 
 func (api *api) publicationProblem(w http.ResponseWriter, r *http.Request, err error) {
 	switch {
+	case errors.Is(err, accounts.ErrQuotaExceeded):
+		api.accountProblem(w, r, err)
 	case errors.Is(err, controls.ErrProjectNotFound):
 		api.projectControlProblem(w, r, err)
 	case errors.Is(err, controls.ErrSuspended):

@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"fmt"
+	"sort"
 	"time"
 
 	"github.com/google/uuid"
@@ -89,6 +90,32 @@ func (s *Store) releaseDeliveryBatch(ctx context.Context, ownerID uuid.UUID, lim
 	if len(jobs) == 0 {
 		return 0, nil
 	}
+	// Recovery can finalize several tenants in one transaction. Acquire their
+	// shared accounting rows in a consistent tenant order to avoid mutual waits.
+	projectIDs := make([]uuid.UUID, 0, len(jobs))
+	for _, job := range jobs {
+		projectIDs = append(projectIDs, job.ProjectID)
+	}
+	parents, err := tx.Query(ctx, `SELECT id,organization_id FROM projects WHERE id = ANY($1::uuid[])`, projectIDs)
+	if err != nil {
+		return 0, fmt.Errorf("read recovery accounting order: %w", err)
+	}
+	organizations := make(map[uuid.UUID]string)
+	for parents.Next() {
+		var projectID, organizationID uuid.UUID
+		if err := parents.Scan(&projectID, &organizationID); err != nil {
+			parents.Close()
+			return 0, fmt.Errorf("read recovery tenant: %w", err)
+		}
+		organizations[projectID] = organizationID.String()
+	}
+	if err := parents.Err(); err != nil {
+		return 0, fmt.Errorf("read recovery tenants: %w", err)
+	}
+	parents.Close()
+	sort.SliceStable(jobs, func(i, j int) bool {
+		return organizations[jobs[i].ProjectID] < organizations[jobs[j].ProjectID]
+	})
 	var databaseNow time.Time
 	if err := tx.QueryRow(ctx, `SELECT clock_timestamp()`).Scan(&databaseNow); err != nil {
 		return 0, fmt.Errorf("read recovery database time: %w", err)
@@ -125,9 +152,11 @@ func (s *Store) ExpirePendingDeliveries(ctx context.Context, limit int) (int64, 
 	result, err := s.pool.Exec(ctx, `WITH expired AS (
 		SELECT d.id, e.deleted_at, d.attempt_count FROM deliveries d
 		JOIN endpoints e ON e.project_id = d.project_id AND e.id = d.endpoint_id
-		WHERE d.state = 'pending' AND (d.attempt_count >= $2 OR d.retry_deadline <= now())
+		JOIN projects p ON p.id = d.project_id JOIN organizations o ON o.id = p.organization_id
+		WHERE d.state = 'pending' AND p.deletion_requested_at IS NULL AND o.deletion_requested_at IS NULL
+		AND (d.attempt_count >= $2 OR d.retry_deadline <= now())
 		ORDER BY d.next_attempt_at, d.id LIMIT $1
-		FOR UPDATE OF d SKIP LOCKED FOR SHARE OF e SKIP LOCKED
+		FOR UPDATE OF d SKIP LOCKED FOR SHARE OF o,p,e SKIP LOCKED
 	) UPDATE deliveries d SET state = CASE WHEN expired.deleted_at IS NOT NULL THEN 'canceled' ELSE 'failed' END,
 		terminal_reason = CASE WHEN expired.deleted_at IS NOT NULL THEN NULL
 			WHEN expired.attempt_count >= $2 THEN 'max_attempts' ELSE 'retry_horizon' END,

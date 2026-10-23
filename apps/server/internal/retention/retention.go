@@ -60,12 +60,14 @@ const (
 	DeleteOrganizations    Phase = "organization_deletion_rows"
 	DeleteAccounts         Phase = "account_deletion_rows"
 	DeleteProviderAccounts Phase = "account_provider_requests"
+	DeleteMetadata         Phase = "expired_metadata_rows"
 )
 
 func Phases() []Phase {
 	return []Phase{
 		ExpireKeys, MarkEvents, DeleteAttempts, DeleteReplays, DeleteDeliveries, DeleteEvents,
 		DeleteOrganizations, DeleteProjects, DeleteProviderAccounts, DeleteAccounts,
+		DeleteMetadata,
 	}
 }
 

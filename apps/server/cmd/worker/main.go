@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"cascadehook/internal/config"
 	"cascadehook/internal/delivery"
@@ -33,7 +34,7 @@ func run() error {
 		Level: cfg.LogLevel,
 	})).With("service", "worker")
 	slog.SetDefault(logger)
-	vault, err := signing.NewVault(cfg.SigningEncryptionKey)
+	vault, err := signing.NewVaultWithPrevious(cfg.SigningEncryptionKey, cfg.PreviousEncryptionKey)
 	if err != nil {
 		return err
 	}
@@ -56,6 +57,12 @@ func run() error {
 		return err
 	}
 	defer db.Close()
+	readyCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	err = db.Ready(readyCtx)
+	cancel()
+	if err != nil {
+		return err
+	}
 
 	var metrics *telemetry.Metrics
 	var workerMetrics *telemetry.Worker

@@ -105,6 +105,14 @@ func (s *Store) PublishEvent(ctx context.Context, projectID uuid.UUID, body []by
 	if suspended {
 		return events.Accepted{}, controls.ErrSuspended
 	}
+	if err := reservePayloadStorage(
+		ctx,
+		tx,
+		projectID,
+		len(body),
+	); err != nil {
+		return events.Accepted{}, err
+	}
 
 	id, err := uuid.NewV7()
 	if err != nil {
@@ -131,6 +139,16 @@ func (s *Store) PublishEvent(ctx context.Context, projectID uuid.UUID, body []by
 		eventType,
 	)
 	if err != nil {
+		return events.Accepted{}, err
+	}
+	if err := recordUsage(
+		ctx,
+		tx,
+		projectID,
+		usageDelta{
+			events: 1, jobs: int64(result.DeliveryCount), bytes: int64(len(body)),
+		},
+	); err != nil {
 		return events.Accepted{}, err
 	}
 	if _, err := tx.Exec(

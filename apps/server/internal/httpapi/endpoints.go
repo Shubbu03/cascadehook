@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"cascadehook/internal/accounts"
 	"cascadehook/internal/auth"
 	"cascadehook/internal/controls"
 	"cascadehook/internal/endpoints"
@@ -42,8 +43,26 @@ func (api *api) endpointCollection(w http.ResponseWriter, r *http.Request, princ
 }
 
 func (api *api) endpointResource(w http.ResponseWriter, r *http.Request, principal auth.Principal) {
+	if r.Method == http.MethodGet || r.Method == http.MethodHead {
+		id, ok := readResourceID(w, r, "endpoint_id")
+		if !ok || !accountQueryEmpty(w, r) {
+			return
+		}
+		endpoint, err := api.db.GetEndpoint(r.Context(), principal.ProjectID, id)
+		if err != nil {
+			api.endpointProblem(w, r, err)
+			return
+		}
+		writeJSON(
+			w,
+			r,
+			http.StatusOK,
+			endpoint,
+		)
+		return
+	}
 	if r.Method != http.MethodPatch && r.Method != http.MethodDelete {
-		w.Header().Set("Allow", "PATCH, DELETE")
+		w.Header().Set("Allow", "GET, HEAD, PATCH, DELETE")
 		writeProblem(w, r, http.StatusMethodNotAllowed, "method_not_allowed")
 		return
 	}
@@ -129,6 +148,8 @@ func (api *api) listEndpoints(w http.ResponseWriter, r *http.Request, principal 
 
 func (api *api) endpointProblem(w http.ResponseWriter, r *http.Request, err error) {
 	switch {
+	case errors.Is(err, accounts.ErrQuotaExceeded):
+		api.accountProblem(w, r, err)
 	case errors.Is(err, controls.ErrSuspended), errors.Is(err, controls.ErrProjectNotFound):
 		api.projectControlProblem(w, r, err)
 	case errors.Is(err, endpoints.ErrNotFound):

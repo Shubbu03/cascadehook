@@ -26,6 +26,10 @@ func cleanupOrganizationData(ctx context.Context, tx pgx.Tx, limit int, preview 
 		return 0, fmt.Errorf("select organization cleanup: %w", err)
 	}
 	selections := []lifecycleCleanupSelection{
+		{retentionSelection: retentionSelection{
+			query: `SELECT i.id FROM organization_invitations i WHERE i.organization_id = $1 ORDER BY i.id LIMIT $2`,
+			table: "organization_invitations", lockAlias: "i", match: `t.id = c.id`, args: []any{id, limit},
+		}},
 		{
 			retentionSelection: retentionSelection{
 				query: `SELECT p.id FROM projects p WHERE p.organization_id = $1
@@ -44,9 +48,29 @@ func cleanupOrganizationData(ctx context.Context, tx pgx.Tx, limit int, preview 
 			match: `t.organization_id = c.organization_id AND t.user_id = c.user_id`, args: []any{id, limit},
 		}},
 		{retentionSelection: retentionSelection{
+			query: `SELECT a.id FROM organization_ownership_actions a WHERE a.organization_id = $1
+				AND NOT EXISTS (SELECT 1 FROM projects p WHERE p.organization_id = $1) ORDER BY a.id LIMIT $2`,
+			table: "organization_ownership_actions", lockAlias: "a", match: `t.id = c.id`, args: []any{id, limit},
+		}},
+		{retentionSelection: retentionSelection{
+			query: `SELECT u.organization_id, u.period FROM organization_usage_months u WHERE u.organization_id = $1
+				AND NOT EXISTS (SELECT 1 FROM projects p WHERE p.organization_id = $1) ORDER BY u.period LIMIT $2`,
+			table: "organization_usage_months", lockAlias: "u",
+			match: `t.organization_id = c.organization_id AND t.period = c.period`, args: []any{id, limit},
+		}},
+		{retentionSelection: retentionSelection{
+			query: `SELECT a.id FROM organization_quota_actions a WHERE a.organization_id = $1
+				AND NOT EXISTS (SELECT 1 FROM projects p WHERE p.organization_id = $1) ORDER BY a.id LIMIT $2`,
+			table: "organization_quota_actions", lockAlias: "a", match: `t.id = c.id`, args: []any{id, limit},
+		}},
+		{retentionSelection: retentionSelection{
 			query: `SELECT o.id FROM organizations o WHERE o.id = $1 AND o.deletion_requested_at IS NOT NULL
 				AND NOT EXISTS (SELECT 1 FROM projects p WHERE p.organization_id = o.id)
-				AND NOT EXISTS (SELECT 1 FROM memberships m WHERE m.organization_id = o.id) LIMIT $2`,
+				AND NOT EXISTS (SELECT 1 FROM memberships m WHERE m.organization_id = o.id)
+				AND NOT EXISTS (SELECT 1 FROM organization_invitations i WHERE i.organization_id = o.id)
+				AND NOT EXISTS (SELECT 1 FROM organization_usage_months u WHERE u.organization_id = o.id)
+				AND NOT EXISTS (SELECT 1 FROM organization_ownership_actions a WHERE a.organization_id = o.id)
+				AND NOT EXISTS (SELECT 1 FROM organization_quota_actions a WHERE a.organization_id = o.id) LIMIT $2`,
 			table: "organizations", lockAlias: "o", match: `t.id = c.id`, args: []any{id, limit},
 		}},
 	}
@@ -64,7 +88,9 @@ func cleanupAccountData(ctx context.Context, tx pgx.Tx, limit int, preview bool)
 	query := `SELECT u.id FROM users u WHERE u.deletion_requested_at IS NOT NULL
 		AND (u.provider_deleted_at IS NOT NULL OR EXISTS (SELECT 1 FROM memberships m WHERE m.user_id = u.id))
 		AND NOT EXISTS (SELECT 1 FROM memberships m JOIN organizations o ON o.id = m.organization_id
-			WHERE m.user_id = u.id AND m.role = 'owner' AND o.deletion_requested_at IS NULL)
+			WHERE m.user_id = u.id AND m.role = 'owner' AND o.deletion_requested_at IS NULL
+			AND NOT EXISTS (SELECT 1 FROM memberships other JOIN users active ON active.id = other.user_id
+				WHERE other.organization_id = o.id AND other.role = 'owner' AND active.deletion_requested_at IS NULL))
 		ORDER BY u.deletion_requested_at, u.id LIMIT 1`
 	if !preview {
 		query += ` FOR UPDATE OF u SKIP LOCKED`

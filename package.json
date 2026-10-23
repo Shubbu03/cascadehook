@@ -10,6 +10,8 @@
     "db:seed": "cd apps/server && go run ./cmd/seed",
     "db:cleanup": "cd apps/server && go run ./cmd/janitor",
     "ops:project": "cd apps/server && go run ./cmd/projectctl",
+    "ops:tenant": "cd apps/server && go run ./cmd/tenantctl",
+    "ops:secrets": "cd apps/server && go run ./cmd/secretctl",
     "build:go": "cd apps/server && go build ./...",
     "fmt:go": "cd apps/server && go fmt ./...",
     "vet:go": "cd apps/server && go vet ./...",

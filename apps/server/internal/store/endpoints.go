@@ -37,6 +37,14 @@ func (s *Store) CreateEndpoint(ctx context.Context, projectID uuid.UUID, input e
 	if err := requireActiveProject(ctx, tx, projectID); err != nil {
 		return endpoints.Endpoint{}, err
 	}
+	if err := checkResourceQuota(
+		ctx,
+		tx,
+		projectID,
+		"endpoints",
+	); err != nil {
+		return endpoints.Endpoint{}, err
+	}
 
 	var endpoint endpoints.Endpoint
 	err = tx.QueryRow(ctx,
