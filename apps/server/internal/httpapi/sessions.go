@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"strings"
 	"time"
@@ -13,6 +14,11 @@ import (
 type sessionHandler func(http.ResponseWriter, *http.Request, accounts.User)
 
 func (api *api) withSession(next sessionHandler) http.HandlerFunc {
+	return api.withAccountSession(next, false)
+}
+
+// Only DELETE /v1/me may re-enter a pending deletion to resolve a lost response.
+func (api *api) withAccountSession(next sessionHandler, allowDeleting bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Cache-Control", "no-store")
 		if api.sessions == nil {
@@ -32,9 +38,17 @@ func (api *api) withSession(next sessionHandler) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 		user, err := api.db.EnsureUser(ctx, identity)
+		if errors.Is(err, accounts.ErrAccountDeleted) {
+			api.accountProblem(w, r, err)
+			return
+		}
 		if err != nil {
 			api.logger.Error("account identity lookup failed", "error", err)
 			writeProblem(w, r, http.StatusServiceUnavailable, "authentication_unavailable")
+			return
+		}
+		if user.DeletionRequestedAt != nil && !allowDeleting {
+			api.accountProblem(w, r, accounts.ErrAccountDeleted)
 			return
 		}
 		next(w, r.WithContext(ctx), user)

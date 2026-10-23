@@ -12,14 +12,17 @@ import (
 )
 
 var (
-	ErrNotFound       = errors.New("account resource not found")
-	ErrForbidden      = errors.New("organization permission required")
-	ErrInvalidName    = errors.New("name must contain 1 to 100 characters without control characters")
-	ErrInvalidRole    = errors.New("role must be owner, admin, or member")
-	ErrUserNotFound   = errors.New("user must sign in before being added to an organization")
-	ErrAlreadyMember  = errors.New("user is already an organization member")
-	ErrLastOwner      = errors.New("organization must retain an owner")
-	ErrMemberNotFound = errors.New("organization member not found")
+	ErrNotFound          = errors.New("account resource not found")
+	ErrForbidden         = errors.New("organization permission required")
+	ErrInvalidName       = errors.New("name must contain 1 to 100 characters without control characters")
+	ErrInvalidRole       = errors.New("role must be owner, admin, or member")
+	ErrUserNotFound      = errors.New("user must sign in before being added to an organization")
+	ErrAlreadyMember     = errors.New("user is already an organization member")
+	ErrLastOwner         = errors.New("organization must retain an owner")
+	ErrMemberNotFound    = errors.New("organization member not found")
+	ErrAccountDeleted    = errors.New("account deletion requested")
+	ErrOwnsOrganizations = errors.New("transfer ownership or delete owned organizations before deleting the account")
+	ErrDeletionLeaseLost = errors.New("account deletion lease lost")
 )
 
 type Role string
@@ -39,8 +42,9 @@ func (role Role) CanManageProjects() bool {
 }
 
 type User struct {
-	ID        uuid.UUID `json:"id"`
-	CreatedAt time.Time `json:"created_at"`
+	ID                  uuid.UUID  `json:"id"`
+	CreatedAt           time.Time  `json:"created_at"`
+	DeletionRequestedAt *time.Time `json:"-"`
 }
 
 type Organization struct {
@@ -71,6 +75,24 @@ type Project struct {
 type ProjectDeletion struct {
 	ProjectID   uuid.UUID `json:"project_id"`
 	RequestedAt time.Time `json:"deletion_requested_at"`
+}
+
+type OrganizationDeletion struct {
+	OrganizationID uuid.UUID `json:"organization_id"`
+	RequestedAt    time.Time `json:"deletion_requested_at"`
+}
+
+type AccountDeletion struct {
+	UserID      uuid.UUID `json:"user_id"`
+	RequestedAt time.Time `json:"deletion_requested_at"`
+}
+
+type ProviderDeletion struct {
+	UserID  uuid.UUID
+	Token   uuid.UUID `json:"-"`
+	Issuer  string    `json:"-"`
+	Subject string    `json:"-"`
+	Attempt int
 }
 
 func NormalizeName(value string) (string, error) {

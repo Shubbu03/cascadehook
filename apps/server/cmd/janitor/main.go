@@ -12,6 +12,7 @@ import (
 	"syscall"
 	"time"
 
+	"cascadehook/internal/clerk"
 	"cascadehook/internal/config"
 	"cascadehook/internal/retention"
 	"cascadehook/internal/store"
@@ -56,11 +57,20 @@ func run() error {
 		return err
 	}
 	defer db.Close()
+	client, err := clerk.New(cfg.ClerkDeletion)
+	if err != nil {
+		return err
+	}
+	var accountDeleter retention.AccountDeleter
+	if client != nil {
+		defer client.CloseIdleConnections()
+		accountDeleter = client
+	}
 	started := time.Now()
 	report, cleanupErr := retention.Run(
 		ctx,
 		db,
-		retention.Options{Config: cfg.Retention, DryRun: *dryRun},
+		retention.Options{Config: cfg.Retention, DryRun: *dryRun, AccountDeleter: accountDeleter},
 		logger,
 	)
 	logger.Info(
@@ -73,6 +83,12 @@ func run() error {
 		report.Batches,
 		"phase_rows",
 		report.Rows,
+		"provider_pending",
+		report.ProviderPending,
+		"provider_failures",
+		report.ProviderFailures,
+		"provider_unavailable",
+		report.ProviderUnavailable,
 		"cutoff",
 		report.Cutoff,
 		"duration_ms",

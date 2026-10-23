@@ -18,6 +18,7 @@ func (s *Store) FindAPIKey(ctx context.Context, digest [sha256.Size]byte) (auth.
 	err := s.pool.QueryRow(ctx,
 		`SELECT k.project_id, k.id FROM api_keys k JOIN projects p ON p.id = k.project_id
 		WHERE k.key_hash = $1 AND k.revoked_at IS NULL AND p.deletion_requested_at IS NULL
+		AND EXISTS (SELECT 1 FROM organizations o WHERE o.id = p.organization_id AND o.deletion_requested_at IS NULL)
 		AND (k.expires_at IS NULL OR k.expires_at > clock_timestamp())
 		AND (k.revokes_at IS NULL OR k.revokes_at > clock_timestamp())`,
 		digest[:],

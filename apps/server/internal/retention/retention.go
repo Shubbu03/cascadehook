@@ -1,4 +1,4 @@
-// Package retention defines bounded history retention and requested project deletion.
+// Package retention defines bounded history retention and tenant/account deletion.
 package retention
 
 import (
@@ -50,17 +50,23 @@ func (cfg Config) Validate() error {
 type Phase string
 
 const (
-	ExpireKeys       Phase = "expired_idempotency_keys"
-	MarkEvents       Phase = "retired_event_groups"
-	DeleteAttempts   Phase = "delivery_attempts"
-	DeleteReplays    Phase = "delivery_replays"
-	DeleteDeliveries Phase = "deliveries"
-	DeleteEvents     Phase = "events"
-	DeleteProjects   Phase = "project_deletion_rows"
+	ExpireKeys             Phase = "expired_idempotency_keys"
+	MarkEvents             Phase = "retired_event_groups"
+	DeleteAttempts         Phase = "delivery_attempts"
+	DeleteReplays          Phase = "delivery_replays"
+	DeleteDeliveries       Phase = "deliveries"
+	DeleteEvents           Phase = "events"
+	DeleteProjects         Phase = "project_deletion_rows"
+	DeleteOrganizations    Phase = "organization_deletion_rows"
+	DeleteAccounts         Phase = "account_deletion_rows"
+	DeleteProviderAccounts Phase = "account_provider_requests"
 )
 
 func Phases() []Phase {
-	return []Phase{ExpireKeys, MarkEvents, DeleteAttempts, DeleteReplays, DeleteDeliveries, DeleteEvents, DeleteProjects}
+	return []Phase{
+		ExpireKeys, MarkEvents, DeleteAttempts, DeleteReplays, DeleteDeliveries, DeleteEvents,
+		DeleteOrganizations, DeleteProjects, DeleteProviderAccounts, DeleteAccounts,
+	}
 }
 
 type Batch struct {
@@ -87,16 +93,22 @@ func (batch Batch) Validate() error {
 }
 
 type BatchResult struct {
-	Rows int64
-	Busy bool
+	Rows                int64
+	Busy                bool
+	ProviderFailed      bool
+	ProviderUnavailable bool
+	ProviderPending     bool
 }
 
 type Report struct {
-	DryRun    bool            `json:"dry_run"`
-	Reference time.Time       `json:"reference_time"`
-	Cutoff    time.Time       `json:"retention_cutoff"`
-	BatchSize int             `json:"batch_size"`
-	Batches   int             `json:"batches"`
-	Status    string          `json:"status"`
-	Rows      map[Phase]int64 `json:"phase_rows"`
+	DryRun              bool            `json:"dry_run"`
+	Reference           time.Time       `json:"reference_time"`
+	Cutoff              time.Time       `json:"retention_cutoff"`
+	BatchSize           int             `json:"batch_size"`
+	Batches             int             `json:"batches"`
+	Status              string          `json:"status"`
+	Rows                map[Phase]int64 `json:"phase_rows"`
+	ProviderFailures    int             `json:"provider_failures"`
+	ProviderUnavailable bool            `json:"provider_unavailable"`
+	ProviderPending     bool            `json:"provider_pending"`
 }

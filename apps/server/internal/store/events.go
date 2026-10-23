@@ -44,6 +44,9 @@ func (s *Store) PublishEvent(ctx context.Context, projectID uuid.UUID, body []by
 	// Lock the parent before touching its child rows, matching endpoint
 	// mutation ordering and avoiding a race with project deletion. Publishers
 	// share this lock; endpoint changes take the exclusive counterpart.
+	if err := lockProjectOrganization(ctx, tx, projectID); err != nil {
+		return events.Accepted{}, err
+	}
 	var suspended bool
 	err = tx.QueryRow(ctx, `SELECT suspended_at IS NOT NULL FROM projects
 		WHERE id = $1 AND deletion_requested_at IS NULL FOR SHARE`,

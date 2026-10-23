@@ -82,7 +82,8 @@ func (s *Store) ListEndpoints(ctx context.Context, projectID uuid.UUID, options 
 	}
 	rows, err := s.pool.Query(ctx, `SELECT `+endpointColumns+`
 		FROM endpoints e WHERE e.project_id = $1 AND e.deleted_at IS NULL
-		AND EXISTS (SELECT 1 FROM projects p WHERE p.id = e.project_id AND p.deletion_requested_at IS NULL)
+		AND EXISTS (SELECT 1 FROM projects p WHERE p.id = e.project_id AND p.deletion_requested_at IS NULL
+		AND EXISTS (SELECT 1 FROM organizations o WHERE o.id = p.organization_id AND o.deletion_requested_at IS NULL))
 		AND ($2::timestamptz IS NULL OR (e.created_at, e.id) < ($2::timestamptz, $3::uuid))
 		AND ($5::boolean IS NULL OR e.enabled = $5::boolean)
 		AND ($6::text = '' OR EXISTS (SELECT 1 FROM endpoint_subscriptions WHERE endpoint_id = e.id AND event_type = $6))
@@ -234,6 +235,9 @@ func scanEndpoint(row pgx.Row, endpoint *endpoints.Endpoint) error {
 // This lock must precede endpoint row locks in every configuration mutation.
 // Publications hold the shared counterpart while reading subscriptions.
 func lockProjectForEndpointChange(ctx context.Context, tx pgx.Tx, projectID uuid.UUID) error {
+	if err := lockProjectOrganization(ctx, tx, projectID); err != nil {
+		return err
+	}
 	var id uuid.UUID
 	err := tx.QueryRow(ctx, `SELECT id FROM projects
 		WHERE id = $1 AND deletion_requested_at IS NULL FOR UPDATE`, projectID).Scan(&id)

@@ -13,8 +13,21 @@ import (
 	"cascadehook/internal/store"
 )
 
+func (api *api) accountResource(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodDelete {
+		api.withAccountSession(api.deleteAccount, true)(w, r)
+		return
+	}
+	api.withSession(api.currentUser)(w, r)
+}
+
 func (api *api) currentUser(w http.ResponseWriter, r *http.Request, user accounts.User) {
-	if !allowGetHead(w, r) || !accountQueryEmpty(w, r) {
+	if r.Method != http.MethodGet && r.Method != http.MethodHead {
+		w.Header().Set("Allow", "GET, HEAD, DELETE")
+		writeProblem(w, r, http.StatusMethodNotAllowed, "method_not_allowed")
+		return
+	}
+	if !accountQueryEmpty(w, r) {
 		return
 	}
 	writeJSON(w, r, http.StatusOK, user)
@@ -55,7 +68,14 @@ func (api *api) organizationCollection(w http.ResponseWriter, r *http.Request, u
 }
 
 func (api *api) organizationResource(w http.ResponseWriter, r *http.Request, user accounts.User) {
-	if !accountResourceMethod(w, r) {
+	switch r.Method {
+	case http.MethodDelete:
+		api.deleteOrganization(w, r, user)
+		return
+	case http.MethodGet, http.MethodHead, http.MethodPatch:
+	default:
+		w.Header().Set("Allow", "GET, HEAD, PATCH, DELETE")
+		writeProblem(w, r, http.StatusMethodNotAllowed, "method_not_allowed")
 		return
 	}
 	id, ok := readResourceID(w, r, "organization_id")
@@ -185,17 +205,6 @@ func (api *api) deleteProject(w http.ResponseWriter, r *http.Request, user accou
 	writeJSON(w, r, http.StatusAccepted, deletion)
 }
 
-func accountResourceMethod(w http.ResponseWriter, r *http.Request) bool {
-	switch r.Method {
-	case http.MethodGet, http.MethodHead, http.MethodPatch:
-		return true
-	default:
-		w.Header().Set("Allow", "GET, HEAD, PATCH")
-		writeProblem(w, r, http.StatusMethodNotAllowed, "method_not_allowed")
-		return false
-	}
-}
-
 func accountQueryEmpty(w http.ResponseWriter, r *http.Request) bool {
 	if r.URL.RawQuery != "" {
 		writeProblem(w, r, http.StatusBadRequest, "invalid_account_request")
@@ -241,6 +250,10 @@ func emptyAccountAction(w http.ResponseWriter, r *http.Request) bool {
 
 func (api *api) accountProblem(w http.ResponseWriter, r *http.Request, err error) {
 	switch {
+	case errors.Is(err, accounts.ErrAccountDeleted):
+		writeProblem(w, r, http.StatusGone, "account_deleted")
+	case errors.Is(err, accounts.ErrOwnsOrganizations):
+		writeProblem(w, r, http.StatusConflict, "account_owns_organizations")
 	case errors.Is(err, accounts.ErrNotFound):
 		writeProblem(w, r, http.StatusNotFound, "account_resource_not_found")
 	case errors.Is(err, accounts.ErrForbidden):

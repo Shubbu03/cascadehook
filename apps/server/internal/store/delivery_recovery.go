@@ -33,8 +33,9 @@ func (s *Store) ReleaseWorkerLeases(ctx context.Context, ownerID uuid.UUID) (int
 		}
 		var remaining bool
 		if err := s.pool.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM deliveries d
-			JOIN projects p ON p.id = d.project_id WHERE d.state = 'leased' AND d.lease_owner = $1
-			AND p.deletion_requested_at IS NULL)`, ownerID).Scan(&remaining); err != nil {
+			JOIN projects p ON p.id = d.project_id JOIN organizations o ON o.id = p.organization_id
+			WHERE d.state = 'leased' AND d.lease_owner = $1
+			AND p.deletion_requested_at IS NULL AND o.deletion_requested_at IS NULL)`, ownerID).Scan(&remaining); err != nil {
 			return total, fmt.Errorf("check remaining worker leases: %w", err)
 		}
 		if !remaining {
@@ -69,9 +70,11 @@ func (s *Store) releaseDeliveryBatch(ctx context.Context, ownerID uuid.UUID, lim
 	}
 	rows, err := tx.Query(ctx, `SELECT `+lockedDeliveryColumns+deliveryJoins+`
 		JOIN projects p ON p.id = d.project_id
-		WHERE d.state = 'leased' AND p.deletion_requested_at IS NULL AND `+predicate+`
+		JOIN organizations o ON o.id = p.organization_id
+		WHERE d.state = 'leased' AND p.deletion_requested_at IS NULL
+		AND o.deletion_requested_at IS NULL AND `+predicate+`
 		ORDER BY d.lease_expires_at, d.id LIMIT $1
-		FOR UPDATE OF d SKIP LOCKED FOR SHARE OF p, e SKIP LOCKED`, args...)
+		FOR UPDATE OF d SKIP LOCKED FOR SHARE OF o, p, e SKIP LOCKED`, args...)
 	if err != nil {
 		return 0, fmt.Errorf("select recoverable delivery leases: %w", err)
 	}

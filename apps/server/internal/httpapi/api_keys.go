@@ -276,6 +276,8 @@ func emptyAPIKeyAction(w http.ResponseWriter, r *http.Request) bool {
 
 func (api *api) apiKeyProblem(w http.ResponseWriter, r *http.Request, err error) {
 	switch {
+	case errors.Is(err, accounts.ErrAccountDeleted):
+		api.accountProblem(w, r, err)
 	case errors.Is(err, controls.ErrSuspended), errors.Is(err, controls.ErrProjectNotFound):
 		api.projectControlProblem(w, r, err)
 	case errors.Is(err, accounts.ErrNotFound), errors.Is(err, accounts.ErrForbidden):

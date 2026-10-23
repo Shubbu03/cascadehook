@@ -23,15 +23,16 @@ func (s *Store) ListMemberships(
 	if _, err := s.GetOrganization(ctx, userID, organizationID); err != nil {
 		return nil, err
 	}
-	query := `SELECT organization_id, user_id, role, created_at, updated_at
-		FROM memberships WHERE organization_id = $1`
+	query := `SELECT m.organization_id, m.user_id, m.role, m.created_at, m.updated_at
+		FROM memberships m JOIN users u ON u.id = m.user_id
+		WHERE m.organization_id = $1 AND u.deletion_requested_at IS NULL`
 	args := []any{organizationID}
 	if options.Before != nil {
 		args = append(args, options.Before.CreatedAt, options.Before.ID)
-		query += ` AND (created_at, user_id) < ($2, $3)`
+		query += ` AND (m.created_at, m.user_id) < ($2, $3)`
 	}
 	args = append(args, options.Limit+1)
-	query += fmt.Sprintf(` ORDER BY created_at DESC, user_id DESC LIMIT $%d`, len(args))
+	query += fmt.Sprintf(` ORDER BY m.created_at DESC, m.user_id DESC LIMIT $%d`, len(args))
 	rows, err := s.pool.Query(ctx, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("list organization members: %w", err)
@@ -61,11 +62,29 @@ func (s *Store) AddMembership(
 	if !params.Role.Valid() {
 		return accounts.Membership{}, accounts.ErrInvalidRole
 	}
+	// Reject unauthorized callers before locking the target's user row.
+	// Authorization is rechecked under the organization lock below.
+	organization, err := s.GetOrganization(ctx, actorID, params.OrganizationID)
+	if err != nil {
+		return accounts.Membership{}, err
+	}
+	if organization.Role != accounts.Owner {
+		return accounts.Membership{}, accounts.ErrForbidden
+	}
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
 		return accounts.Membership{}, fmt.Errorf("begin membership creation: %w", err)
 	}
 	defer rollbackTransaction(tx)
+	targetErr := lockActiveUsers(
+		ctx,
+		tx,
+		actorID,
+		params.UserID,
+	)
+	if targetErr != nil && !errors.Is(targetErr, accounts.ErrUserNotFound) {
+		return accounts.Membership{}, targetErr
+	}
 	role, err := lockOrganizationAccess(ctx, tx, actorID, params.OrganizationID)
 	if err != nil {
 		return accounts.Membership{}, err
@@ -73,13 +92,9 @@ func (s *Store) AddMembership(
 	if role != accounts.Owner {
 		return accounts.Membership{}, accounts.ErrForbidden
 	}
-	var exists bool
-	err = tx.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM users WHERE id = $1)`, params.UserID).Scan(&exists)
-	if err != nil {
-		return accounts.Membership{}, fmt.Errorf("check membership user: %w", err)
-	}
-	if !exists {
-		return accounts.Membership{}, accounts.ErrUserNotFound
+	// Preserve authorization before disclosing whether a target account exists.
+	if targetErr != nil {
+		return accounts.Membership{}, targetErr
 	}
 	var member accounts.Membership
 	err = scanMembership(tx.QueryRow(ctx, `INSERT INTO memberships (organization_id, user_id, role)
@@ -106,17 +121,36 @@ func (s *Store) ChangeMembershipRole(
 	if !params.Role.Valid() {
 		return accounts.Membership{}, accounts.ErrInvalidRole
 	}
+	organization, err := s.GetOrganization(ctx, actorID, params.OrganizationID)
+	if err != nil {
+		return accounts.Membership{}, err
+	}
+	if organization.Role != accounts.Owner {
+		return accounts.Membership{}, accounts.ErrForbidden
+	}
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
 		return accounts.Membership{}, fmt.Errorf("begin membership update: %w", err)
 	}
 	defer rollbackTransaction(tx)
+	targetErr := lockActiveUsers(
+		ctx,
+		tx,
+		actorID,
+		params.UserID,
+	)
+	if targetErr != nil && !errors.Is(targetErr, accounts.ErrUserNotFound) {
+		return accounts.Membership{}, targetErr
+	}
 	role, err := lockOrganizationAccess(ctx, tx, actorID, params.OrganizationID)
 	if err != nil {
 		return accounts.Membership{}, err
 	}
 	if role != accounts.Owner {
 		return accounts.Membership{}, accounts.ErrForbidden
+	}
+	if targetErr != nil {
+		return accounts.Membership{}, targetErr
 	}
 	if params.Role != accounts.Owner {
 		if err := retainOrganizationOwner(ctx, tx, params.OrganizationID, params.UserID); err != nil {
@@ -141,17 +175,36 @@ func (s *Store) ChangeMembershipRole(
 }
 
 func (s *Store) RemoveMembership(ctx context.Context, actorID, organizationID, userID uuid.UUID) error {
+	organization, err := s.GetOrganization(ctx, actorID, organizationID)
+	if err != nil {
+		return err
+	}
+	if organization.Role != accounts.Owner && actorID != userID {
+		return accounts.ErrForbidden
+	}
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
 		return fmt.Errorf("begin membership removal: %w", err)
 	}
 	defer rollbackTransaction(tx)
+	targetErr := lockActiveUsers(
+		ctx,
+		tx,
+		actorID,
+		userID,
+	)
+	if targetErr != nil && !errors.Is(targetErr, accounts.ErrUserNotFound) {
+		return targetErr
+	}
 	role, err := lockOrganizationAccess(ctx, tx, actorID, organizationID)
 	if err != nil {
 		return err
 	}
 	if role != accounts.Owner && actorID != userID {
 		return accounts.ErrForbidden
+	}
+	if targetErr != nil {
+		return targetErr
 	}
 	if err := retainOrganizationOwner(ctx, tx, organizationID, userID); err != nil {
 		return err
@@ -186,8 +239,8 @@ func retainOrganizationOwner(ctx context.Context, tx pgx.Tx, organizationID, use
 		return nil
 	}
 	var anotherOwner bool
-	err = tx.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM memberships
-		WHERE organization_id = $1 AND user_id <> $2 AND role = 'owner')`,
+	err = tx.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM memberships m JOIN users u ON u.id = m.user_id
+		WHERE m.organization_id = $1 AND m.user_id <> $2 AND m.role = 'owner' AND u.deletion_requested_at IS NULL)`,
 		organizationID, userID).Scan(&anotherOwner)
 	if err != nil {
 		return fmt.Errorf("check remaining organization owners: %w", err)

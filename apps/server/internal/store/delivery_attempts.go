@@ -37,12 +37,24 @@ const deliveryJoins = ` FROM deliveries d
 func lockDeliveryProject(ctx context.Context, tx pgx.Tx, deliveryID uuid.UUID) error {
 	var id uuid.UUID
 	err := tx.QueryRow(ctx, `SELECT p.id FROM projects p JOIN deliveries d ON d.project_id = p.id
-		WHERE d.id = $1 AND p.deletion_requested_at IS NULL FOR SHARE OF p`, deliveryID).Scan(&id)
+		JOIN organizations o ON o.id = p.organization_id
+		WHERE d.id = $1 AND p.deletion_requested_at IS NULL AND o.deletion_requested_at IS NULL
+		FOR SHARE OF o`, deliveryID).Scan(&id)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return deliveries.ErrLeaseLost
 	}
 	if err != nil {
 		return fmt.Errorf("lock delivery project: %w", err)
+	}
+	// Recheck the project after its organization lock; project deletion can
+	// commit independently while sharing that organization lock.
+	err = tx.QueryRow(ctx, `SELECT id FROM projects WHERE id = $1
+		AND deletion_requested_at IS NULL FOR SHARE`, id).Scan(&id)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return deliveries.ErrLeaseLost
+	}
+	if err != nil {
+		return fmt.Errorf("lock live delivery project: %w", err)
 	}
 	return nil
 }

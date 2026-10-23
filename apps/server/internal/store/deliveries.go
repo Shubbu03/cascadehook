@@ -39,14 +39,16 @@ func (s *Store) ClaimDeliveries(ctx context.Context, ownerID uuid.UUID, limit in
 		JOIN endpoints e ON e.project_id = d.project_id AND e.id = d.endpoint_id
 		JOIN events v ON v.project_id = d.project_id AND v.id = d.event_id
 		JOIN projects p ON p.id = d.project_id
+		JOIN organizations o ON o.id = p.organization_id
 		WHERE d.state = 'pending' AND d.next_attempt_at <= now()
 		AND p.suspended_at IS NULL AND p.deletion_requested_at IS NULL
+		AND o.deletion_requested_at IS NULL
 		AND v.purge_started_at IS NULL
 		AND e.enabled AND e.verified_at IS NOT NULL AND e.deleted_at IS NULL AND e.signing_secret IS NOT NULL
 		AND d.attempt_count < $2 AND d.retry_deadline > now()
 		AND NOT (d.endpoint_id = ANY($3::uuid[]))
 		ORDER BY d.next_attempt_at, d.id LIMIT $1
-		FOR UPDATE OF d SKIP LOCKED FOR SHARE OF p, e SKIP LOCKED`,
+		FOR UPDATE OF d SKIP LOCKED FOR SHARE OF o, p, e SKIP LOCKED`,
 		limit, deliveries.MaxAttempts, excludedIDs)
 	if err != nil {
 		return nil, fmt.Errorf("select due deliveries: %w", err)

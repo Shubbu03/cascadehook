@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"cascadehook/internal/auth"
+	"cascadehook/internal/clerk"
 	"cascadehook/internal/deliveries"
 	"cascadehook/internal/limits"
 	"cascadehook/internal/retention"
@@ -46,7 +47,8 @@ type WorkerConfig struct {
 
 type JanitorConfig struct {
 	Config
-	Retention retention.Config
+	Retention     retention.Config
+	ClerkDeletion clerk.Config
 }
 
 // Load reads the shared environment variables once at startup. An explicitly
@@ -212,8 +214,8 @@ func signingEncryptionKey() ([]byte, error) {
 	return key, nil
 }
 
-// Cleanup needs only database access; signing and Clerk configuration are not
-// required. The job is one-shot, with explicit row, operation, and run bounds.
+// Clerk configuration is optional for history cleanup, but required to finish
+// requested account erasure. Signing credentials are not used by this job.
 func LoadJanitor() (JanitorConfig, error) {
 	shared, err := Load()
 	if err != nil {
@@ -252,6 +254,12 @@ func LoadJanitor() (JanitorConfig, error) {
 		}
 	}
 	if err := cfg.Retention.Validate(); err != nil {
+		return JanitorConfig{}, err
+	}
+	cfg.ClerkDeletion = clerk.Config{
+		IssuerURL: os.Getenv("CLERK_ISSUER_URL"), SecretKey: os.Getenv("CLERK_SECRET_KEY"),
+	}
+	if err := cfg.ClerkDeletion.Validate(); err != nil {
 		return JanitorConfig{}, err
 	}
 	return cfg, nil

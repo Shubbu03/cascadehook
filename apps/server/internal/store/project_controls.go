@@ -29,7 +29,8 @@ func scanProjectState(row pgx.Row, state *controls.ProjectState) error {
 func (s *Store) GetProjectState(ctx context.Context, projectID uuid.UUID) (controls.ProjectState, error) {
 	var state controls.ProjectState
 	err := scanProjectState(s.pool.QueryRow(ctx, `SELECT `+projectStateColumns+`
-		FROM projects WHERE id = $1 AND deletion_requested_at IS NULL`,
+		FROM projects WHERE id = $1 AND deletion_requested_at IS NULL
+		AND EXISTS (SELECT 1 FROM organizations o WHERE o.id = projects.organization_id AND o.deletion_requested_at IS NULL)`,
 		projectID), &state)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return controls.ProjectState{}, controls.ErrProjectNotFound
@@ -57,9 +58,14 @@ func (s *Store) ChangeProjectControl(
 		return ProjectControlResult{}, fmt.Errorf("begin project control change: %w", err)
 	}
 	defer rollbackTransaction(tx)
+	if err := lockProjectOrganization(ctx, tx, change.ProjectID); err != nil {
+		return ProjectControlResult{}, err
+	}
 	var state controls.ProjectState
 	err = scanProjectState(tx.QueryRow(ctx, `SELECT `+projectStateColumns+`
-		FROM projects WHERE id = $1 AND deletion_requested_at IS NULL FOR UPDATE`,
+		FROM projects WHERE id = $1 AND deletion_requested_at IS NULL
+		AND EXISTS (SELECT 1 FROM organizations o WHERE o.id = projects.organization_id AND o.deletion_requested_at IS NULL)
+		FOR UPDATE`,
 		change.ProjectID), &state)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return ProjectControlResult{}, controls.ErrProjectNotFound
@@ -168,9 +174,14 @@ func (s *Store) ListProjectControlActions(
 // Take the project lock before endpoint/delivery child locks. Suspension and
 // deletion take the exclusive counterpart to order acceptance/dispatch writes.
 func lockProjectSuspension(ctx context.Context, tx pgx.Tx, projectID uuid.UUID) (bool, error) {
+	if err := lockProjectOrganization(ctx, tx, projectID); err != nil {
+		return false, err
+	}
 	var suspended bool
 	err := tx.QueryRow(ctx, `SELECT suspended_at IS NOT NULL FROM projects
-		WHERE id = $1 AND deletion_requested_at IS NULL FOR SHARE`,
+		WHERE id = $1 AND deletion_requested_at IS NULL
+		AND EXISTS (SELECT 1 FROM organizations o WHERE o.id = projects.organization_id AND o.deletion_requested_at IS NULL)
+		FOR SHARE`,
 		projectID).Scan(&suspended)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return false, controls.ErrProjectNotFound
@@ -186,7 +197,8 @@ func lockProjectSuspension(ctx context.Context, tx pgx.Tx, projectID uuid.UUID) 
 func requireActiveProject(ctx context.Context, tx pgx.Tx, projectID uuid.UUID) error {
 	var suspended bool
 	err := tx.QueryRow(ctx, `SELECT suspended_at IS NOT NULL FROM projects
-		WHERE id = $1 AND deletion_requested_at IS NULL`,
+		WHERE id = $1 AND deletion_requested_at IS NULL
+		AND EXISTS (SELECT 1 FROM organizations o WHERE o.id = projects.organization_id AND o.deletion_requested_at IS NULL)`,
 		projectID).Scan(&suspended)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return controls.ErrProjectNotFound

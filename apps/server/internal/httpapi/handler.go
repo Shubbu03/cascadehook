@@ -97,7 +97,7 @@ func NewHandler(options HandlerOptions) (http.Handler, error) {
 	handle("/v1/api-keys/{api_key_id}", api.withProjectKey(api.apiKeyResource))
 	handle("/v1/api-keys/{api_key_id}/rotate", api.withProjectKey(api.rotateAPIKey))
 	handle("/v1/project-status", api.withProjectKey(api.projectStatus))
-	handle("/v1/me", api.withSession(api.currentUser))
+	handle("/v1/me", api.accountResource)
 	handle("/v1/organizations", api.withSession(api.organizationCollection))
 	handle("/v1/organizations/{organization_id}", api.withSession(api.organizationResource))
 	handle("/v1/organizations/{organization_id}/members", api.withSession(api.membershipCollection))

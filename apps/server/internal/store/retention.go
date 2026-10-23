@@ -42,6 +42,13 @@ func (s *Store) RetentionClock(ctx context.Context) (time.Time, error) {
 	if _, err := s.pool.Exec(ctx, `SELECT deletion_requested_at FROM projects LIMIT 0`); err != nil {
 		return time.Time{}, fmt.Errorf("project deletion schema unavailable; apply migrations first: %w", err)
 	}
+	if _, err := s.pool.Exec(ctx, `SELECT o.deletion_requested_at, u.provider_deleted_at
+		FROM organizations o CROSS JOIN users u LIMIT 0`); err != nil {
+		return time.Time{}, fmt.Errorf("account lifecycle schema unavailable; apply migrations first: %w", err)
+	}
+	if _, err := s.pool.Exec(ctx, `SELECT identity_hash FROM deleted_account_identities LIMIT 0`); err != nil {
+		return time.Time{}, fmt.Errorf("identity suppression schema unavailable; apply migrations first: %w", err)
+	}
 	var now time.Time
 	if err := s.pool.QueryRow(ctx, `SELECT clock_timestamp()`).Scan(&now); err != nil {
 		return time.Time{}, fmt.Errorf("read cleanup database time: %w", err)
@@ -66,6 +73,22 @@ func (s *Store) PreviewRetentionBatch(ctx context.Context, batch retention.Batch
 	}
 	if batch.Phase == retention.DeleteProjects {
 		return cleanupProjectData(
+			ctx,
+			tx,
+			batch.Limit,
+			true,
+		)
+	}
+	if batch.Phase == retention.DeleteOrganizations {
+		return cleanupOrganizationData(
+			ctx,
+			tx,
+			batch.Limit,
+			true,
+		)
+	}
+	if batch.Phase == retention.DeleteAccounts {
+		return cleanupAccountData(
 			ctx,
 			tx,
 			batch.Limit,
@@ -113,6 +136,22 @@ func (s *Store) CleanupRetentionBatch(ctx context.Context, batch retention.Batch
 			batch.Limit,
 			false,
 		)
+	case retention.DeleteOrganizations:
+		affected, err = cleanupOrganizationData(
+			ctx,
+			tx,
+			batch.Limit,
+			false,
+		)
+	case retention.DeleteAccounts:
+		affected, err = cleanupAccountData(
+			ctx,
+			tx,
+			batch.Limit,
+			false,
+		)
+	case retention.DeleteProviderAccounts:
+		return retention.BatchResult{}, fmt.Errorf("provider cleanup must run outside a database transaction")
 	default:
 		selection := retentionCandidates(batch)
 		// Table, aliases, joins, and matching keys come only from the fixed
@@ -177,6 +216,14 @@ func retireEventGroups(ctx context.Context, tx pgx.Tx, batch retention.Batch) (i
 
 func retentionCandidates(batch retention.Batch) retentionSelection {
 	switch batch.Phase {
+	case retention.DeleteProviderAccounts:
+		return retentionSelection{
+			query: `SELECT u.id FROM users u WHERE u.deletion_requested_at IS NOT NULL AND u.provider_deleted_at IS NULL
+				AND u.provider_delete_after <= statement_timestamp()
+				AND (u.provider_delete_token IS NULL OR u.provider_delete_lease_expires_at <= statement_timestamp())
+				ORDER BY u.provider_delete_after, u.id LIMIT $1`,
+			args: []any{batch.Limit},
+		}
 	case retention.ExpireKeys:
 		return retentionSelection{
 			query: `SELECT k.project_id, k.idempotency_key FROM event_idempotency_keys k

@@ -27,7 +27,8 @@ func (s *Store) GetDelivery(ctx context.Context, projectID, id uuid.UUID) (deliv
 	err := scanDelivery(s.pool.QueryRow(ctx, `SELECT `+deliveryReadColumns+`
 		FROM deliveries d JOIN events v ON v.project_id = d.project_id AND v.id = d.event_id
 		WHERE d.project_id = $1 AND d.id = $2 AND v.purge_started_at IS NULL
-		AND EXISTS (SELECT 1 FROM projects p WHERE p.id = d.project_id AND p.deletion_requested_at IS NULL)`, projectID, id), &delivery)
+		AND EXISTS (SELECT 1 FROM projects p WHERE p.id = d.project_id AND p.deletion_requested_at IS NULL
+		AND EXISTS (SELECT 1 FROM organizations o WHERE o.id = p.organization_id AND o.deletion_requested_at IS NULL))`, projectID, id), &delivery)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return deliveries.Delivery{}, deliveries.ErrNotFound
 	}
@@ -50,7 +51,8 @@ func (s *Store) ListDeliveries(ctx context.Context, projectID uuid.UUID, options
 	query := `SELECT ` + deliveryReadColumns + ` FROM deliveries d
 		JOIN events v ON v.project_id = d.project_id AND v.id = d.event_id
 		WHERE d.project_id = $1 AND v.purge_started_at IS NULL
-		AND EXISTS (SELECT 1 FROM projects p WHERE p.id = d.project_id AND p.deletion_requested_at IS NULL)`
+		AND EXISTS (SELECT 1 FROM projects p WHERE p.id = d.project_id AND p.deletion_requested_at IS NULL
+		AND EXISTS (SELECT 1 FROM organizations o WHERE o.id = p.organization_id AND o.deletion_requested_at IS NULL))`
 	args := []any{projectID}
 	// Only fixed column names are assembled; every request value is bound.
 	if options.EventID != nil {
@@ -102,7 +104,8 @@ func (s *Store) ListDeliveryAttempts(ctx context.Context, projectID, deliveryID 
 		ctx,
 		`SELECT d.id FROM deliveries d JOIN events v ON v.project_id = d.project_id AND v.id = d.event_id
 		WHERE d.project_id = $1 AND d.id = $2 AND v.purge_started_at IS NULL
-		AND EXISTS (SELECT 1 FROM projects p WHERE p.id = d.project_id AND p.deletion_requested_at IS NULL)`,
+		AND EXISTS (SELECT 1 FROM projects p WHERE p.id = d.project_id AND p.deletion_requested_at IS NULL
+		AND EXISTS (SELECT 1 FROM organizations o WHERE o.id = p.organization_id AND o.deletion_requested_at IS NULL))`,
 		projectID,
 		deliveryID,
 	).Scan(&id)

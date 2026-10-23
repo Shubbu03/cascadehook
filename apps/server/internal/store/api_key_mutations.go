@@ -190,6 +190,9 @@ func lockAPIKeyMutation(ctx context.Context, tx pgx.Tx, actor auth.Principal, ta
 			return auth.APIKey{}, auth.APIKey{}, time.Time{}, err
 		}
 	}
+	if err := lockProjectOrganization(ctx, tx, actor.ProjectID); err != nil {
+		return auth.APIKey{}, auth.APIKey{}, time.Time{}, err
+	}
 	var projectID uuid.UUID
 	err := tx.QueryRow(ctx, `SELECT id FROM projects
 		WHERE id = $1 AND deletion_requested_at IS NULL FOR UPDATE`, actor.ProjectID).Scan(&projectID)

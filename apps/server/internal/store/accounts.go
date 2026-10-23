@@ -15,9 +15,9 @@ import (
 
 func (s *Store) EnsureUser(ctx context.Context, identity auth.SessionIdentity) (accounts.User, error) {
 	var user accounts.User
-	err := s.pool.QueryRow(ctx, `SELECT id, created_at FROM users
+	err := s.pool.QueryRow(ctx, `SELECT id, created_at, deletion_requested_at FROM users
 		WHERE identity_issuer = $1 AND identity_subject = $2`, identity.Issuer, identity.Subject,
-	).Scan(&user.ID, &user.CreatedAt)
+	).Scan(&user.ID, &user.CreatedAt, &user.DeletionRequestedAt)
 	if err == nil {
 		return user, nil
 	}
@@ -28,15 +28,35 @@ func (s *Store) EnsureUser(ctx context.Context, identity auth.SessionIdentity) (
 	if err != nil {
 		return accounts.User{}, fmt.Errorf("generate user ID: %w", err)
 	}
-	// The unique provider identity resolves concurrent first requests to one
-	// account. Existing users take the read-only path above on later requests.
-	err = s.pool.QueryRow(ctx, `INSERT INTO users (id, identity_issuer, identity_subject)
+	tx, err := s.pool.BeginTx(ctx, pgx.TxOptions{IsoLevel: pgx.ReadCommitted})
+	if err != nil {
+		return accounts.User{}, fmt.Errorf("begin identity provisioning: %w", err)
+	}
+	defer rollbackTransaction(tx)
+	digest := auth.IdentityDigest(identity)
+	if err := lockIdentity(ctx, tx, digest); err != nil {
+		return accounts.User{}, err
+	}
+	var suppressed bool
+	if err := tx.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM deleted_account_identities WHERE identity_hash = $1)`,
+		digest[:]).Scan(&suppressed); err != nil {
+		return accounts.User{}, fmt.Errorf("check identity suppression: %w", err)
+	}
+	if suppressed {
+		return accounts.User{}, accounts.ErrAccountDeleted
+	}
+	// Provisioning and deletion serialize on the identity. An old request
+	// cannot recreate the account after the janitor removes its user row.
+	err = tx.QueryRow(ctx, `INSERT INTO users (id, identity_issuer, identity_subject)
 		VALUES ($1,$2,$3) ON CONFLICT (identity_issuer, identity_subject)
-		DO UPDATE SET identity_subject = EXCLUDED.identity_subject RETURNING id, created_at`,
+		DO UPDATE SET identity_subject = EXCLUDED.identity_subject RETURNING id, created_at, deletion_requested_at`,
 		id, identity.Issuer, identity.Subject,
-	).Scan(&user.ID, &user.CreatedAt)
+	).Scan(&user.ID, &user.CreatedAt, &user.DeletionRequestedAt)
 	if err != nil {
 		return accounts.User{}, fmt.Errorf("provision account identity: %w", err)
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return accounts.User{}, fmt.Errorf("commit identity provisioning: %w", err)
 	}
 	return user, nil
 }
@@ -44,8 +64,9 @@ func (s *Store) EnsureUser(ctx context.Context, identity auth.SessionIdentity) (
 func (s *Store) GetOrganization(ctx context.Context, userID, id uuid.UUID) (accounts.Organization, error) {
 	var organization accounts.Organization
 	err := scanOrganization(s.pool.QueryRow(ctx, `SELECT o.id, o.name, m.role, o.created_at, o.updated_at
-		FROM organizations o JOIN memberships m ON m.organization_id = o.id
-		WHERE o.id = $1 AND m.user_id = $2`, id, userID), &organization)
+		FROM organizations o JOIN memberships m ON m.organization_id = o.id JOIN users u ON u.id = m.user_id
+		WHERE o.id = $1 AND m.user_id = $2 AND o.deletion_requested_at IS NULL
+		AND u.deletion_requested_at IS NULL`, id, userID), &organization)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return accounts.Organization{}, accounts.ErrNotFound
 	}
@@ -64,7 +85,8 @@ func (s *Store) ListOrganizations(
 		return nil, err
 	}
 	query := `SELECT o.id, o.name, m.role, o.created_at, o.updated_at
-		FROM organizations o JOIN memberships m ON m.organization_id = o.id WHERE m.user_id = $1`
+		FROM organizations o JOIN memberships m ON m.organization_id = o.id JOIN users u ON u.id = m.user_id
+		WHERE m.user_id = $1 AND o.deletion_requested_at IS NULL AND u.deletion_requested_at IS NULL`
 	args := []any{userID}
 	if options.Before != nil {
 		args = append(args, options.Before.CreatedAt, options.Before.ID)
@@ -111,6 +133,9 @@ func (s *Store) CreateOrganization(ctx context.Context, userID uuid.UUID, name s
 		return accounts.Organization{}, fmt.Errorf("begin organization creation: %w", err)
 	}
 	defer rollbackTransaction(tx)
+	if err := lockActiveUsers(ctx, tx, userID); err != nil {
+		return accounts.Organization{}, err
+	}
 	organization := accounts.Organization{ID: id, Name: name, Role: accounts.Owner}
 	err = tx.QueryRow(ctx, `INSERT INTO organizations (id, name) VALUES ($1, $2)
 		RETURNING created_at, updated_at`, id, name).Scan(&organization.CreatedAt, &organization.UpdatedAt)
@@ -162,15 +187,19 @@ func (s *Store) RenameOrganization(
 	return organization, nil
 }
 
-// Organization writes serialize before checking membership. A separate query
-// after the parent lock observes role changes committed while the lock waited.
+// Active-user locks precede organization writes. A separate query after the
+// parent lock observes role changes committed while that lock waited.
 func lockOrganizationAccess(
 	ctx context.Context,
 	tx pgx.Tx,
 	userID, organizationID uuid.UUID,
 ) (accounts.Role, error) {
+	if err := lockActiveUsers(ctx, tx, userID); err != nil {
+		return "", err
+	}
 	var id uuid.UUID
-	err := tx.QueryRow(ctx, `SELECT id FROM organizations WHERE id = $1 FOR UPDATE`, organizationID).Scan(&id)
+	err := tx.QueryRow(ctx, `SELECT id FROM organizations
+		WHERE id = $1 AND deletion_requested_at IS NULL FOR UPDATE`, organizationID).Scan(&id)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return "", accounts.ErrNotFound
 	}
@@ -182,7 +211,8 @@ func lockOrganizationAccess(
 
 func organizationRole(ctx context.Context, tx pgx.Tx, userID, organizationID uuid.UUID) (accounts.Role, error) {
 	var role accounts.Role
-	err := tx.QueryRow(ctx, `SELECT role FROM memberships WHERE organization_id = $1 AND user_id = $2`,
+	err := tx.QueryRow(ctx, `SELECT m.role FROM memberships m JOIN users u ON u.id = m.user_id
+		WHERE m.organization_id = $1 AND m.user_id = $2 AND u.deletion_requested_at IS NULL`,
 		organizationID, userID).Scan(&role)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return "", accounts.ErrNotFound

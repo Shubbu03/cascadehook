@@ -17,7 +17,9 @@ func (s *Store) GetProject(ctx context.Context, userID, id uuid.UUID) (accounts.
 	var project accounts.Project
 	err := scanProject(s.pool.QueryRow(ctx, `SELECT p.id, p.organization_id, p.name, m.role, p.created_at, p.updated_at
 		FROM projects p JOIN memberships m ON m.organization_id = p.organization_id
-		WHERE p.id = $1 AND m.user_id = $2 AND p.deletion_requested_at IS NULL`, id, userID), &project)
+		JOIN organizations o ON o.id = p.organization_id JOIN users u ON u.id = m.user_id
+		WHERE p.id = $1 AND m.user_id = $2 AND p.deletion_requested_at IS NULL
+		AND o.deletion_requested_at IS NULL AND u.deletion_requested_at IS NULL`, id, userID), &project)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return accounts.Project{}, accounts.ErrNotFound
 	}
@@ -40,7 +42,9 @@ func (s *Store) ListProjects(
 	}
 	query := `SELECT p.id, p.organization_id, p.name, m.role, p.created_at, p.updated_at
 		FROM projects p JOIN memberships m ON m.organization_id = p.organization_id
-		WHERE p.organization_id = $1 AND m.user_id = $2 AND p.deletion_requested_at IS NULL`
+		JOIN organizations o ON o.id = p.organization_id JOIN users u ON u.id = m.user_id
+		WHERE p.organization_id = $1 AND m.user_id = $2 AND p.deletion_requested_at IS NULL
+		AND o.deletion_requested_at IS NULL AND u.deletion_requested_at IS NULL`
 	args := []any{organizationID, userID}
 	if options.Before != nil {
 		args = append(args, options.Before.CreatedAt, options.Before.ID)
@@ -137,12 +141,18 @@ func (s *Store) RenameProject(ctx context.Context, userID, id uuid.UUID, name st
 	return project, nil
 }
 
-// Human credential/replay mutations hold the organization before taking any
-// project or child locks. Membership changes require an exclusive organization
-// lock, so a removed/demoted user cannot pass the transactional recheck later.
+// Human mutations hold the active user, then the organization, before project
+// or child locks. Account deletion and membership changes take the exclusive
+// counterparts, preventing a removed/deleted actor from passing the recheck.
 func lockHumanProjectAccess(ctx context.Context, tx pgx.Tx, actor auth.Principal) (accounts.Role, error) {
 	if !actor.Valid() || actor.UserID == uuid.Nil {
 		return "", accounts.ErrForbidden
+	}
+	if err := lockActiveUsers(ctx, tx, actor.UserID); err != nil {
+		if errors.Is(err, accounts.ErrUserNotFound) {
+			return "", accounts.ErrAccountDeleted
+		}
+		return "", err
 	}
 	var organizationID uuid.UUID
 	err := tx.QueryRow(ctx, `SELECT organization_id FROM projects WHERE id = $1`, actor.ProjectID).Scan(&organizationID)
@@ -153,7 +163,8 @@ func lockHumanProjectAccess(ctx context.Context, tx pgx.Tx, actor auth.Principal
 		return "", fmt.Errorf("find project organization: %w", err)
 	}
 	var id uuid.UUID
-	err = tx.QueryRow(ctx, `SELECT id FROM organizations WHERE id = $1 FOR SHARE`, organizationID).Scan(&id)
+	err = tx.QueryRow(ctx, `SELECT id FROM organizations
+		WHERE id = $1 AND deletion_requested_at IS NULL FOR SHARE`, organizationID).Scan(&id)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return "", accounts.ErrNotFound
 	}
