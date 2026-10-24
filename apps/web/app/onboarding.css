@@ -1,0 +1,143 @@
+@layer components {
+  .onboarding-page {
+    position: relative;
+    isolation: isolate;
+    display: flex;
+    flex-direction: column;
+    min-height: 100svh;
+  }
+  .onboarding-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    min-height: 88px;
+  }
+  .onboarding-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+  }
+  .onboarding-header .text-link {
+    min-height: 44px;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  .onboarding-body {
+    display: grid;
+    align-items: center;
+    flex: 1;
+    padding-block: 36px 88px;
+  }
+  .onboarding-content {
+    width: min(460px, calc(100% - 40px));
+    margin-inline: auto;
+  }
+  .onboarding-progress {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 32px;
+    padding: 0;
+    margin: 0 0 28px;
+    list-style: none;
+  }
+  .onboarding-progress li {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  .onboarding-progress li > span {
+    display: grid;
+    place-items: center;
+    width: 25px;
+    height: 25px;
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    font-family: var(--font-plex-mono), monospace;
+    font-size: 11px;
+  }
+  .onboarding-progress [aria-current="step"] {
+    color: var(--foreground);
+  }
+  .onboarding-progress [aria-current="step"] > span,
+  .onboarding-progress [data-complete="true"] > span {
+    border-color: var(--accent);
+    background: var(--accent-subtle);
+    color: var(--accent);
+  }
+  .onboarding-card {
+    padding: 32px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface);
+  }
+  .onboarding-card h1 {
+    font-size: 26px;
+    letter-spacing: -0.035em;
+  }
+  .onboarding-organization {
+    margin-top: 10px;
+    color: var(--muted);
+    font-size: 14px;
+    overflow-wrap: anywhere;
+  }
+  .onboarding-card form {
+    margin-top: 28px;
+  }
+  .onboarding-card .form-field input {
+    border: 0;
+    background: var(--surface-hover);
+    box-shadow: inset 0 -2px transparent;
+    transition: box-shadow 0.15s;
+  }
+  .onboarding-card .form-field input:focus-visible {
+    outline: none;
+    box-shadow: inset 0 -2px var(--accent);
+  }
+  .onboarding-card .button {
+    width: 100%;
+    margin-top: 6px;
+  }
+  .onboarding-skeleton {
+    height: 280px;
+  }
+}
+
+@media (forced-colors: active) {
+  .onboarding-card .form-field input {
+    border: 1px solid ButtonText;
+  }
+  .onboarding-card .form-field input:focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+  }
+}
+
+@media (max-width: 600px) {
+  .onboarding-header {
+    min-height: 80px;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .onboarding-header .brand {
+    font-size: 20px;
+  }
+  .onboarding-header-actions {
+    gap: 14px;
+  }
+  .onboarding-header .text-link {
+    font-size: 12px;
+  }
+  .onboarding-body {
+    padding-block: 24px 48px;
+  }
+  .onboarding-card {
+    padding: 24px;
+  }
+  .onboarding-card h1 {
+    font-size: 24px;
+  }
+}

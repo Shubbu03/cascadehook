@@ -24,9 +24,6 @@ export function MobileNav() {
         <ListIcon size={23} aria-hidden="true" />
       </summary>
       <nav aria-label="Mobile navigation">
-        <a href="#product" onClick={close}>
-          Product
-        </a>
         <a href="#how-it-works" onClick={close}>
           How it works
         </a>

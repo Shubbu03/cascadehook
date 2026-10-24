@@ -14,5 +14,11 @@ export default function proxy(request: NextRequest, event: NextFetchEvent) {
 }
 
 export const config = {
-  matcher: ["/sign-in(.*)", "/sign-up(.*)", "/dashboard(.*)", "/__clerk/(.*)"],
+  matcher: [
+    "/sign-in(.*)",
+    "/sign-up(.*)",
+    "/onboarding(.*)",
+    "/dashboard(.*)",
+    "/__clerk/(.*)",
+  ],
 };

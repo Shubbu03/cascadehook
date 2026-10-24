@@ -1,13 +1,8 @@
-import { auth } from "@clerk/nextjs/server";
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
-import { connection } from "next/server";
 import { Suspense } from "react";
-import {
-  WorkspaceHome,
-  WorkspaceLoading,
-} from "@/features/workspace/workspace-home";
-import { isAuthConfigured } from "@/lib/server/auth";
+import { WorkspaceHome } from "@/features/workspace/workspace-home";
+import { ContentLoading } from "@/features/workspace/loading";
+import { requireSession } from "@/lib/server/session";
 
 export const metadata: Metadata = {
   title: "Your workspace",
@@ -15,15 +10,13 @@ export const metadata: Metadata = {
 };
 
 async function AuthenticatedWorkspace() {
-  await connection();
-  if (!isAuthConfigured()) redirect("/sign-in");
-  const { userId } = await auth.protect();
-  return <WorkspaceHome key={userId} userId={userId} />;
+  await requireSession();
+  return <WorkspaceHome />;
 }
 
 export default function DashboardPage() {
   return (
-    <Suspense fallback={<WorkspaceLoading />}>
+    <Suspense fallback={<ContentLoading />}>
       <AuthenticatedWorkspace />
     </Suspense>
   );

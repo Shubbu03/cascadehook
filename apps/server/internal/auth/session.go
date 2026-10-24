@@ -52,11 +52,13 @@ func NewClerkVerifier(cfg ClerkConfig) (*ClerkVerifier, error) {
 		return nil, fmt.Errorf("CLERK_ISSUER_URL must be the exact HTTPS origin of your Clerk instance")
 	}
 	if len(cfg.AuthorizedParties) == 0 {
-		return nil, fmt.Errorf("CLERK_AUTHORIZED_PARTIES must contain at least one HTTPS application origin")
+		return nil, fmt.Errorf("CLERK_AUTHORIZED_PARTIES must contain at least one application origin")
 	}
 	for _, party := range cfg.AuthorizedParties {
-		if !validHTTPSOrigin(party) {
-			return nil, fmt.Errorf("CLERK_AUTHORIZED_PARTIES must contain only exact HTTPS application origins")
+		if !validApplicationOrigin(party) {
+			return nil, fmt.Errorf(
+				"CLERK_AUTHORIZED_PARTIES must contain only exact HTTPS origins or HTTP loopback origins",
+			)
 		}
 	}
 	key, err := jwt.ParseRSAPublicKeyFromPEM([]byte(cfg.JWTPublicKey))
@@ -114,6 +116,23 @@ func validHTTPSOrigin(value string) bool {
 		return false
 	}
 	if u.Scheme != "https" || u.Hostname() == "" || u.ForceQuery {
+		return false
+	}
+	return u.User == nil && u.Path == "" && u.RawQuery == "" && u.Fragment == "" && u.String() == value
+}
+
+func validApplicationOrigin(value string) bool {
+	if validHTTPSOrigin(value) {
+		return true
+	}
+	u, err := url.Parse(value)
+	if err != nil || len(value) > 255 {
+		return false
+	}
+	host := u.Hostname()
+	isLoopback := host == "localhost" || host == "127.0.0.1" || host == "::1"
+	isLocalHTTP := u.Scheme == "http" && isLoopback
+	if !isLocalHTTP || u.ForceQuery {
 		return false
 	}
 	return u.User == nil && u.Path == "" && u.RawQuery == "" && u.Fragment == "" && u.String() == value

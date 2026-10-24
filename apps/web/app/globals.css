@@ -1,9 +1,14 @@
 @layer theme, base, clerk, components, utilities;
 @import "tailwindcss";
 @import "./site.css";
+@import "./project.css";
+@import "./onboarding.css";
+@import "./workspace.css";
 
 :root {
   color-scheme: light;
+  --theme-light-icon: block;
+  --theme-dark-icon: none;
   --background: #f6f5f2;
   --surface: #ffffff;
   --surface-hover: #eeede9;
@@ -26,6 +31,8 @@
 
 :root[data-theme="dark"] {
   color-scheme: dark;
+  --theme-light-icon: none;
+  --theme-dark-icon: block;
   --background: #111214;
   --surface: #191a1d;
   --surface-hover: #232428;
@@ -49,6 +56,8 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]):not([data-theme="dark"]) {
     color-scheme: dark;
+    --theme-light-icon: none;
+    --theme-dark-icon: block;
     --background: #111214;
     --surface: #191a1d;
     --surface-hover: #232428;

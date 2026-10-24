@@ -1,6 +1,6 @@
 "use client";
 
-import { DesktopIcon, MoonIcon, SunIcon } from "@phosphor-icons/react";
+import { MoonIcon, SunIcon } from "@phosphor-icons/react";
 import { useSyncExternalStore } from "react";
 import { notify } from "@/lib/notify";
 import {
@@ -13,10 +13,15 @@ const changeEvent = "cascadehook-theme-change";
 
 function currentTheme(): ThemePreference {
   const value = document.documentElement.dataset.theme;
-  return isThemePreference(value) ? value : "system";
+  if (value === "light" || value === "dark") return value;
+  return window.matchMedia("(prefers-color-scheme: dark)").matches
+    ? "dark"
+    : "light";
 }
 
 function subscribe(onChange: () => void) {
+  const systemTheme = window.matchMedia("(prefers-color-scheme: dark)");
+
   function onStorage(event: StorageEvent) {
     if (event.key !== themeStorageKey && event.key !== null) return;
     document.documentElement.dataset.theme = isThemePreference(event.newValue)
@@ -26,9 +31,11 @@ function subscribe(onChange: () => void) {
   }
   window.addEventListener(changeEvent, onChange);
   window.addEventListener("storage", onStorage);
+  systemTheme.addEventListener("change", onChange);
   return () => {
     window.removeEventListener(changeEvent, onChange);
     window.removeEventListener("storage", onStorage);
+    systemTheme.removeEventListener("change", onChange);
   };
 }
 
@@ -38,35 +45,35 @@ function serverTheme(): ThemePreference {
 
 export function ThemeSwitcher() {
   const theme = useSyncExternalStore(subscribe, currentTheme, serverTheme);
-  const Icon =
-    theme === "light" ? SunIcon : theme === "dark" ? MoonIcon : DesktopIcon;
+  const label =
+    theme === "system"
+      ? "Toggle color theme"
+      : `Switch to ${theme === "dark" ? "light" : "dark"} theme`;
 
-  function changeTheme(value: string) {
-    if (!isThemePreference(value)) return;
+  function toggleTheme() {
+    const value = currentTheme() === "dark" ? "light" : "dark";
     document.documentElement.dataset.theme = value;
     window.dispatchEvent(new Event(changeEvent));
     try {
       localStorage.setItem(themeStorageKey, value);
     } catch {
       notify(
-        "Theme changed for this visit. Your browser couldn't save it.",
+        "Theme changed. Your browser couldn't save the preference.",
         "warn",
       );
     }
   }
 
   return (
-    <label className="theme-switcher">
-      <Icon size={17} aria-hidden="true" />
-      <span className="sr-only">Color theme</span>
-      <select
-        value={theme}
-        onChange={(event) => changeTheme(event.target.value)}
-      >
-        <option value="system">System</option>
-        <option value="light">Light</option>
-        <option value="dark">Dark</option>
-      </select>
-    </label>
+    <button
+      type="button"
+      className="theme-switcher"
+      onClick={toggleTheme}
+      aria-label={label}
+      title={label}
+    >
+      <SunIcon size={20} className="theme-icon-light" aria-hidden="true" />
+      <MoonIcon size={20} className="theme-icon-dark" aria-hidden="true" />
+    </button>
   );
 }

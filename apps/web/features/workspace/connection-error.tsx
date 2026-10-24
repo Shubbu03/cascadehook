@@ -6,10 +6,12 @@ export function ConnectionError({
   error,
   retry,
   pending = false,
+  title = "Let's get you reconnected.",
 }: {
   error: Error;
   retry: () => void;
   pending?: boolean;
+  title?: string;
 }) {
   return (
     <div className="connection-error" role="alert">
@@ -18,7 +20,7 @@ export function ConnectionError({
         className="text-warning"
         aria-hidden="true"
       />
-      <h2>Let&apos;s get you reconnected.</h2>
+      <h2>{title}</h2>
       <p>{error.message}</p>
       <button
         type="button"

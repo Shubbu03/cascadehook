@@ -23,16 +23,16 @@ function DeliveryExample() {
       <figcaption className="example-caption">
         <span>
           <span className="small-square" />
-          EVENT → ENDPOINT
+          Event → endpoint
         </span>
-        <span>ILLUSTRATIVE EXAMPLE</span>
+        <span>Example</span>
       </figcaption>
       <div className="example-event">
         <div className="example-event-icon">
           <LightningIcon size={24} aria-hidden="true" />
         </div>
         <div>
-          <span className="field-label">Your application publishes</span>
+          <span className="field-label">Event</span>
           <p className="mono">invoice.paid</p>
         </div>
         <span className="status status-neutral">202 accepted</span>
@@ -45,7 +45,7 @@ function DeliveryExample() {
       <div className="example-delivery">
         <div className="example-delivery-heading">
           <div>
-            <span className="field-label">Delivery destination</span>
+            <span className="field-label">Endpoint</span>
             <p className="mono">/webhooks/billing</p>
           </div>
           <span className="status status-success">
@@ -70,19 +70,15 @@ function DeliveryExample() {
           <li>
             <span className="attempt-dot attempt-success" />
             <span className="attempt-number">02</span>
-            <span>Successfully delivered</span>
+            <span>Delivered</span>
             <code className="text-success">200</code>
           </li>
         </ol>
         <div className="example-delivery-footer">
           <ShieldCheckIcon size={16} aria-hidden="true" />
-          <span>Signed. Retried. Accounted for.</span>
+          <span>HMAC-signed requests</span>
         </div>
       </div>
-      <p className="example-note">
-        <span className="note-line" />
-        You publish once. We handle the follow-through.
-      </p>
     </figure>
   );
 }
@@ -90,20 +86,20 @@ function DeliveryExample() {
 const steps = [
   {
     number: "01",
-    title: "Give your events a destination.",
-    text: "Register an HTTPS endpoint, choose its event subscriptions, and verify ownership.",
+    title: "Connect an endpoint",
+    text: "Add an HTTPS URL, choose event types, and verify ownership.",
     Icon: GitBranchIcon,
   },
   {
     number: "02",
-    title: "Publish. Then get back to building.",
-    text: "Send an event through the API. We'll queue a signed webhook for every subscribed endpoint.",
+    title: "Publish an event",
+    text: "Send a payload. We sign and deliver it to subscribed endpoints.",
     Icon: CodeIcon,
   },
   {
     number: "03",
-    title: "Know what happened next.",
-    text: "Follow each delivery, inspect its attempts, and replay an eligible delivery when you need to.",
+    title: "Track delivery",
+    text: "Inspect every attempt, with automatic retries when delivery fails.",
     Icon: CheckCircleIcon,
   },
 ];
@@ -112,9 +108,8 @@ export function LandingPage() {
   return (
     <div className="marketing-page">
       <header className="site-header page-width">
-        <Brand />
+        <Brand href={null} />
         <nav className="desktop-nav" aria-label="Main navigation">
-          <a href="#product">Product</a>
           <a href="#how-it-works">How it works</a>
           <a href="#quickstart">Quickstart</a>
         </nav>
@@ -124,7 +119,7 @@ export function LandingPage() {
             Sign in
           </Link>
           <Link href="/sign-up" className="button button-small button-primary">
-            Start building
+            Get started
             <ArrowUpRightIcon size={16} aria-hidden="true" />
           </Link>
           <MobileNav />
@@ -136,117 +131,61 @@ export function LandingPage() {
           <div className="hero-copy">
             <div className="eyebrow hero-eyebrow">
               <span className="small-square" />
-              OUTBOUND WEBHOOKS, TAKEN CARE OF
+              Outbound webhooks
             </div>
             <h1>
-              Ship the event.
+              Webhooks,
               <br />
-              We&apos;ll take it
-              <br />
-              <span>from here.</span>
+              <span>delivered.</span>
             </h1>
             <p className="hero-description">
-              Your app has news. Make sure it arrives. Reliable delivery, signed
-              requests, and a clear view of every attempt.
+              Send signed webhooks, retry failures, and track every delivery.
             </p>
             <div className="hero-actions">
               <Link href="/sign-up" className="button button-primary">
-                Start building
+                Get started
                 <ArrowRightIcon size={18} aria-hidden="true" />
               </Link>
-              <a href="#how-it-works" className="button button-quiet">
-                See how it works
+              <a href="#quickstart" className="button button-quiet">
+                View quickstart
                 <ArrowDownIcon size={16} aria-hidden="true" />
               </a>
             </div>
-            <p className="hero-footnote">
-              <span className="mini-rule" />
-              Less delivery infrastructure. More of your product.
-            </p>
           </div>
           <DeliveryExample />
         </section>
 
         <section
-          id="product"
-          className="principles-strip page-width"
-          aria-label="Built into every delivery"
-        >
-          <span className="principles-label">A dependable last mile.</span>
-          <span>
-            <ShieldCheckIcon size={18} aria-hidden="true" />
-            Signed requests
-          </span>
-          <span>
-            <ArrowsClockwiseIcon size={18} aria-hidden="true" />
-            Automatic retries
-          </span>
-          <span>
-            <TerminalWindowIcon size={18} aria-hidden="true" />
-            Attempt history
-          </span>
-        </section>
-
-        <section
           id="how-it-works"
-          className="how-section page-width section-space"
+          className="how-section page-width"
+          aria-labelledby="how-heading"
         >
-          <div className="section-heading">
-            <div>
-              <span className="eyebrow">A SHORT PATH FROM HERE TO THERE</span>
-              <h2>
-                Three steps.
-                <br />
-                One less thing to maintain.
-              </h2>
-            </div>
-            <p>
-              From your first event to the attempts that follow, the whole
-              journey stays in view.
-            </p>
-          </div>
-          <div className="steps-grid">
+          <h2 id="how-heading">How it works</h2>
+          <ol className="steps-grid">
             {steps.map(({ number, title, text, Icon }) => (
-              <article className="step" key={number}>
+              <li className="step" key={number}>
                 <div className="step-top">
                   <span className="mono">{number}</span>
                   <Icon size={22} aria-hidden="true" />
                 </div>
                 <h3>{title}</h3>
                 <p>{text}</p>
-              </article>
+              </li>
             ))}
-          </div>
+          </ol>
         </section>
 
-        <section id="quickstart" className="integration-section">
+        <section
+          id="quickstart"
+          className="integration-section"
+          aria-labelledby="quickstart-heading"
+        >
           <div className="page-width integration-grid">
             <div className="integration-copy">
-              <span className="eyebrow">
-                A SMALL REQUEST. A SOLID FOUNDATION.
-              </span>
-              <h2>
-                Fits right into
-                <br />
-                what you&apos;re building.
-              </h2>
-              <p>
-                A straightforward HTTP API. Your event type, your payload, your
-                endpoints. No new workflow to learn.
-              </p>
-              <ul className="integration-details">
-                <li>
-                  <span>01</span>Set up a verified endpoint
-                </li>
-                <li>
-                  <span>02</span>Create a project API key
-                </li>
-                <li>
-                  <span>03</span>Publish your first event
-                </li>
-              </ul>
+              <h2 id="quickstart-heading">Your first event.</h2>
+              <p>Publish JSON with your project API key. We handle delivery.</p>
               <Link href="/sign-up" className="text-link text-accent">
-                Make your first connection
+                Create an account
                 <ArrowUpRightIcon size={17} aria-hidden="true" />
               </Link>
             </div>
@@ -254,12 +193,12 @@ export function LandingPage() {
               <div className="code-example-header">
                 <span>
                   <TerminalWindowIcon size={17} aria-hidden="true" />
-                  Publish an event
+                  Example request
                 </span>
                 <CopyButton
                   value={publicationExample}
                   label="Copy cURL"
-                  successMessage="Example copied. Replace the API host and project key before running it."
+                  successMessage="Example copied."
                 />
               </div>
               <pre>
@@ -267,43 +206,20 @@ export function LandingPage() {
               </pre>
               <div className="code-example-footer">
                 <span className="status status-success">202 Accepted</span>
-                <span>Queued for subscribed endpoints.</span>
+                <span>Queued for delivery</span>
               </div>
               <p className="code-example-note">
-                Example request and response. Use your API host and project key.
+                Replace the API host and project key.
               </p>
             </div>
           </div>
         </section>
-
-        <section className="closing-section page-width">
-          <span className="eyebrow">
-            BUILD YOUR PRODUCT. WE&apos;LL CARRY THE MESSAGE.
-          </span>
-          <h2>
-            Good things deserve
-            <br />
-            to get delivered.
-          </h2>
-          <Link href="/sign-up" className="button button-primary">
-            Start building with Cascadehook
-            <ArrowRightIcon size={18} aria-hidden="true" />
-          </Link>
-        </section>
       </main>
 
       <footer className="site-footer page-width">
-        <div>
-          <Brand />
+        <div className="footer-brand">
+          <Brand href={null} />
           <p>Webhooks, delivered.</p>
-        </div>
-        <div className="footer-links">
-          <a href="#quickstart">
-            Quickstart
-            <ArrowUpRightIcon size={14} aria-hidden="true" />
-          </a>
-          <Link href="/sign-in">Sign in</Link>
-          <ThemeSwitcher />
         </div>
       </footer>
     </div>

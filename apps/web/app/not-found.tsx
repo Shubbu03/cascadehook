@@ -11,7 +11,7 @@ export default function NotFound() {
       </header>
       <main id="main-content" className="page-width workspace-main">
         <div className="empty-state">
-          <span className="eyebrow">404 · PAGE NOT FOUND</span>
+          <span className="eyebrow">404 · Page not found</span>
           <h1>This page took a wrong turn.</h1>
           <p>
             The link may have changed. Let&apos;s get you back to familiar

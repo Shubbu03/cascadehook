@@ -3,12 +3,14 @@
 import { useId, useState, type FormEvent } from "react";
 
 export function NameForm({
+  titleId,
   kind,
   pending,
   error,
   onSubmit,
   onCancel,
 }: {
+  titleId?: string;
   kind: "organization" | "project";
   pending: boolean;
   error: Error | null;
@@ -35,16 +37,9 @@ export function NameForm({
   const message = validation ?? error?.message;
   return (
     <form className="setup-form" onSubmit={submit} aria-busy={pending}>
-      <h3>
-        {kind === "organization"
-          ? "Give your team a home."
-          : "Start with a project."}
-      </h3>
-      <p>
-        {kind === "organization"
-          ? "An organization keeps your team's projects and access together."
-          : "Keep one application's endpoints and events together."}
-      </p>
+      <h2 id={titleId}>
+        {kind === "organization" ? "Create organization" : "Create project"}
+      </h2>
       <label className="form-field" htmlFor={id}>
         <span>
           {kind === "organization" ? "Organization name" : "Project name"}

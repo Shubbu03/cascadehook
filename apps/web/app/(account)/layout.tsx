@@ -27,11 +27,24 @@ async function ConfiguredAccount({ children }: { children: React.ReactNode }) {
 
   return (
     <ClerkProvider
+      dynamic
       signInUrl="/sign-in"
       signUpUrl="/sign-up"
-      signInFallbackRedirectUrl="/dashboard"
-      signUpFallbackRedirectUrl="/dashboard"
+      signInFallbackRedirectUrl="/onboarding"
+      signUpFallbackRedirectUrl="/onboarding"
       afterSignOutUrl="/"
+      localization={{
+        signIn: {
+          start: { title: "Sign in", subtitle: "", subtitleCombined: "" },
+        },
+        signUp: {
+          start: {
+            title: "Create an account",
+            subtitle: "",
+            subtitleCombined: "",
+          },
+        },
+      }}
       appearance={{
         cssLayerName: "clerk",
         variables: {

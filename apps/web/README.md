@@ -10,6 +10,10 @@ From the repository root:
     cp apps/web/.env.example apps/web/.env.local
     bun run dev:web
 
+Open http://localhost:3000. Development uses plain HTTP. Set the root API .env's
+CLERK_AUTHORIZED_PARTIES to http://localhost:3000 and restart the API after changing
+it. If Next.js uses a different port, update the allowed origin to match it.
+
 Configure the values in the copied file before testing account access:
 
 | Variable | Purpose |
@@ -18,7 +22,7 @@ Configure the values in the copied file before testing account access:
 | CLERK_SECRET_KEY | Server-only secret for that same Clerk application |
 | NEXT_PUBLIC_API_BASE_URL | Public Go API origin, without /v1 or embedded credentials |
 
-The example also sets local sign-in/sign-up URLs and the /dashboard fallback.
+The example also sets local sign-in/sign-up URLs and the /onboarding fallback.
 Keep secrets out of NEXT_PUBLIC_ variables. Configure public variables before a
 production build, and restart development after changing the environment.
 No Clerk application is created automatically.
@@ -31,13 +35,11 @@ the API origin, authenticated users see a recoverable connection error.
 
 - Use the same Clerk instance as the backend's CLERK_ISSUER_URL and public key.
   Apply the backend's account migrations and configure its session verification.
-- Add the frontend's exact HTTPS origin to Go's CLERK_AUTHORIZED_PARTIES. Go
-  currently requires HTTPS origins and uses this list for browser CORS as well
-  as token authorized-party checks.
-- Plain HTTP localhost can preview the frontend, but it does not satisfy that
-  backend origin contract. For end-to-end checks, use an allowed HTTPS frontend
-  origin; local Next.js HTTPS can be requested with
-  bun run dev:web --experimental-https and its origin must still be allowed.
+- Add the frontend's exact origin to Go's CLERK_AUTHORIZED_PARTIES. This list
+  controls both browser CORS and the session token's authorized-party check.
+  HTTPS is required for public hosts. Local development may explicitly allow
+  HTTP on localhost, 127.0.0.1, or [::1]. Scheme, host, and port must all match;
+  adding one loopback origin does not allow other hosts or ports.
 - Configure the desired sign-in methods, email verification, and session tasks
   in the existing Clerk application. Clerk's components handle those configured
   flows; credentials and tokens are never saved in browser storage by app code.
@@ -47,11 +49,40 @@ the API origin, authenticated users see a recoverable connection error.
 ## Current flow
 
 - / — responsive landing page with explicitly illustrative delivery examples.
-- /sign-in and /sign-up — themed Clerk forms, including their catch-all steps.
-  Existing active sessions continue to /dashboard.
-- /dashboard — server-protected account entry. Connects to /v1/me, lists
+- /sign-in and /sign-up — 40/60 split layout with brief, context-specific copy
+  and Clerk forms, including their catch-all steps. A back-to-home link is always
+  available. Phone layouts show the brand, home link, and form.
+  After authentication, /onboarding checks the saved Go workspace state.
+- /onboarding/organization — create the first organization.
+- /onboarding/project — name and create its first project, then open that
+  project's dashboard. Refreshes and returning visits resume from saved state.
+  Existing users with an accessible project skip setup. Read-only members of an
+  empty organization can create their own organization instead.
+- Clerk receives the request's session state during server rendering, so the
+  dashboard can render its page subtree before the browser SDK finishes loading.
+- /dashboard — server-protected workspace. Incomplete accounts return to setup
+  before any dashboard content renders. Connects to /v1/me, lists
   organizations/projects using cursor pagination, and creates them through the
-  existing Go endpoints. Other operational dashboard screens are a later slice.
+  existing Go endpoints. Header dropdowns switch organizations and projects;
+  /dashboard?organization=:organizationId opens that organization's project grid.
+  Creation uses small dialogs, with a new organization continuing to its first
+  project. Open a project to manage its endpoints.
+- /dashboard/projects/:projectId/endpoints — real endpoint listing with cursor
+  pagination, delivery-status filters, and exact event-type filters.
+- /dashboard/projects/:projectId/endpoints/new — register a public HTTPS receiver
+  and its exact event subscriptions. Registration leaves delivery disabled.
+- /dashboard/projects/:projectId/endpoints/:endpointId — edit the destination or
+  subscriptions, generate/rotate its signing secret, verify ownership, and
+  explicitly enable or disable delivery. Changing the URL resets verification
+  and disables delivery.
+- /dashboard/projects/:projectId/receiver-guide — raw-body signature validation,
+  challenge-proof instructions, and receiver handling guidance.
+
+Owners and admins can manage endpoints; members can review them. Go enforces
+authorization for every request. Paused projects allow inspection, editing,
+secret rotation, and disabling, while registration, verification, and activation
+remain unavailable. Project availability must load before those actions are
+enabled.
 
 Clerk loads only on account routes. Each signed-in workspace owns its QueryClient;
 query keys include the user/project context and auth is checked near the protected
@@ -59,11 +90,23 @@ content. Xior obtains a current bearer token per request, omits API cookies,
 disables HTTP caching, and uses a bounded timeout. Mutations do not automatically
 retry. No live API calls are made during a production build.
 
+Signing secrets stay in local component state, outside Query caches, browser
+storage, URLs, logs, and notification text. They are masked until revealed and
+cleared when leaving or hiding the route. Save the secret securely and dismiss
+the disclosure before editing, verifying, or enabling the endpoint. Rotation
+retains the previous secret for five minutes and preserves existing delivery
+settings. The API cannot retrieve an existing secret.
+
+Verification sends a signed challenge and has a visible 30-second cooldown.
+Errors remain inline as well as appearing in notifications. Failed or uncertain
+mutations refresh endpoint metadata; secret requests never automatically retry.
+
 ## Themes and notifications
 
-System / Light / Dark applies to every screen. A small pre-paint script restores
-the preference; CSS follows OS changes in System mode. Preferences synchronize
-across tabs. Blocked browser storage still permits a temporary theme selection.
+The system theme is the default. A borderless sun/moon button switches between
+light and dark and saves the explicit choice. A small pre-paint script restores
+the preference; CSS follows OS changes until a theme is chosen. Preferences
+synchronize across tabs. Blocked browser storage still permits a temporary choice.
 IBM Plex fonts are self-hosted; their licenses are in app/fonts.
 
 Import notify from @/lib/notify and call:
@@ -83,6 +126,7 @@ remain inline. To dismiss/update a returned ID, use react-hot-toast's normal API
 From the repository root:
 
     bun run lint:web
+    bun run test:web
     bun run typecheck:web
     bun run build:web
 
@@ -93,12 +137,23 @@ Node.js releases; use a supported Node version for builds.
 Manually verify:
 
 1. Landing navigation and code copying at phone, tablet, and desktop widths.
-2. Both themes, System mode, persistence, and keyboard focus.
+2. System default, icon toggling, saved preferences, and keyboard focus.
 3. Sign-up verification, sign-in, sign-out, and returning-user redirects.
-4. Direct unauthenticated /dashboard access.
-5. Account bootstrap, organization/project creation, membership roles, and
-   pagination against the deployed Go API.
+4. Fresh-account organization/project setup, refresh between steps, errors,
+   returning-user skip, and direct unauthenticated /dashboard and /onboarding access.
+5. Header organization/project switching, creation dialogs, membership roles,
+   pagination, refresh/back navigation, and keyboard dismissal against the Go API.
 6. API failures, incorrect origin/session configuration, and useful toast
    placement/dismissal in both themes.
+7. Open a project, register an endpoint, save its one-time secret, implement the
+   receiver guide, verify ownership, and explicitly enable delivery.
+8. Change subscriptions; change the URL and confirm delivery is disabled until
+   verified again. Disable delivery and check the status/event-type filters and
+   pagination.
+9. Rotate a signing secret and check the grace-period message. Navigate away
+   with a revealed secret, then return and confirm it is cleared, including
+   browser back/forward navigation. Check sign-out/account-switch isolation.
+10. Check member read-only controls, suspended-project restrictions, verification
+    failures, cooldowns, and phone-width forms and dialogs in both themes.
 
 Browser and GUI verification is user-owned.

@@ -1,0 +1,113 @@
+.background {
+  --edge-inset: clamp(1.25rem, 4vw, 4rem);
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  color: var(--accent);
+}
+
+.background::before {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(
+      ellipse at 0% 28%,
+      color-mix(in srgb, currentColor 7%, transparent),
+      transparent 48%
+    ),
+    radial-gradient(
+      ellipse at 100% 88%,
+      color-mix(in srgb, currentColor 6%, transparent),
+      transparent 45%
+    );
+  content: "";
+}
+
+.texture {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(currentColor 0.7px, transparent 1px);
+  background-size: 26px 26px;
+  mask-image:
+    radial-gradient(ellipse at 0% 28%, #000, transparent 58%),
+    radial-gradient(ellipse at 100% 88%, #000, transparent 52%);
+  opacity: 0.18;
+}
+
+.particle {
+  position: absolute;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 8px color-mix(in srgb, currentColor 45%, transparent);
+  opacity: 0.3;
+  animation: drift 18s ease-in-out infinite alternate;
+}
+
+.corner {
+  position: absolute;
+  width: 3rem;
+  height: 3rem;
+  border: solid currentColor;
+  border-width: 1px 0 0 1px;
+  opacity: 0.28;
+}
+
+.corner[data-corner="top-left"] {
+  top: calc(var(--edge-inset) + 4rem);
+  left: var(--edge-inset);
+}
+
+.corner[data-corner="top-right"] {
+  top: calc(var(--edge-inset) + 4rem);
+  right: var(--edge-inset);
+  rotate: 90deg;
+}
+
+.corner[data-corner="bottom-left"] {
+  bottom: var(--edge-inset);
+  left: var(--edge-inset);
+  rotate: -90deg;
+}
+
+.corner[data-corner="bottom-right"] {
+  right: var(--edge-inset);
+  bottom: var(--edge-inset);
+  rotate: 180deg;
+}
+
+@keyframes drift {
+  to {
+    transform: translate(4px, -12px);
+    opacity: 0.6;
+  }
+}
+
+@media (max-width: 600px) {
+  .texture {
+    opacity: 0.12;
+  }
+
+  .corner {
+    width: 1.5rem;
+    height: 1.5rem;
+    opacity: 0.2;
+  }
+
+  .particle:nth-of-type(even) {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .particle {
+    animation: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .background {
+    display: none;
+  }
+}

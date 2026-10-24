@@ -6,6 +6,9 @@ An outbound webhook delivery platform, starting with a Go backend. See
 The Next.js frontend lives in [apps/web](apps/web/README.md). Start it with
 `bun run dev:web` after configuring its environment. It includes the public landing
 page, Clerk account access, and initial organization/project setup through Go.
+New accounts complete organization and project setup before entering the dashboard.
+Local development uses `http://localhost:3000`; set the API's
+`CLERK_AUTHORIZED_PARTIES` to that exact origin. Public app origins require HTTPS.
 
 Implementation is continuing before the first deployment. Railway verification
 will follow a substantial backend slice: endpoint registration, subscriptions,
@@ -109,8 +112,10 @@ bun run test:go
 ```
 
 `dev:api`, `dev:worker`, `db:migrate`, and `db:seed` are also available as wrappers for the
-corresponding Go commands when explicitly needed. Application verification is
-performed on Railway.
+corresponding Go commands when explicitly needed. These commands, `db:cleanup`,
+and the `ops:*` commands explicitly load the repository root `.env` before
+launching Go. Configure that file yourself; Go does not load dotenv files.
+Application verification is performed on Railway.
 
 The backend lives in `apps/server`; `apps/web`, `apps/docs`, and
 `packages/sdk-typescript` are reserved for later phases. Empty directories have

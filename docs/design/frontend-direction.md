@@ -108,6 +108,8 @@ alternative for discussion, not a second theme users need to configure.
 
 ### Type, spacing, and shape
 
+- Use sentence case for interface copy, including small labels and section
+  introductions. Do not apply uppercase or capitalize text transforms.
 - Proposed typography: IBM Plex Sans for navigation, labels, and headings; IBM
   Plex Mono for IDs, HTTP values, durations, code, and payloads. Use tabular
   numerals for aligned counts and durations.
@@ -176,8 +178,9 @@ Recommended behavior:
 - Use short purposeful color/opacity transitions, around 120–180ms as an initial
   design choice. Keep navigation interruptible and respect reduced motion.
   [W3C interaction animation guidance](https://www.w3.org/WAI/WCAG22/Understanding/animation-from-interactions.html)
-- Offer System / Light / Dark, persist the choice, and set the initial theme before
-  visible content paints. Align native controls using `color-scheme`.
+- Default to the system theme with a borderless sun/moon button to toggle light
+  and dark. Persist explicit choices before visible content paints. Align native
+  controls using `color-scheme`.
   [web.dev theme guidance](https://web.dev/articles/color-scheme)
 
 Performance goals for later measurement: LCP at most 2.5s, INP at most 200ms, and
@@ -222,7 +225,8 @@ and the corresponding read/replay/account sections in `plan.md`.
 ## Implementation order
 
 Start with the landing page, light/dark theme foundation, and Clerk sign-in and
-sign-up. Follow authentication with real organization/project setup. This order
+sign-up. Follow authentication with real organization/project setup in a separate
+onboarding flow, before the dashboard becomes available. This order
 was confirmed after the research discussion.
 
 Then implement the delivery list and its attempt inspector as the operational

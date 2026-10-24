@@ -1,8 +1,8 @@
 import Link from "next/link";
 
-export function Brand() {
-  return (
-    <Link href="/" className="brand" aria-label="Cascadehook home">
+export function Brand({ href = "/dashboard" }: { href?: "/" | "/dashboard" | null }) {
+  const content = (
+    <>
       <span className="brand-mark" aria-hidden="true">
         <span />
         <span />
@@ -11,6 +11,18 @@ export function Brand() {
       <span>
         cascadehook<span className="brand-period">.</span>
       </span>
+    </>
+  );
+
+  if (href === null) return <span className="brand">{content}</span>;
+
+  return (
+    <Link
+      href={href}
+      className="brand"
+      aria-label={href === "/dashboard" ? "Cascadehook dashboard" : "Cascadehook home"}
+    >
+      {content}
     </Link>
   );
 }

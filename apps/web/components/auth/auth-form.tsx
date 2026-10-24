@@ -23,11 +23,8 @@ export async function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
     return (
       <div className="empty-state auth-unavailable">
         <LockKeyIcon size={28} className="text-accent" aria-hidden="true" />
-        <h3>Sign-in is taking a moment.</h3>
-        <p>
-          Account access isn&apos;t available right now. Please try again
-          shortly.
-        </p>
+        <h3>Account access unavailable</h3>
+        <p>Please try again later.</p>
         <Link href="/" className="button button-secondary">
           Back to Cascadehook
         </Link>
@@ -35,14 +32,14 @@ export async function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
     );
   }
   const { userId } = await auth();
-  if (userId) redirect("/dashboard");
+  if (userId) redirect("/onboarding");
   return mode === "sign-in" ? (
     <SignIn
       appearance={formAppearance}
       routing="path"
       path="/sign-in"
       signUpUrl="/sign-up"
-      fallbackRedirectUrl="/dashboard"
+      fallbackRedirectUrl="/onboarding"
     />
   ) : (
     <SignUp
@@ -50,7 +47,7 @@ export async function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
       routing="path"
       path="/sign-up"
       signInUrl="/sign-in"
-      fallbackRedirectUrl="/dashboard"
+      fallbackRedirectUrl="/onboarding"
     />
   );
 }
