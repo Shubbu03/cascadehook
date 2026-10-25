@@ -1,12 +1,8 @@
 "use client";
 
 import { useAuth } from "@clerk/nextjs";
-import { BookOpenIcon, PlugsConnectedIcon } from "@phosphor-icons/react";
 import { useQuery } from "@tanstack/react-query";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { createContext, useContext } from "react";
-import { CopyButton } from "@/components/copy-button";
 import { apiRequest } from "@/lib/api";
 import { ConnectionError } from "@/features/workspace/connection-error";
 import { ContentLoading } from "@/features/workspace/loading";
@@ -42,7 +38,6 @@ export function ProjectWorkspace({
 }) {
   const userId = useSessionUserId();
   const { getToken } = useAuth();
-  const pathname = usePathname();
   const project = useQuery(projectQuery(userId, projectId, getToken));
   const status = useQuery({
     queryKey: ["project-status", userId, projectId],
@@ -55,16 +50,15 @@ export function ProjectWorkspace({
       ),
     staleTime: 0,
   });
-  const href = projectHref(projectId);
   if (project.isPending)
     return (
-      <main id="main-content" className="page-width workspace-main">
+      <main id="main-content" className="dashboard-main">
         <ContentLoading />
       </main>
     );
   if (project.isError)
     return (
-      <main id="main-content" className="page-width workspace-main">
+      <main id="main-content" className="dashboard-main">
         <ConnectionError
           error={project.error}
           retry={() => {
@@ -86,32 +80,22 @@ export function ProjectWorkspace({
         availabilityKnown: status.isSuccess,
       }}
     >
-      <main id="main-content" className="project-workspace page-width">
-        <div className="project-heading">
-          <div className="project-heading-title">
-            <h1>{project.data.name}</h1>
-            <span className="status status-neutral">{project.data.role}</span>
-          </div>
-          <div className="project-heading-meta">
-            <code>{projectId}</code>
-            <CopyButton
-              value={projectId}
-              label="Copy ID"
-              successMessage="Project ID copied."
-            />
-          </div>
-        </div>
+      <main id="main-content" className="dashboard-main">
         {status.data?.suspended && (
-          <div className="notice notice-warning" role="status">
-            This project is paused. You can review and edit existing endpoints,
-            rotate signing secrets, and disable delivery. New endpoints,
-            verification, and activation are unavailable.
-          </div>
+          <p
+            className="workspace-banner workspace-banner-warning"
+            role="status"
+          >
+            Project paused. Publishing, replay, endpoint activation, and API key
+            issuance are unavailable.
+          </p>
         )}
         {status.isError && (
-          <div className="notice notice-warning" role="status">
-            We couldn&apos;t check project availability. You can still review
-            existing endpoints.{" "}
+          <p
+            className="workspace-banner workspace-banner-warning"
+            role="status"
+          >
+            Project availability could not be checked.
             <button
               type="button"
               className="text-link"
@@ -122,37 +106,10 @@ export function ProjectWorkspace({
             >
               Check again
             </button>
-          </div>
-        )}
-        {!canManage && (
-          <p className="notice">
-            You have read-only access. An owner or admin can change endpoint
-            settings.
           </p>
         )}
-        <div className="project-layout">
-          <nav className="project-navigation" aria-label="Project navigation">
-            <Link
-              href={href + "/endpoints"}
-              aria-current={
-                pathname.startsWith(href + "/endpoints") ? "page" : undefined
-              }
-            >
-              <PlugsConnectedIcon size={19} aria-hidden="true" />
-              Endpoints
-            </Link>
-            <Link
-              href={href + "/receiver-guide"}
-              aria-current={
-                pathname === href + "/receiver-guide" ? "page" : undefined
-              }
-            >
-              <BookOpenIcon size={19} aria-hidden="true" />
-              Receiver guide
-            </Link>
-          </nav>
-          <div className="project-content">{children}</div>
-        </div>
+        {!canManage && <p className="workspace-banner">Read-only access</p>}
+        <div className="project-content">{children}</div>
       </main>
     </ProjectContext>
   );

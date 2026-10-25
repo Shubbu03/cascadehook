@@ -1,13 +1,11 @@
 "use client";
 
-import { useAuth, UserButton } from "@clerk/nextjs";
+import { useAuth } from "@clerk/nextjs";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createContext, useContext, useState } from "react";
-import { Brand } from "@/components/brand";
-import { ThemeSwitcher } from "@/components/theme-switcher";
 import { WorkspaceLoading } from "./loading";
 import { WorkspaceCreation } from "./workspace-creation";
-import { WorkspaceNavigation } from "./workspace-navigation";
+import { DashboardShell } from "./dashboard-shell";
 
 const UserIdContext = createContext<string | null>(null);
 
@@ -56,17 +54,7 @@ export function WorkspaceSession({
     <UserIdContext value={userId}>
       <QueryClientProvider client={queryClient}>
         <WorkspaceCreation>
-          <div className="workspace-page">
-            <header className="workspace-header page-width">
-              <Brand />
-              <WorkspaceNavigation />
-              <div className="workspace-header-actions">
-                <ThemeSwitcher />
-                <UserButton />
-              </div>
-            </header>
-            {children}
-          </div>
+          <DashboardShell>{children}</DashboardShell>
         </WorkspaceCreation>
       </QueryClientProvider>
     </UserIdContext>

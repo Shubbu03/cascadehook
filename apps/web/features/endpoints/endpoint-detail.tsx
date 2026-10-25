@@ -13,6 +13,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { CopyButton } from "@/components/copy-button";
+import { PageHeader } from "@/components/page-header";
 import { useProject, projectHref } from "@/features/projects/project-workspace";
 import { ConnectionError } from "@/features/workspace/connection-error";
 import { ContentLoading } from "@/features/workspace/loading";
@@ -124,12 +125,7 @@ export function EndpointDetail({ endpointId }: { endpointId: string }) {
   if (editing && canManage)
     return (
       <section>
-        <div className="workspace-section-heading">
-          <div>
-            <h2>Edit endpoint</h2>
-            <p>Update its destination and exact event subscriptions.</p>
-          </div>
-        </div>
+        <PageHeader title="Edit endpoint" />
         <EndpointForm
           endpoint={current}
           onSaved={() => setEditing(false)}
@@ -144,23 +140,37 @@ export function EndpointDetail({ endpointId }: { endpointId: string }) {
         <ArrowLeftIcon size={16} aria-hidden="true" />
         Endpoints
       </Link>
-      <div className="endpoint-detail-heading">
-        <div>
-          <h2>Endpoint settings</h2>
-          <p className="endpoint-url">{current.url}</p>
-        </div>
-        {canManage && (
-          <button
-            type="button"
-            className="button button-small button-secondary"
-            disabled={busy}
-            onClick={() => setEditing(true)}
-          >
-            <PencilSimpleIcon size={16} aria-hidden="true" />
-            Edit endpoint
-          </button>
-        )}
-      </div>
+      <PageHeader
+        title="Endpoint settings"
+        description={
+          <>
+            <div className="endpoint-url">{current.url}</div>
+            <Link
+              className="text-link"
+              href={
+                href +
+                "/deliveries?endpoint_id=" +
+                encodeURIComponent(endpointId)
+              }
+            >
+              View deliveries →
+            </Link>
+          </>
+        }
+        actions={
+          canManage && (
+            <button
+              type="button"
+              className="button button-small button-secondary"
+              disabled={busy}
+              onClick={() => setEditing(true)}
+            >
+              <PencilSimpleIcon size={16} aria-hidden="true" />
+              Edit endpoint
+            </button>
+          )
+        }
+      />
       {endpoint.isError && (
         <ConnectionError
           error={endpoint.error}

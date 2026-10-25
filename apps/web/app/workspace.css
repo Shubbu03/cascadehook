@@ -93,12 +93,14 @@
     background: var(--surface-hover);
   }
   .switcher-panel {
-    position: absolute;
+    position: fixed;
     z-index: 50;
-    top: calc(100% + 8px);
-    left: 0;
+    top: 68px;
+    left: 12px;
     width: 320px;
-    max-width: calc(100vw - 40px);
+    max-width: calc(100vw - 24px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
     padding: 6px;
     border: 1px solid var(--border);
     border-radius: 12px;
@@ -206,16 +208,6 @@
     font-size: 13px;
     color: var(--accent);
   }
-  .workspace-projects-heading {
-    align-items: center;
-    padding-bottom: 14px;
-    margin-bottom: 16px;
-    border-bottom: 1px solid var(--border);
-  }
-  .workspace-projects-heading h1 {
-    font-size: 28px;
-    letter-spacing: -0.04em;
-  }
   .workspace-project-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
@@ -231,7 +223,9 @@
     border: 1px solid var(--border);
     border-radius: 10px;
     background: var(--surface);
-    transition: border-color 0.15s, background-color 0.15s;
+    transition:
+      border-color 0.15s,
+      background-color 0.15s;
   }
   .workspace-project-card:hover {
     border-color: color-mix(in srgb, var(--accent) 50%, var(--border));
@@ -311,35 +305,6 @@
   }
 }
 
-@media (max-width: 1000px) {
-  .workspace-header {
-    flex-wrap: wrap;
-    min-height: 0;
-    gap: 10px;
-    padding-block: 12px;
-  }
-  .workspace-switchers {
-    order: 3;
-    width: 100%;
-  }
-  .workspace-switchers::before {
-    display: none;
-  }
-  .workspace-switcher {
-    flex: 1 1 0;
-  }
-  .switcher-name {
-    max-width: none;
-  }
-  .switcher-caret {
-    margin-left: auto;
-  }
-  .workspace-switcher:last-child .switcher-panel {
-    right: 0;
-    left: auto;
-  }
-}
-
 @media (max-width: 600px) {
   .workspace-main {
     padding-block: 24px 48px;
@@ -355,19 +320,7 @@
   .workspace-switchers {
     gap: 4px;
   }
-  .workspace-projects-heading h1 {
-    font-size: 24px;
-  }
   .workspace-create-dialog {
     padding: 24px;
-  }
-}
-
-@media (forced-colors: active) {
-  .workspace-create-dialog .form-field input {
-    border: 1px solid ButtonText;
-  }
-  .workspace-create-dialog .form-field input:focus-visible {
-    outline: 2px solid Highlight;
   }
 }

@@ -132,6 +132,14 @@ alternative for discussion, not a second theme users need to configure.
 
 These widths are starting points to tune against content, not device guarantees.
 
+The current dashboard trial uses a full-width shell with a 224px sidebar,
+a 68px collapsed rail, a 60px context header, and 32px desktop content gutters.
+At 900px and below, navigation moves into a native modal drawer. Page headings
+replace the repeated project banner; project ID and role are in Settings.
+Operational lists use the available content width, while forms and guide text
+keep a readable maximum width. The table below describes the broader direction,
+including the future side-by-side inspector.
+
 | Space | Proposed behavior |
 | --- | --- |
 | Wide desktop, roughly 1280px+ | Approximately 224–240px navigation; short context header; delivery list beside a 400–440px inspector when both remain readable. |

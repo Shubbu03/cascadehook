@@ -3,6 +3,13 @@ import localFont from "next/font/local";
 import { Notifications } from "@/components/notifications";
 import { themeScript } from "@/lib/theme";
 import "./globals.css";
+import "./site.css";
+import "./project.css";
+import "./onboarding.css";
+import "./workspace.css";
+import "./activity.css";
+import "./dashboard.css";
+import "./controls.css";
 
 const sans = localFont({
   src: "./fonts/ibm-plex-sans-latin.woff2",

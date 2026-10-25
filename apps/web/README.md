@@ -77,6 +77,36 @@ the API origin, authenticated users see a recoverable connection error.
   and disables delivery.
 - /dashboard/projects/:projectId/receiver-guide — raw-body signature validation,
   challenge-proof instructions, and receiver handling guidance.
+- /dashboard/projects/:projectId/deliveries — delivery history with exact state,
+  endpoint ID, and event ID filters, cursor pagination, and optional live refresh.
+- /dashboard/projects/:projectId/deliveries/:deliveryId — completed attempts across
+  replay cycles, in-flight attempt metadata, retry scheduling, and replay with an
+  observed-cycle check. Replay acceptance is shown as queued, not delivered.
+  Attempts expose status, duration, error codes, and response-read flags; the API
+  does not return response bodies or sensitive response headers.
+- /dashboard/projects/:projectId/events — accepted events filtered by exact type.
+  Event detail shows the accepted JSON envelope and links to its deliveries.
+- /dashboard/projects/:projectId/api-keys — owner/admin key creation, optional
+  expiry, development/live labels, rotation, and revocation. Both labels grant the
+  same project scope. Rotation leaves the previous key usable for five minutes.
+  Newly issued credentials stay in local state outside query/mutation caches,
+  URLs, logs, and browser storage, and are cleared when the route is hidden or
+  unmounted. A publication example uses placeholders rather than embedding a key.
+- /dashboard/projects/:projectId/usage — project activity and resource counts,
+  with organization-wide monthly event/delivery quotas shown separately.
+- /dashboard/projects/:projectId/settings — owner/admin renaming and owner-only
+  project deletion with an exact-name confirmation.
+- /dashboard/organizations/:organizationId/settings — organization renaming,
+  membership roles/removal, and invitation creation/revocation. These mutations
+  require the owner role. Members can inspect the membership list; the API exposes
+  account IDs rather than display names or member email addresses.
+- /invitations/accept — accepts a one-time token or fragment link through Go.
+  An unsigned recipient signs in with the invited email, then reopens the link.
+  The fragment is removed before acceptance; tokens never enter query/mutation
+  caches or storage. Go checks verified emails through its configured Clerk
+  backend client (the root API CLERK_SECRET_KEY). Invitation links are shared
+  manually; this UI does not send email. New accounts can also reach this page
+  from organization onboarding.
 
 Owners and admins can manage endpoints; members can review them. Go enforces
 authorization for every request. Paused projects allow inspection, editing,
@@ -89,6 +119,27 @@ query keys include the user/project context and auth is checked near the protect
 content. Xior obtains a current bearer token per request, omits API cookies,
 disables HTTP caching, and uses a bounded timeout. Mutations do not automatically
 retry. No live API calls are made during a production build.
+Failed reads with 401/403/404/410 hide previously cached content. Temporary
+connection failures may retain prior results while showing the error.
+
+Dashboard routes share a full-width shell: a 224px sidebar that collapses to an
+icon rail, a compact organization/project top bar, and a mobile navigation drawer
+below 901px. The drawer supports Escape, backdrop dismissal, and keyboard focus
+containment. Project IDs and roles live in Project settings. Page headings,
+filter toolbars, tables, empty states, and usage cards share compact spacing;
+forms and documentation retain readable maximum widths.
+Cmd/Ctrl+B toggles the sidebar, or the drawer at mobile widths, outside text
+inputs and other open dialogs. Inputs use borderless surfaces with a subtle
+keyboard-focus cue. Filter and role selectors share an inset caret; workspace
+menus align to their triggers and stay inside the viewport.
+
+Global stylesheets are imported directly from the root layout so Turbopack tracks
+every style entry during development. With the dev server running, check the
+actual emitted dashboard CSS without opening a browser:
+
+    bun run --cwd apps/web check:styles
+
+Pass a different HTTP origin as the final argument when using another dev port.
 
 Signing secrets stay in local component state, outside Query caches, browser
 storage, URLs, logs, and notification text. They are masked until revealed and
@@ -155,5 +206,28 @@ Manually verify:
    browser back/forward navigation. Check sign-out/account-switch isolation.
 10. Check member read-only controls, suspended-project restrictions, verification
     failures, cooldowns, and phone-width forms and dialogs in both themes.
+11. Create a project API key, save its one-time value, publish the example event,
+    and inspect the event, deliveries, completed attempts, and retry scheduling.
+    Test state/ID/type filters, pagination, empty results, and background refresh.
+12. Replay a failed/succeeded delivery and check its new cycle and retained
+    history. Test a stale-cycle conflict, an unavailable endpoint, and a paused
+    project. Check member read-only access and direct resource URLs.
+13. Rotate/revoke API keys, including expired keys and a pending rotation. Hide a
+    route during a secret request and use back/forward navigation to confirm
+    one-time values are not restored. Check project and account isolation.
+14. Inspect shared organization quotas and separate project counters. Rename a
+    project/organization, manage roles, and verify the last-owner protection.
+15. Create/share an invitation link, sign in with the matching verified email,
+    and accept it. Check mismatched email, expiry, revocation, duplicate invites,
+    owner-only controls, and lost-link recovery by revoking/recreating an invite.
+16. Request deletion of a disposable project with exact-name confirmation and
+    check that further activity is denied while cleanup runs.
+17. Check the full-width dashboard, sidebar collapse/expand, nested active links,
+    and organization/project switching. At phone/tablet widths, check the drawer,
+    Escape/backdrop dismissal, keyboard focus, wrapping filters, and table scroll.
+    Check both themes and confirm project metadata appears in Settings.
+18. Toggle navigation with Cmd/Ctrl+B. Check that typing in inputs and other
+    dialogs does not toggle it. Verify borderless auth/setup/settings fields,
+    select labels/carets, and workspace-menu alignment at narrow widths.
 
 Browser and GUI verification is user-owned.

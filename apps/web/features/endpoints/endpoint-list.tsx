@@ -1,5 +1,6 @@
 "use client";
 
+import { Select } from "@/components/select";
 import { useAuth } from "@clerk/nextjs";
 import {
   ArrowClockwiseIcon,
@@ -10,6 +11,7 @@ import {
 import { useInfiniteQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useId, useState, type FormEvent } from "react";
+import { PageHeader } from "@/components/page-header";
 import { useProject, projectHref } from "@/features/projects/project-workspace";
 import { ConnectionError } from "@/features/workspace/connection-error";
 import { ContentLoading } from "@/features/workspace/loading";
@@ -68,36 +70,35 @@ export function EndpointList() {
 
   return (
     <section>
-      <div className="workspace-section-heading">
-        <div>
-          <h2>Endpoints</h2>
-          <p>Where your application&apos;s events go next.</p>
-        </div>
-        {canManage && (
-          <Link
-            href={href + "/new"}
-            className="button button-primary"
-            aria-disabled={suspended || !availabilityKnown}
-            onClick={(event) => {
-              if (suspended || !availabilityKnown) event.preventDefault();
-            }}
-          >
-            <PlusIcon size={17} aria-hidden="true" />
-            Register endpoint
-          </Link>
-        )}
-      </div>
+      <PageHeader
+        title="Endpoints"
+        actions={
+          canManage && (
+            <Link
+              href={href + "/new"}
+              className="button button-primary"
+              aria-disabled={suspended || !availabilityKnown}
+              onClick={(event) => {
+                if (suspended || !availabilityKnown) event.preventDefault();
+              }}
+            >
+              <PlusIcon size={17} aria-hidden="true" />
+              Register endpoint
+            </Link>
+          )
+        }
+      />
       <div className="endpoint-toolbar">
         <label className="filter-field">
           <span>Status</span>
-          <select
+          <Select
             value={enabled}
             onChange={(event) => setEnabled(event.target.value)}
           >
             <option value="">All endpoints</option>
             <option value="true">Enabled</option>
             <option value="false">Disabled</option>
-          </select>
+          </Select>
         </label>
         <form className="event-filter" onSubmit={applyFilter}>
           <label className="filter-field" htmlFor={id}>
@@ -189,15 +190,11 @@ export function EndpointList() {
                 className="text-accent"
                 aria-hidden="true"
               />
-              <h3>
-                {filtered
-                  ? "No endpoints match."
-                  : "Give your events a destination."}
-              </h3>
+              <h3>{filtered ? "No matching endpoints" : "No endpoints yet"}</h3>
               <p>
                 {filtered
                   ? "Adjust the status or event-type filter to find your endpoints."
-                  : "Register your first endpoint, set up its signing secret, and verify your receiver."}
+                  : "Add a destination to receive your events."}
               </p>
               {!filtered && canManage && availabilityKnown && !suspended && (
                 <Link href={href + "/new"} className="button button-secondary">

@@ -1,9 +1,5 @@
 @layer theme, base, clerk, components, utilities;
 @import "tailwindcss";
-@import "./site.css";
-@import "./project.css";
-@import "./onboarding.css";
-@import "./workspace.css";
 
 :root {
   color-scheme: light;

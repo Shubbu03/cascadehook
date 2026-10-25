@@ -2,6 +2,7 @@
 
 import { ArrowRightIcon, CheckIcon } from "@phosphor-icons/react";
 import { useActionState, useId, useState } from "react";
+import Link from "next/link";
 import type { NameActionState } from "../data-access/form-state";
 
 export function OnboardingForm({
@@ -20,7 +21,11 @@ export function OnboardingForm({
 
   return (
     <main id="main-content" className="onboarding-content">
-      <ol className="onboarding-progress" aria-label="Setup progress" role="list">
+      <ol
+        className="onboarding-progress"
+        aria-label="Setup progress"
+        role="list"
+      >
         <li
           aria-current={!isProject ? "step" : undefined}
           data-complete={isProject}
@@ -44,7 +49,11 @@ export function OnboardingForm({
         )}
         <form action={formAction} aria-busy={pending}>
           {organization && (
-            <input type="hidden" name="organizationId" value={organization.id} />
+            <input
+              type="hidden"
+              name="organizationId"
+              value={organization.id}
+            />
           )}
           <label className="form-field" htmlFor={id}>
             <span>{isProject ? "Project name" : "Organization name"}</span>
@@ -75,6 +84,13 @@ export function OnboardingForm({
           </button>
         </form>
       </div>
+      {!isProject && (
+        <p className="onboarding-invitation">
+          <Link href="/invitations/accept" className="text-link">
+            Have an invitation? Join an organization
+          </Link>
+        </p>
+      )}
     </main>
   );
 }

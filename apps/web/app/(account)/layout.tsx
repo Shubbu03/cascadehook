@@ -47,6 +47,7 @@ async function ConfiguredAccount({ children }: { children: React.ReactNode }) {
       }}
       appearance={{
         cssLayerName: "clerk",
+        elements: { formFieldInput: "account-input" },
         variables: {
           colorPrimary: "var(--accent)",
           colorPrimaryForeground: "var(--accent-foreground)",

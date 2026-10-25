@@ -17,7 +17,10 @@ export function useWorkspaceSelection() {
   const project = useQuery(projectQuery(userId, projectId, getToken));
   const organizationId = projectId
     ? project.data?.organization_id
-    : searchParams.get("organization") || organizations.data?.pages[0]?.data[0]?.id;
+    : typeof params.organizationId === "string"
+      ? params.organizationId
+      : searchParams.get("organization") ||
+        organizations.data?.pages[0]?.data[0]?.id;
   const organization = useQuery(
     organizationQuery(userId, organizationId, getToken),
   );

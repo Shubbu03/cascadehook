@@ -11,20 +11,21 @@ export function WorkspaceHome() {
   const userId = useSessionUserId();
   const { organization, organizations } = useWorkspaceSelection();
   const { createOrganization } = useWorkspaceCreation();
-  const error = organization.error ?? (
-    organization.data || organizations.data ? null : organizations.error
-  );
-  const loading = !organization.data && (
-    organizations.isPending || organization.isFetching
-  );
+  const error =
+    organization.error ??
+    (organization.data || organizations.data ? null : organizations.error);
+  const loading =
+    !organization.data && (organizations.isPending || organization.isFetching);
 
   return (
-    <main id="main-content" className="workspace-main page-width">
+    <main id="main-content" className="dashboard-main">
       {error ? (
         <ConnectionError
           error={error}
           retry={() => {
-            void (organization.isError ? organization.refetch() : organizations.refetch());
+            void (organization.isError
+              ? organization.refetch()
+              : organizations.refetch());
           }}
           pending={organization.isFetching || organizations.isFetching}
         />
