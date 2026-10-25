@@ -246,6 +246,36 @@
     font-size: 19px;
     margin-bottom: 16px;
   }
+  .settings-section > h2 {
+    margin-bottom: 16px;
+    font-size: 19px;
+  }
+  .button-danger {
+    background: var(--danger);
+    color: var(--accent-foreground);
+  }
+  .button-danger:hover {
+    filter: brightness(0.94);
+  }
+  .account-ownership ul {
+    display: grid;
+    gap: 12px;
+    padding: 0;
+    margin-block: 22px;
+    list-style: none;
+  }
+  .account-ownership .text-link {
+    color: var(--accent);
+    font-size: 14px;
+    overflow-wrap: anywhere;
+  }
+  .account-settings .notice h2 {
+    font-size: 18px;
+    margin-bottom: 12px;
+  }
+  .deletion-form {
+    max-width: 460px;
+  }
   .settings-section > .text-link {
     font-size: 14px;
   }

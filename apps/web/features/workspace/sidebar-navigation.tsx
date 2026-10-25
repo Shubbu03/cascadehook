@@ -9,6 +9,7 @@ import {
   LightningIcon,
   ListChecksIcon,
   PlugsConnectedIcon,
+  RocketLaunchIcon,
   SquaresFourIcon,
   UsersIcon,
 } from "@phosphor-icons/react";
@@ -158,8 +159,18 @@ export function SidebarNavigation({
           </ul>
         </div>
       )}
-      {projectId && (
-        <div className="sidebar-guide">
+      <div className="sidebar-guide">
+        <Link
+          href="/docs/quickstart"
+          className="sidebar-link"
+          aria-label="Quickstart"
+          title="Quickstart"
+          onNavigate={onNavigate}
+        >
+          <RocketLaunchIcon size={18} aria-hidden="true" />
+          <span>Quickstart</span>
+        </Link>
+        {projectId && (
           <Link
             href={href + "/receiver-guide"}
             className="sidebar-link"
@@ -173,8 +184,8 @@ export function SidebarNavigation({
             <BookOpenIcon size={18} aria-hidden="true" />
             <span>Receiver guide</span>
           </Link>
-        </div>
-      )}
+        )}
+      </div>
     </nav>
   );
 }

@@ -6,7 +6,9 @@ import {
   CaretRightIcon,
   ListIcon,
   XIcon,
+  UserCircleIcon,
 } from "@phosphor-icons/react";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { Brand } from "@/components/brand";
@@ -71,6 +73,16 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         </div>
         <SidebarNavigation {...navigation} />
         <div className="sidebar-footer">
+          <Link
+            href="/account"
+            className="sidebar-link"
+            aria-label="Account settings"
+            title="Account settings"
+            aria-current={pathname === "/account" ? "page" : undefined}
+          >
+            <UserCircleIcon size={18} aria-hidden="true" />
+            <span>Account settings</span>
+          </Link>
           <button
             className="sidebar-link sidebar-collapse"
             type="button"
@@ -191,6 +203,12 @@ function MobileNavigation({
         </button>
       </div>
       {children}
+      <div className="sidebar-footer">
+        <Link href="/account" className="sidebar-link" onNavigate={onClose}>
+          <UserCircleIcon size={18} aria-hidden="true" />
+          <span>Account settings</span>
+        </Link>
+      </div>
       <div className="sidebar-footer mobile-theme">
         <span>Appearance</span>
         <ThemeSwitcher />

@@ -27,9 +27,9 @@ export function MobileNav() {
         <a href="#how-it-works" onClick={close}>
           How it works
         </a>
-        <a href="#quickstart" onClick={close}>
+        <Link href="/docs/quickstart" onClick={close}>
           Quickstart
-        </a>
+        </Link>
         <Link href="/sign-in" onClick={close}>
           Sign in
         </Link>

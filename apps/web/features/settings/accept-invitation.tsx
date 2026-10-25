@@ -4,6 +4,7 @@ import { useAuth } from "@clerk/nextjs";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import { AmbientBackground } from "@/components/ambient-background";
 import { Brand } from "@/components/brand";
 import { apiRequest } from "@/lib/api";
 import type { Membership } from "./types";
@@ -79,6 +80,7 @@ export function AcceptInvitation() {
 
   return (
     <div className="onboarding-page">
+      <AmbientBackground />
       <header className="onboarding-header page-width">
         <Brand href={isSignedIn ? "/dashboard" : "/"} />
         <Link href="/" className="text-link">

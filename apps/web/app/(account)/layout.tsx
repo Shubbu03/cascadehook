@@ -30,7 +30,7 @@ async function ConfiguredAccount({ children }: { children: React.ReactNode }) {
       dynamic
       signInUrl="/sign-in"
       signUpUrl="/sign-up"
-      signInFallbackRedirectUrl="/onboarding"
+      signInFallbackRedirectUrl="/dashboard"
       signUpFallbackRedirectUrl="/onboarding"
       afterSignOutUrl="/"
       localization={{

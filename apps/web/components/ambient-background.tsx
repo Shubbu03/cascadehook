@@ -1,5 +1,3 @@
-import styles from "./ambient-background.module.css";
-
 const particles = [
   [7, 24, 2, -3],
   [16, 38, 3, -11],
@@ -21,12 +19,12 @@ const particles = [
 
 export function AmbientBackground() {
   return (
-    <div className={styles.background} aria-hidden="true">
-      <span className={styles.texture} />
+    <div className="ambient-background" aria-hidden="true">
+      <span className="ambient-background-texture" />
       {particles.map(([x, y, size, delay]) => (
         <span
           key={x + "-" + y}
-          className={styles.particle}
+          className="ambient-background-particle"
           style={{
             left: x + "%",
             top: y + "%",
@@ -36,10 +34,10 @@ export function AmbientBackground() {
           }}
         />
       ))}
-      <span className={styles.corner} data-corner="top-left" />
-      <span className={styles.corner} data-corner="top-right" />
-      <span className={styles.corner} data-corner="bottom-left" />
-      <span className={styles.corner} data-corner="bottom-right" />
+      <span className="ambient-background-corner" data-corner="top-left" />
+      <span className="ambient-background-corner" data-corner="top-right" />
+      <span className="ambient-background-corner" data-corner="bottom-left" />
+      <span className="ambient-background-corner" data-corner="bottom-right" />
     </div>
   );
 }

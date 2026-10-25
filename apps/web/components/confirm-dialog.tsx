@@ -7,6 +7,8 @@ export function ConfirmDialog({
   children,
   confirmLabel,
   pending = false,
+  pendingLabel = "Updating…",
+  destructive = false,
   onConfirm,
   onCancel,
 }: {
@@ -14,6 +16,8 @@ export function ConfirmDialog({
   children: React.ReactNode;
   confirmLabel: string;
   pending?: boolean;
+  pendingLabel?: string;
+  destructive?: boolean;
   onConfirm: () => void;
   onCancel: () => void;
 }) {
@@ -48,11 +52,13 @@ export function ConfirmDialog({
         </button>
         <button
           type="button"
-          className="button button-primary"
+          className={
+            "button " + (destructive ? "button-danger" : "button-primary")
+          }
           onClick={onConfirm}
           disabled={pending}
         >
-          {pending ? "Updating…" : confirmLabel}
+          {pending ? pendingLabel : confirmLabel}
         </button>
       </div>
     </dialog>

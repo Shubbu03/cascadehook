@@ -15,9 +15,10 @@ import (
 
 func (s *Store) EnsureUser(ctx context.Context, identity auth.SessionIdentity) (accounts.User, error) {
 	var user accounts.User
-	err := s.pool.QueryRow(ctx, `SELECT id, created_at, deletion_requested_at FROM users
-		WHERE identity_issuer = $1 AND identity_subject = $2`, identity.Issuer, identity.Subject,
-	).Scan(&user.ID, &user.CreatedAt, &user.DeletionRequestedAt)
+	err := s.pool.QueryRow(ctx, `SELECT u.id, u.created_at, u.deletion_requested_at, b.completed_at
+		FROM users u LEFT JOIN user_onboarding b ON b.user_id = u.id
+		WHERE u.identity_issuer = $1 AND u.identity_subject = $2`, identity.Issuer, identity.Subject,
+	).Scan(&user.ID, &user.CreatedAt, &user.DeletionRequestedAt, &user.OnboardingCompletedAt)
 	if err == nil {
 		return user, nil
 	}
@@ -49,9 +50,11 @@ func (s *Store) EnsureUser(ctx context.Context, identity auth.SessionIdentity) (
 	// cannot recreate the account after the janitor removes its user row.
 	err = tx.QueryRow(ctx, `INSERT INTO users (id, identity_issuer, identity_subject)
 		VALUES ($1,$2,$3) ON CONFLICT (identity_issuer, identity_subject)
-		DO UPDATE SET identity_subject = EXCLUDED.identity_subject RETURNING id, created_at, deletion_requested_at`,
+		DO UPDATE SET identity_subject = EXCLUDED.identity_subject
+		RETURNING id, created_at, deletion_requested_at,
+		(SELECT completed_at FROM user_onboarding WHERE user_id = users.id)`,
 		id, identity.Issuer, identity.Subject,
-	).Scan(&user.ID, &user.CreatedAt, &user.DeletionRequestedAt)
+	).Scan(&user.ID, &user.CreatedAt, &user.DeletionRequestedAt, &user.OnboardingCompletedAt)
 	if err != nil {
 		return accounts.User{}, fmt.Errorf("provision account identity: %w", err)
 	}
@@ -59,6 +62,17 @@ func (s *Store) EnsureUser(ctx context.Context, identity auth.SessionIdentity) (
 		return accounts.User{}, fmt.Errorf("commit identity provisioning: %w", err)
 	}
 	return user, nil
+}
+
+// Completion is independent of tenant resources and written in the transaction
+// that finishes setup. A separate row avoids upgrading shared active-user locks.
+func completeOnboarding(ctx context.Context, tx pgx.Tx, userID uuid.UUID) error {
+	_, err := tx.Exec(ctx, `INSERT INTO user_onboarding (user_id) VALUES ($1)
+		ON CONFLICT (user_id) DO NOTHING`, userID)
+	if err != nil {
+		return fmt.Errorf("complete account onboarding: %w", err)
+	}
+	return nil
 }
 
 func (s *Store) GetOrganization(ctx context.Context, userID, id uuid.UUID) (accounts.Organization, error) {

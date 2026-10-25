@@ -9,6 +9,7 @@
     "lint": "eslint",
     "test": "bun test",
     "check:styles": "bun scripts/check-styles.ts",
+    "check:receivers": "bun scripts/check-receivers.ts",
     "typecheck": "next typegen && tsc --noEmit"
   },
   "dependencies": {

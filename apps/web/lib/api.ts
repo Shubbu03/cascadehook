@@ -58,6 +58,9 @@ function problemMessage(status: number, code?: string) {
       "Invitation verification is temporarily unavailable. Please try again later.",
     last_organization_owner:
       "The organization must keep at least one owner. Promote another member first.",
+    account_owns_organizations:
+      "Delete your owned organizations, or promote another owner and change your own role, before deleting your account.",
+    account_deleted: "This account is no longer available. Please sign out.",
     already_member: "This account is already an organization member.",
     invalid_role: "Choose a valid organization role.",
     invalid_endpoint_url:

@@ -1,9 +1,5 @@
-import type {
-  Account,
-  Organization,
-  Page,
-  Project,
-} from "@/features/workspace/types";
+import type { Account, Organization, Page } from "@/features/workspace/types";
+import { ApiError } from "@/lib/api";
 
 export type SetupState =
   | { step: "organization" }
@@ -16,7 +12,15 @@ type SetupRequest = <T>(
 ) => Promise<T>;
 
 export async function resolveSetup(request: SetupRequest): Promise<SetupState> {
-  await request<Account>("/v1/me");
+  const account = await request<Account>("/v1/me");
+  if (account.onboarding_completed_at === undefined) {
+    throw new ApiError(
+      "Workspace setup is unavailable. Update and restart the API after applying the latest database migrations.",
+      503,
+      "workspace_setup_version_mismatch",
+    );
+  }
+  if (account.onboarding_completed_at) return { step: "ready" };
   let organization: Organization | undefined;
   let cursor: string | null = null;
 
@@ -25,16 +29,6 @@ export async function resolveSetup(request: SetupRequest): Promise<SetupState> {
       limit: 20,
       ...(cursor ? { cursor } : {}),
     });
-    const projects = await Promise.all(
-      page.data.map((item) =>
-        request<Page<Project>>(
-          "/v1/organizations/" + encodeURIComponent(item.id) + "/projects",
-          { limit: 1 },
-        ),
-      ),
-    );
-    if (projects.some((page) => page.data.length > 0)) return { step: "ready" };
-
     organization ??= page.data.find((item) => item.role !== "member");
     cursor = page.next_cursor;
   } while (cursor);

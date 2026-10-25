@@ -1,6 +1,10 @@
 export type OrganizationRole = "owner" | "admin" | "member";
 
-export type Account = { id: string; created_at: string };
+export type Account = {
+  id: string;
+  created_at: string;
+  onboarding_completed_at: string | null;
+};
 
 export type Organization = {
   id: string;

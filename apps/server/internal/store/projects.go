@@ -112,6 +112,9 @@ func (s *Store) CreateProject(
 	if err != nil {
 		return accounts.Project{}, fmt.Errorf("create organization project: %w", err)
 	}
+	if err := completeOnboarding(ctx, tx, userID); err != nil {
+		return accounts.Project{}, err
+	}
 	if err := tx.Commit(ctx); err != nil {
 		return accounts.Project{}, fmt.Errorf("commit project creation: %w", err)
 	}

@@ -111,7 +111,7 @@ export function LandingPage() {
         <Brand href={null} />
         <nav className="desktop-nav" aria-label="Main navigation">
           <a href="#how-it-works">How it works</a>
-          <a href="#quickstart">Quickstart</a>
+          <Link href="/docs/quickstart">Quickstart</Link>
         </nav>
         <div className="header-actions">
           <ThemeSwitcher />
@@ -146,10 +146,10 @@ export function LandingPage() {
                 Get started
                 <ArrowRightIcon size={18} aria-hidden="true" />
               </Link>
-              <a href="#quickstart" className="button button-quiet">
+              <Link href="/docs/quickstart" className="button button-quiet">
                 View quickstart
                 <ArrowDownIcon size={16} aria-hidden="true" />
-              </a>
+              </Link>
             </div>
           </div>
           <DeliveryExample />

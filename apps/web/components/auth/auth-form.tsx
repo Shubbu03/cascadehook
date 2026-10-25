@@ -32,14 +32,14 @@ export async function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
     );
   }
   const { userId } = await auth();
-  if (userId) redirect("/onboarding");
+  if (userId) redirect("/dashboard");
   return mode === "sign-in" ? (
     <SignIn
       appearance={formAppearance}
       routing="path"
       path="/sign-in"
       signUpUrl="/sign-up"
-      fallbackRedirectUrl="/onboarding"
+      fallbackRedirectUrl="/dashboard"
     />
   ) : (
     <SignUp

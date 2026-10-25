@@ -1,5 +1,6 @@
 import { CopyButton } from "@/components/copy-button";
 import { PageHeader } from "@/components/page-header";
+import Link from "next/link";
 
 const proofExample = [
   'import { createHmac } from "node:crypto";',
@@ -28,6 +29,9 @@ export function ReceiverGuide() {
   return (
     <article className="receiver-guide">
       <PageHeader title="Receiver guide" />
+      <Link href="/docs/receivers" className="text-link text-accent">
+        Working Node.js and Bun examples →
+      </Link>
       <p className="notice">
         Verification makes a real request to your receiver. A generic webhook
         inbox that only returns 200 will not pass the ownership challenge.

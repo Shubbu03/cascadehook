@@ -101,6 +101,9 @@ func (s *Store) RecoverOrganizationOwner(
 	if err != nil {
 		return OwnershipRecovery{}, fmt.Errorf("audit ownership recovery: %w", err)
 	}
+	if err := completeOnboarding(ctx, tx, userID); err != nil {
+		return OwnershipRecovery{}, err
+	}
 	if err := tx.Commit(ctx); err != nil {
 		return OwnershipRecovery{}, fmt.Errorf("commit ownership recovery; inspect membership before retrying: %w", err)
 	}

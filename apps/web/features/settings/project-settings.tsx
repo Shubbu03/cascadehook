@@ -1,7 +1,11 @@
 "use client";
 
 import { useAuth } from "@clerk/nextjs";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQueryClient,
+  type InfiniteData,
+} from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -10,6 +14,8 @@ import { CopyButton } from "@/components/copy-button";
 import { PageHeader } from "@/components/page-header";
 import { useProject } from "@/features/projects/project-workspace";
 import { useSessionUserId } from "@/features/workspace/session";
+import { organizationHref } from "@/features/workspace/queries";
+import type { Page, Project } from "@/features/workspace/types";
 import { apiRequest } from "@/lib/api";
 import { notify } from "@/lib/notify";
 import { RenameForm } from "./rename-form";
@@ -25,10 +31,26 @@ export function ProjectSettings() {
   const path = "/v1/projects/" + encodeURIComponent(project.id);
   const remove = useMutation({
     mutationFn: () => apiRequest<unknown>(path, getToken, { method: "DELETE" }),
-    onSuccess: () => {
+    onSuccess: async () => {
       setConfirmation(false);
       notify("Project deletion requested.", "success");
-      router.replace("/dashboard");
+      const queryKey = ["projects", userId, project.organization_id];
+      await client.cancelQueries({ queryKey });
+      client.setQueriesData<InfiniteData<Page<Project>>>(
+        { queryKey },
+        (data) =>
+          data
+            ? {
+                ...data,
+                pages: data.pages.map((page) => ({
+                  ...page,
+                  data: page.data.filter((item) => item.id !== project.id),
+                })),
+              }
+            : data,
+      );
+      void client.invalidateQueries({ queryKey, refetchType: "none" });
+      router.replace(organizationHref(project.organization_id));
       router.refresh();
     },
     onError: (error) => {
@@ -123,7 +145,9 @@ export function ProjectSettings() {
       {confirmation && (
         <ConfirmDialog
           title="Permanently delete this project?"
-          confirmLabel="Request deletion"
+          confirmLabel="Delete"
+          pendingLabel="Deleting…"
+          destructive
           pending={remove.isPending}
           onConfirm={() => remove.mutate()}
           onCancel={() => setConfirmation(false)}

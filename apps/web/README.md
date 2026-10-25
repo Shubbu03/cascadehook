@@ -22,7 +22,8 @@ Configure the values in the copied file before testing account access:
 | CLERK_SECRET_KEY | Server-only secret for that same Clerk application |
 | NEXT_PUBLIC_API_BASE_URL | Public Go API origin, without /v1 or embedded credentials |
 
-The example also sets local sign-in/sign-up URLs and the /onboarding fallback.
+The example also sets local sign-in/sign-up URLs. Sign-in returns to /dashboard;
+sign-up starts at /onboarding.
 Keep secrets out of NEXT_PUBLIC_ variables. Configure public variables before a
 production build, and restart development after changing the environment.
 No Clerk application is created automatically.
@@ -49,15 +50,22 @@ the API origin, authenticated users see a recoverable connection error.
 ## Current flow
 
 - / — responsive landing page with explicitly illustrative delivery examples.
+- /docs/quickstart — public setup, publish, and troubleshooting guide.
+- /docs/receivers — copyable/downloadable Node.js and Bun adapters with a shared
+  receiver. The exact downloaded files are tested against the Go signing/proof
+  contract, reject invalid/old signatures, and sync ordinary events to a local
+  inbox before acknowledging. They are a single-process reference; deploy behind
+  public HTTPS and replace the inbox with your durable queue/database as needed.
 - /sign-in and /sign-up — 40/60 split layout with brief, context-specific copy
   and Clerk forms, including their catch-all steps. A back-to-home link is always
   available. Phone layouts show the brand, home link, and form.
-  After authentication, /onboarding checks the saved Go workspace state.
+  Sign-in returns to the dashboard; first-time sign-up starts onboarding.
 - /onboarding/organization — create the first organization.
 - /onboarding/project — name and create its first project, then open that
-  project's dashboard. Refreshes and returning visits resume from saved state.
-  Existing users with an accessible project skip setup. Read-only members of an
-  empty organization can create their own organization instead.
+  project's dashboard. Refreshes resume unfinished first-time setup. Go persists
+  onboarding_completed_at when the first project is created or the user joins an
+  existing organization. Once completed, setup never returns after deleting
+  projects or organizations. Migration 00019 marks existing accounts complete.
 - Clerk receives the request's session state during server rendering, so the
   dashboard can render its page subtree before the browser SDK finishes loading.
 - /dashboard — server-protected workspace. Incomplete accounts return to setup
@@ -111,6 +119,30 @@ the API origin, authenticated users see a recoverable connection error.
   membership roles/removal, and invitation creation/revocation. These mutations
   require the owner role. Members can inspect the membership list; the API exposes
   account IDs rather than display names or member email addresses.
+  Owners can request permanent organization deletion after exact-name confirmation
+  and a second modal confirmation. Access/dispatch stops on acceptance; cleanup
+  continues in the background. Deletion requests never automatically retry.
+- /account — account settings and deletion, linked from the sidebar.
+  The ownership check scans every organizations page. Transfer/demote ownership
+  or delete owned organizations before requesting account deletion with DELETE and
+  a second confirmation; Go enforces the final check. Account deletion blocks
+  access and queues local/provider cleanup. The UI clears its caches and signs out
+  the confirmed session, with an explicit sign-out retry if the provider is offline.
+  Destructive operations bind their token to the confirmed Clerk session and verify
+  receipt scope before treating a deletion as accepted.
+
+Account and organization settings require a session but do not require an existing
+project. Project routes and the projects home only gate unfinished first-time
+setup using the persisted account field in /v1/me; their public URLs are unchanged.
+Deleting the last project opens that organization's All projects empty state.
+
+Apply migration 00019 with `bun run db:migrate` and restart the Go API before
+using this frontend version. The lifecycle regression uses an isolated schema in
+a PostgreSQL database provided through TEST_DATABASE_URL:
+
+    cd apps/server
+    TEST_DATABASE_URL=... go test ./internal/store -run TestOnboardingLifecycle -v
+
 - /invitations/accept — accepts a one-time token or fragment link through Go.
   An unsigned recipient signs in with the invited email, then reopens the link.
   The fragment is removed before acceptance; tokens never enter query/mutation
@@ -192,6 +224,14 @@ From the repository root:
     bun run typecheck:web
     bun run build:web
 
+With Node.js and Bun installed, exercise both downloaded HTTP receivers locally:
+
+    bun run --cwd apps/web check:receivers
+
+This starts temporary plain-HTTP listeners, uses a public deterministic fixture,
+checks challenge proofs, durable receipts, and tamper rejection, then removes the
+temporary data. It does not call the application API or delete any application data.
+
 Turbopack uses worker-thread evaluation for CSS loaders to avoid a socket-based
 loader process pool. Next.js may fall back to its default strategy on affected
 Node.js releases; use a supported Node version for builds.
@@ -245,5 +285,12 @@ Manually verify:
     copying, repeat publication/new event keys, and pending/failed delivery links.
     Switch endpoints/projects, disable an endpoint, expire/revoke a key, and check
     member access, paused projects, API failures, and completed setup in both themes.
+20. Read the public docs while signed out; download and run each receiver adapter,
+    configure a public HTTPS destination, and follow the quickstart through success.
+21. With disposable resources, check organization deletion as owner/admin/member,
+    exact-name and modal confirmation, failed/lost responses, and post-deletion access.
+    Check account deletion with owned organizations on later pages, after ownership
+    transfer, without a project, and during sign-out/provider failures. Confirm that
+    changing signed-in accounts cannot retarget a pending deletion.
 
 Browser and GUI verification is user-owned.

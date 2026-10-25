@@ -20,6 +20,7 @@ export const config = {
     "/onboarding(.*)",
     "/invitations/accept(.*)",
     "/dashboard(.*)",
+    "/account(.*)",
     "/__clerk/(.*)",
   ],
 };

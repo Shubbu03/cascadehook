@@ -7,16 +7,13 @@
     min-height: 100svh;
   }
   .onboarding-header {
+    position: relative;
+    z-index: 1;
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 20px;
     min-height: 88px;
-  }
-  .onboarding-header-actions {
-    display: flex;
-    align-items: center;
-    gap: 24px;
   }
   .onboarding-header .text-link {
     min-height: 44px;
@@ -24,6 +21,8 @@
     font-size: 13px;
   }
   .onboarding-body {
+    position: relative;
+    z-index: 1;
     display: grid;
     align-items: center;
     flex: 1;
@@ -114,9 +113,6 @@
   }
   .onboarding-header .brand {
     font-size: 20px;
-  }
-  .onboarding-header-actions {
-    gap: 14px;
   }
   .onboarding-header .text-link {
     font-size: 12px;

@@ -383,6 +383,9 @@ func (s *Store) AcceptInvitation(
 	); err != nil {
 		return accounts.Membership{}, fmt.Errorf("consume invitation: %w", err)
 	}
+	if err := completeOnboarding(ctx, tx, userID); err != nil {
+		return accounts.Membership{}, err
+	}
 	if err := tx.Commit(ctx); err != nil {
 		return accounts.Membership{}, fmt.Errorf("commit invitation acceptance; retry token to resolve: %w", err)
 	}

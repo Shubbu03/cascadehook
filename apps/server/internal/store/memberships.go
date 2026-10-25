@@ -118,6 +118,9 @@ func (s *Store) AddMembership(
 	if err != nil {
 		return accounts.Membership{}, fmt.Errorf("add organization member: %w", err)
 	}
+	if err := completeOnboarding(ctx, tx, params.UserID); err != nil {
+		return accounts.Membership{}, err
+	}
 	if err := tx.Commit(ctx); err != nil {
 		return accounts.Membership{}, fmt.Errorf("commit membership creation: %w", err)
 	}

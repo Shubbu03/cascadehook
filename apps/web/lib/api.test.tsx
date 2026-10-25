@@ -166,6 +166,189 @@ afterAll(() => {
 });
 
 describe("authenticated API transport", () => {
+  test("binds destructive operations to the confirmed session and rejects switched accounts", async () => {
+    const { deletionToken } = await import("../features/settings/deletion");
+    let current = {
+      id: "session-a",
+      user: { id: "user-a" },
+      getToken: async () => "token-a",
+    };
+    const token = deletionToken(current, "session-a", "user-a");
+    current = {
+      id: "session-b",
+      user: { id: "user-b" },
+      getToken: async () => "token-b",
+    };
+    expect(await token()).toBe("token-a");
+    expect(() => deletionToken(current, "session-a", "user-a")).toThrow(
+      "account changed",
+    );
+    expect(() => deletionToken(null, "session-a", "user-a")).toThrow(
+      "account changed",
+    );
+  });
+  test("requires exact confirmation and the owner role before requesting organization deletion", async () => {
+    const { requestOrganizationDeletion } = await import(
+      "../features/settings/deletion"
+    );
+    const organization = {
+      id: "019a0000-0000-7000-8000-000000000001",
+      name: "Billing",
+      role: "owner" as const,
+      created_at: "2026-10-25T00:00:00Z",
+      updated_at: "2026-10-25T00:00:00Z",
+    };
+    let requests = 0;
+    replaceFetch(async (input, init) => {
+      requests++;
+      const request = new Request(input, init);
+      expect(request.method).toBe("DELETE");
+      expect(request.url).toBe(
+        "https://api.example/v1/organizations/" + organization.id,
+      );
+      expect(await request.text()).toBe("");
+      expect(init?.credentials).toBe("omit");
+      return Response.json(
+        {
+          organization_id: organization.id,
+          deletion_requested_at: organization.created_at,
+        },
+        { status: 202 },
+      );
+    });
+    for (const role of ["admin", "member"] as const)
+      await expect(
+        requestOrganizationDeletion(
+          { ...organization, role },
+          "Billing",
+          async () => "token",
+        ),
+      ).rejects.toMatchObject({ status: 403 });
+    await expect(
+      requestOrganizationDeletion(organization, "billing", async () => "token"),
+    ).rejects.toThrow("exact");
+    expect(requests).toBe(0);
+    await requestOrganizationDeletion(
+      organization,
+      "Billing",
+      async () => "token",
+    );
+    expect(requests).toBe(1);
+  });
+  test("does not confirm deletion from a malformed or wrong-resource receipt", async () => {
+    const { requestAccountDeletion } = await import(
+      "../features/settings/deletion"
+    );
+    for (const receipt of [
+      { user_id: "other", deletion_requested_at: "2026-10-25T00:00:00Z" },
+      {
+        user_id: "019a0000-0000-7000-8000-000000000001",
+        deletion_requested_at: "invalid",
+      },
+      null,
+    ]) {
+      replaceFetch(async () => Response.json(receipt, { status: 202 }));
+      await expect(
+        requestAccountDeletion(
+          "019a0000-0000-7000-8000-000000000001",
+          "DELETE",
+          async () => "token",
+        ),
+      ).rejects.toThrow("could not be confirmed");
+    }
+  });
+  test("sends account deletion once with no body and explains ownership conflicts", async () => {
+    const { requestAccountDeletion } = await import(
+      "../features/settings/deletion"
+    );
+    let requests = 0;
+    replaceFetch(async (input, init) => {
+      requests++;
+      const request = new Request(input, init);
+      expect(request.method).toBe("DELETE");
+      expect(request.url).toBe("https://api.example/v1/me");
+      expect(await request.text()).toBe("");
+      return Response.json(
+        { code: "account_owns_organizations" },
+        { status: 409 },
+      );
+    });
+    await expect(
+      requestAccountDeletion(
+        "019a0000-0000-7000-8000-000000000001",
+        "delete",
+        async () => "token",
+      ),
+    ).rejects.toThrow("Type DELETE");
+    expect(requests).toBe(0);
+    await expect(
+      requestAccountDeletion(
+        "019a0000-0000-7000-8000-000000000001",
+        "DELETE",
+        async () => "token",
+      ),
+    ).rejects.toThrow("promote another owner");
+    expect(requests).toBe(1);
+    replaceFetch(async () => {
+      requests++;
+      return Response.json({ code: "request_timeout" }, { status: 503 });
+    });
+    await expect(
+      requestAccountDeletion(
+        "019a0000-0000-7000-8000-000000000001",
+        "DELETE",
+        async () => "token",
+      ),
+    ).rejects.toMatchObject({ status: 503 });
+    expect(requests).toBe(2);
+  });
+  test("checks ownership beyond the first organizations page", async () => {
+    const { ownedOrganizations } = await import(
+      "../features/settings/deletion"
+    );
+    const requests: URL[] = [];
+    replaceFetch(async (input, init) => {
+      const url = new URL(new Request(input, init).url);
+      requests.push(url);
+      return Response.json(
+        url.searchParams.has("cursor")
+          ? { data: [{ id: "owned", role: "owner" }], next_cursor: null }
+          : {
+              data: [{ id: "joined", role: "member" }],
+              next_cursor: "second-page",
+            },
+      );
+    });
+    const owned = await ownedOrganizations(
+      async () => "token",
+      new AbortController().signal,
+    );
+    expect(owned.map((organization) => organization.id)).toEqual(["owned"]);
+    expect(requests).toHaveLength(2);
+    expect(requests[1].searchParams.get("cursor")).toBe("second-page");
+  });
+  test("requires a second confirmation before rendering a destructive dialog", async () => {
+    const { QueryClient, QueryClientProvider } = await import(
+      "@tanstack/react-query"
+    );
+    const { DeleteAction } = await import("../features/settings/delete-action");
+    const html = renderToStaticMarkup(
+      <QueryClientProvider client={new QueryClient()}>
+        <DeleteAction
+          title="Delete account"
+          description="Account removal"
+          confirmationText="DELETE"
+          onDelete={async () => {
+            throw new Error("Must not run during rendering");
+          }}
+          onDeleted={() => {}}
+        />
+      </QueryClientProvider>,
+    );
+    expect(html).not.toContain("<dialog");
+    expect(html).toContain("disabled");
+    expect(html).toContain("Type <code>DELETE</code> to confirm");
+  });
   test("sends the observed replay cycle with a bearer token and no API cookies", async () => {
     let captured: Request | undefined;
     let options: RequestInit | undefined;

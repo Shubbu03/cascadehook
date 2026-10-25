@@ -6,6 +6,7 @@ dist/
 
 # Local configuration
 .env
+received-events.ndjson
 .env.*
 !.env.example
 !.env.*.example

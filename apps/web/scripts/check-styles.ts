@@ -28,6 +28,12 @@ try {
     ".account-input",
     ".overview-grid",
     ".overview-checklist",
+    ".docs-main",
+    ".docs-code",
+    ".deletion-form",
+    ".ambient-background",
+    ".ambient-background-particle",
+    ".ambient-background-corner",
   ].filter((selector) => !css.includes(selector));
   if (missing.length) throw new Error(`Missing styles: ${missing.join(", ")}`);
   console.log(

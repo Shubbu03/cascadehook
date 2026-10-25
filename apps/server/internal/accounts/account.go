@@ -42,9 +42,10 @@ func (role Role) CanManageProjects() bool {
 }
 
 type User struct {
-	ID                  uuid.UUID  `json:"id"`
-	CreatedAt           time.Time  `json:"created_at"`
-	DeletionRequestedAt *time.Time `json:"-"`
+	ID                    uuid.UUID  `json:"id"`
+	CreatedAt             time.Time  `json:"created_at"`
+	OnboardingCompletedAt *time.Time `json:"onboarding_completed_at"`
+	DeletionRequestedAt   *time.Time `json:"-"`
 }
 
 type Organization struct {
