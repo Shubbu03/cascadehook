@@ -22,6 +22,22 @@ beforeAll(async () => {
 });
 
 describe("workspace sidebar", () => {
+  test("marks Overview active only at the project root", async () => {
+    const { SidebarNavigation } = await import(
+      "../features/workspace/sidebar-navigation"
+    );
+    const html = renderToStaticMarkup(
+      <SidebarNavigation
+        projectId="project"
+        role="owner"
+        pathname="/dashboard/projects/project"
+      />,
+    );
+    expect(html.match(/<a\b[^>]*aria-current="page"[^>]*>/)?.[0]).toContain(
+      'href="/dashboard/projects/project"',
+    );
+    expect(html.match(/aria-current="page"/g)).toHaveLength(1);
+  });
   test("keeps member navigation read-only and marks nested routes active", async () => {
     const { SidebarNavigation } = await import(
       "../features/workspace/sidebar-navigation"
@@ -75,6 +91,71 @@ describe("workspace sidebar", () => {
       'href="/dashboard/organizations/organization/settings"',
     );
     expect(html).not.toContain("/deliveries");
+  });
+});
+
+describe("project Overview reads", () => {
+  test("queries selected-endpoint history separately from successful deliveries", async () => {
+    const { QueryClient } = await import("@tanstack/react-query");
+    const { setupActivityQuery } = await import(
+      "../features/projects/overview/queries"
+    );
+    const requests: URL[] = [];
+    replaceFetch(async (input, init) => {
+      const url = new URL(new Request(input, init).url);
+      requests.push(url);
+      return Response.json({
+        data: url.searchParams.has("state")
+          ? []
+          : [{ id: "queued", state: "pending" }],
+        next_cursor: null,
+      });
+    });
+    const client = new QueryClient();
+    const result = await client.fetchQuery(
+      setupActivityQuery("user", "project", "endpoint", async () => "token"),
+    );
+    expect(result.latest?.state).toBe("pending");
+    expect(result.successful).toBeNull();
+    expect(requests).toHaveLength(2);
+    expect(
+      requests.every(
+        (url) =>
+          url.pathname === "/v1/projects/project/deliveries" &&
+          url.searchParams.get("endpoint_id") === "endpoint" &&
+          url.searchParams.get("limit") === "1",
+      ),
+    ).toBe(true);
+    expect(
+      requests.filter((url) => url.searchParams.get("state") === "succeeded"),
+    ).toHaveLength(1);
+    client.clear();
+  });
+  test("checks only active keys and disables private reads for members", async () => {
+    const { QueryClient, skipToken } = await import("@tanstack/react-query");
+    const { setupKeyQuery } = await import(
+      "../features/projects/overview/queries"
+    );
+    let request: URL | undefined;
+    replaceFetch(async (input, init) => {
+      request = new URL(new Request(input, init).url);
+      return Response.json({ data: [], next_cursor: null });
+    });
+    const client = new QueryClient();
+    await client.fetchQuery(
+      setupKeyQuery("user", "project", true, async () => "token"),
+    );
+    expect(request?.searchParams.get("status")).toBe("active");
+    expect(request?.searchParams.get("limit")).toBe("1");
+    const member = setupKeyQuery("user", "project", false, async () => "token");
+    expect(member.queryFn === skipToken).toBe(true);
+    expect([...member.queryKey]).toEqual([
+      "api-keys",
+      "user",
+      "project",
+      "overview-active",
+    ]);
+    client.clear();
   });
 });
 afterAll(() => {

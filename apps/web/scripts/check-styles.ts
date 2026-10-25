@@ -26,6 +26,8 @@ try {
     ".page-heading",
     ".select-control",
     ".account-input",
+    ".overview-grid",
+    ".overview-checklist",
   ].filter((selector) => !css.includes(selector));
   if (missing.length) throw new Error(`Missing styles: ${missing.join(", ")}`);
   console.log(

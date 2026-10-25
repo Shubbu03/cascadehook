@@ -118,7 +118,7 @@ export function SigningSecret({
   }
 
   return (
-    <section className="endpoint-section">
+    <section id="signing-secret" className="endpoint-section">
       <div className="endpoint-section-title">
         <KeyIcon size={21} aria-hidden="true" />
         <h3>Signing secret</h3>

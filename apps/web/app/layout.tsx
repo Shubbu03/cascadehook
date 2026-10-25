@@ -10,6 +10,7 @@ import "./workspace.css";
 import "./activity.css";
 import "./dashboard.css";
 import "./controls.css";
+import "./overview.css";
 
 const sans = localFont({
   src: "./fonts/ibm-plex-sans-latin.woff2",

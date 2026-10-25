@@ -3,7 +3,14 @@
 import { useAuth } from "@clerk/nextjs";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { createContext, useContext, useEffect, useId, useRef, useState } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+} from "react";
 import { apiRequest } from "@/lib/api";
 import { notify } from "@/lib/notify";
 import { NameForm } from "./name-form";
@@ -40,13 +47,18 @@ export function WorkspaceCreation({ children }: { children: React.ReactNode }) {
     <CreationContext
       value={{
         createOrganization: () => setTarget({ kind: "organization" }),
-        createProject: (organization) => setTarget({ kind: "project", organization }),
+        createProject: (organization) =>
+          setTarget({ kind: "project", organization }),
       }}
     >
       {children}
       {target && (
         <CreateDialog
-          key={target.kind === "organization" ? target.kind : target.organization.id}
+          key={
+            target.kind === "organization"
+              ? target.kind
+              : target.organization.id
+          }
           target={target}
           onCancel={() => setTarget(null)}
           onOrganizationCreated={(organization) => {
@@ -56,7 +68,7 @@ export function WorkspaceCreation({ children }: { children: React.ReactNode }) {
           onProjectCreated={(project) => {
             setTarget(null);
             router.push(
-              "/dashboard/projects/" + encodeURIComponent(project.id) + "/endpoints",
+              "/dashboard/projects/" + encodeURIComponent(project.id),
             );
           }}
         />
@@ -92,7 +104,9 @@ function CreateDialog({
         return { kind: "organization", organization };
       }
       const project = await apiRequest<Project>(
-        "/v1/organizations/" + encodeURIComponent(target.organization.id) + "/projects",
+        "/v1/organizations/" +
+          encodeURIComponent(target.organization.id) +
+          "/projects",
         getToken,
         { method: "POST", data: { name } },
       );
@@ -105,7 +119,9 @@ function CreateDialog({
           ["organization", userId, organization.id],
           organization,
         );
-        void queryClient.invalidateQueries({ queryKey: ["organizations", userId] });
+        void queryClient.invalidateQueries({
+          queryKey: ["organizations", userId],
+        });
         notify("Organization created.", "success");
         onOrganizationCreated(organization);
       } else {

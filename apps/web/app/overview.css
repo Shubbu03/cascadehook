@@ -1,0 +1,190 @@
+@layer components {
+  .overview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
+    align-items: start;
+    gap: 24px;
+  }
+  .overview-setup,
+  .overview-integration {
+    min-width: 0;
+    padding: 24px;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    background: var(--surface);
+  }
+  .overview-section-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+  .overview-section-heading h2,
+  .overview-publish > h2 {
+    font-size: 17px;
+    letter-spacing: -0.02em;
+  }
+  .overview-progress {
+    color: var(--muted);
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+  }
+  .overview-destination {
+    margin-bottom: 12px;
+    color: var(--muted);
+    font-size: 11px;
+    overflow-wrap: anywhere;
+  }
+  .overview-endpoint-picker {
+    width: min(100%, 560px);
+    margin-bottom: 24px;
+  }
+  .dashboard-main .overview-endpoint-picker select {
+    width: 100%;
+  }
+  .overview-checklist {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .overview-checklist li {
+    display: grid;
+    grid-template-columns: 28px minmax(0, 1fr) auto;
+    align-items: start;
+    gap: 12px;
+    padding-block: 20px;
+  }
+  .overview-checklist li + li {
+    border-top: 1px solid var(--border);
+  }
+  .overview-step-number {
+    display: grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    color: var(--muted);
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+  }
+  .overview-checklist [aria-current="step"] .overview-step-number {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-subtle);
+  }
+  .overview-checklist [data-state="complete"] .overview-step-number {
+    border-color: transparent;
+    color: var(--success);
+    background: var(--success-subtle);
+  }
+  .overview-step-copy h3 {
+    margin-block: 4px 7px;
+    font-size: 14px;
+    line-height: 1.4;
+  }
+  .overview-step-copy p {
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.7;
+  }
+  .overview-step-action {
+    align-self: start;
+    min-height: 30px;
+    gap: 5px;
+    color: var(--accent);
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  .overview-history-note {
+    padding-top: 4px;
+    font-size: 11px;
+  }
+  .overview-waiting {
+    padding-block: 20px;
+  }
+  .overview-waiting p {
+    max-width: 380px;
+    margin-bottom: 18px;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.8;
+  }
+  .overview-waiting .text-link,
+  .overview-command-note .text-link,
+  .overview-delivery .text-link {
+    font-size: 12px;
+  }
+  .overview-command {
+    margin-block: 18px 12px;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    background: var(--background);
+    overflow: hidden;
+  }
+  .overview-command-heading,
+  .overview-command-note {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .overview-command-heading {
+    padding: 6px 8px 6px 16px;
+    border-bottom: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 11px;
+  }
+  .overview-command pre {
+    margin: 0;
+    padding: 18px;
+    overflow-x: auto;
+    font-size: 11px;
+    line-height: 1.9;
+    tab-size: 2;
+  }
+  .overview-command-note {
+    margin-bottom: 18px;
+  }
+  .overview-delivery {
+    padding-top: 24px;
+    margin-top: 28px;
+    border-top: 1px solid var(--border);
+  }
+  .overview-delivery .form-actions {
+    margin-top: 14px;
+    gap: 18px;
+  }
+  .overview-delivery-success {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 20px;
+    color: var(--success);
+    font-size: 12px;
+    line-height: 1.7;
+  }
+  .project-content section[id] {
+    scroll-margin-top: 80px;
+  }
+}
+
+@media (max-width: 600px) {
+  .overview-setup,
+  .overview-integration {
+    padding: 18px;
+  }
+  .overview-checklist li {
+    grid-template-columns: 26px minmax(0, 1fr);
+    gap: 4px 10px;
+    padding-block: 18px;
+  }
+  .overview-step-action {
+    grid-column: 2;
+    justify-self: start;
+    min-height: 40px;
+  }
+}

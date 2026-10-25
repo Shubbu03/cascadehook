@@ -1,25 +1,8 @@
-import { redirect } from "next/navigation";
-import { Suspense } from "react";
-import { requireSession } from "@/lib/server/session";
+import type { Metadata } from "next";
+import { ProjectOverview } from "@/features/projects/overview/project-overview";
 
-async function ProjectEntry({
-  params,
-}: {
-  params: Promise<{ projectId: string }>;
-}) {
-  await requireSession();
-  const { projectId } = await params;
-  return redirect(
-    "/dashboard/projects/" + encodeURIComponent(projectId) + "/endpoints",
-  );
-}
+export const metadata: Metadata = { title: "Overview" };
 
-export default function ProjectPage(props: {
-  params: Promise<{ projectId: string }>;
-}) {
-  return (
-    <Suspense>
-      <ProjectEntry {...props} />
-    </Suspense>
-  );
+export default function ProjectPage() {
+  return <ProjectOverview />;
 }

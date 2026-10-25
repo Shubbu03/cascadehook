@@ -80,11 +80,7 @@ export function Projects({
             {items.map((project) => (
               <Link
                 key={project.id}
-                href={
-                  "/dashboard/projects/" +
-                  encodeURIComponent(project.id) +
-                  "/endpoints"
-                }
+                href={"/dashboard/projects/" + encodeURIComponent(project.id)}
                 className="workspace-project-card"
               >
                 <span className="workspace-project-icon" aria-hidden="true">

@@ -222,7 +222,7 @@ export function EndpointDetail({ endpointId }: { endpointId: string }) {
           onBusyChange={setSecretBusy}
         />
       ) : (
-        <section className="endpoint-section">
+        <section id="signing-secret" className="endpoint-section">
           <h3>Signing secret</h3>
           <p className="section-description">
             {current.has_signing_secret
@@ -231,7 +231,7 @@ export function EndpointDetail({ endpointId }: { endpointId: string }) {
           </p>
         </section>
       )}
-      <section className="endpoint-section">
+      <section id="receiver-verification" className="endpoint-section">
         <div className="endpoint-section-title">
           <ShieldCheckIcon size={21} aria-hidden="true" />
           <h3>Receiver verification</h3>

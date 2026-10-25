@@ -9,6 +9,7 @@ import {
   LightningIcon,
   ListChecksIcon,
   PlugsConnectedIcon,
+  SquaresFourIcon,
   UsersIcon,
 } from "@phosphor-icons/react";
 import Link from "next/link";
@@ -19,6 +20,7 @@ const groups = [
   {
     label: "Activity",
     links: [
+      { path: "", label: "Overview", Icon: SquaresFourIcon, privileged: false },
       {
         path: "deliveries",
         label: "Deliveries",
@@ -88,13 +90,14 @@ export function SidebarNavigation({
                 .map(({ path, label, Icon }) => (
                   <li key={path}>
                     <Link
-                      href={href + "/" + path}
+                      href={path ? href + "/" + path : href}
                       className="sidebar-link"
                       aria-label={label}
                       title={label}
                       aria-current={
-                        pathname === href + "/" + path ||
-                        pathname.startsWith(href + "/" + path + "/")
+                        pathname === (path ? href + "/" + path : href) ||
+                        (path !== "" &&
+                          pathname.startsWith(href + "/" + path + "/"))
                           ? "page"
                           : undefined
                       }

@@ -231,11 +231,7 @@ function ProjectSwitcher({ selection }: { selection: Selection }) {
           {items.map((item) => (
             <SwitcherItem
               key={item.id}
-              href={
-                "/dashboard/projects/" +
-                encodeURIComponent(item.id) +
-                "/endpoints"
-              }
+              href={"/dashboard/projects/" + encodeURIComponent(item.id)}
               name={item.name}
               selected={item.id === projectId}
               icon={

@@ -52,7 +52,9 @@ export function QueryState({
 
 export function LoadMore({
   query,
+  label = "Load more",
 }: {
+  label?: string;
   query: {
     hasNextPage?: boolean;
     isFetching: boolean;
@@ -70,7 +72,7 @@ export function LoadMore({
         void query.fetchNextPage();
       }}
     >
-      {query.isFetchingNextPage ? "Loading…" : "Load more"}
+      {query.isFetchingNextPage ? "Loading…" : label}
     </button>
   );
 }

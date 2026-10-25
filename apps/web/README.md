@@ -66,7 +66,18 @@ the API origin, authenticated users see a recoverable connection error.
   existing Go endpoints. Header dropdowns switch organizations and projects;
   /dashboard?organization=:organizationId opens that organization's project grid.
   Creation uses small dialogs, with a new organization continuing to its first
-  project. Open a project to manage its endpoints.
+  project. Opening or switching a project lands on its Overview.
+- /dashboard/projects/:projectId — Overview with a setup checklist for one
+  selected endpoint: registration, signing secret, verification/enabling, an
+  active API key, publication, and successful delivery. Checks use current Go
+  metadata and retained delivery history; no progress flags or credentials are
+  stored in the browser. Members inspect setup without API-key reads or publishing
+  guidance. Endpoint choices support pagination. Reads refresh every 15 seconds,
+  on returning to Overview, or with Refresh. Denied reads hide cached content.
+  Owners/admins get a copyable command using a subscribed event type and their
+  configured API origin; credentials remain placeholders. Reusing its request key
+  is idempotent; Use a new event generates a fresh key without sending a request.
+  Pending/failed deliveries link to attempt history and never count as success.
 - /dashboard/projects/:projectId/endpoints — real endpoint listing with cursor
   pagination, delivery-status filters, and exact event-type filters.
 - /dashboard/projects/:projectId/endpoints/new — register a public HTTPS receiver
@@ -229,5 +240,10 @@ Manually verify:
 18. Toggle navigation with Cmd/Ctrl+B. Check that typing in inputs and other
     dialogs does not toggle it. Verify borderless auth/setup/settings fields,
     select labels/carets, and workspace-menu alignment at narrow widths.
+19. Open a fresh project's Overview and follow its checklist to a successful
+    delivery. Return after each setup step and check refreshed progress, command
+    copying, repeat publication/new event keys, and pending/failed delivery links.
+    Switch endpoints/projects, disable an endpoint, expire/revoke a key, and check
+    member access, paused projects, API failures, and completed setup in both themes.
 
 Browser and GUI verification is user-owned.
