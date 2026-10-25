@@ -18,6 +18,7 @@ import (
 
 	"cascadehook/internal/accounts"
 	"cascadehook/internal/auth"
+	"cascadehook/internal/endpoints"
 	"cascadehook/internal/pagination"
 	"cascadehook/migrations"
 )
@@ -131,12 +132,52 @@ func TestOnboardingLifecycle(t *testing.T) {
 	if completed == nil {
 		t.Fatal("first project must persist onboarding completion")
 	}
+	if _, err := db.pool.Exec(ctx, `UPDATE organizations SET max_projects = 1 WHERE id = $1`, organization.ID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.PublishEvent(
+		ctx,
+		project.ID,
+		[]byte(`{"type":"invoice.paid","data":{"test":true}}`),
+		"usage-retention-fixture",
+	); err != nil {
+		t.Fatal(err)
+	}
 	if _, err := db.RequestProjectDeletion(ctx, user.ID, project.ID); err != nil {
 		t.Fatal(err)
 	}
 	projects, err := db.ListProjects(ctx, user.ID, organization.ID, pagination.Options{Limit: 20})
 	if err != nil || len(projects) != 0 {
 		t.Fatalf("deleted last project must disappear from All projects: %v", err)
+	}
+	usageAfterDeletion, err := db.GetUsage(ctx, organization.ID, uuid.Nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if usageAfterDeletion.Projects != len(projects) {
+		t.Fatalf("usage must count only currently listed projects: got %d, want %d",
+			usageAfterDeletion.Projects, len(projects))
+	}
+	if usageAfterDeletion.Counters.Events != 1 {
+		t.Fatal("project deletion must preserve consumed monthly event usage")
+	}
+	replacement, err := db.CreateProject(ctx, user.ID, CreateProjectParams{
+		OrganizationID: organization.ID,
+		Name:           "Replacement project",
+	})
+	if err != nil {
+		t.Fatalf("deleted project must immediately release its project quota slot: %v", err)
+	}
+	usageWithReplacement, err := db.GetUsage(ctx, organization.ID, uuid.Nil)
+	if err != nil || usageWithReplacement.Projects != 1 {
+		t.Fatalf("only the replacement project should count: %v", err)
+	}
+	if _, err := db.RequestProjectDeletion(ctx, user.ID, replacement.ID); err != nil {
+		t.Fatal(err)
+	}
+	usageAfterBothDeleted, err := db.GetUsage(ctx, organization.ID, uuid.Nil)
+	if err != nil || usageAfterBothDeleted.Projects != 0 {
+		t.Fatalf("both retained deleted projects must be excluded: %v", err)
 	}
 	if at := loadUser(identity).OnboardingCompletedAt; at == nil || !at.Equal(*completed) {
 		t.Fatal("deleting the last project must retain onboarding completion")
@@ -191,4 +232,120 @@ func TestOnboardingLifecycle(t *testing.T) {
 	if loadUser(memberIdentity).OnboardingCompletedAt == nil {
 		t.Fatal("direct organization membership must complete onboarding")
 	}
+
+	t.Run("leave organization and retain last owner", func(t *testing.T) {
+		if err := db.RemoveMembership(ctx, member.ID, organization.ID, invitee.ID); !errors.Is(err, accounts.ErrForbidden) {
+			t.Fatal("a member must not remove someone else")
+		}
+		if err := db.RemoveMembership(ctx, user.ID, organization.ID, user.ID); !errors.Is(err, accounts.ErrLastOwner) {
+			t.Fatal("the last owner must not be able to leave")
+		}
+		if err := db.RemoveMembership(ctx, member.ID, organization.ID, member.ID); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := db.GetOrganization(ctx, member.ID, organization.ID); !errors.Is(err, accounts.ErrNotFound) {
+			t.Fatal("leaving must immediately remove organization access")
+		}
+		if loadUser(memberIdentity).OnboardingCompletedAt == nil {
+			t.Fatal("leaving must not reset onboarding")
+		}
+		usage, err := db.GetUsage(ctx, organization.ID, uuid.Nil)
+		if err != nil || usage.Projects != 0 || usage.Members != 2 {
+			t.Fatalf("organization usage must work without projects: %v", err)
+		}
+		members, err := db.ListMemberships(ctx, user.ID, organization.ID, pagination.Options{Limit: 20})
+		if err != nil || len(members) != 2 {
+			t.Fatalf("load authorized member identities: %v", err)
+		}
+		for _, item := range members {
+			if item.IdentityIssuer != identity.Issuer || item.IdentitySubject == "" {
+				t.Fatal("missing internal profile identity")
+			}
+		}
+	})
+
+	t.Run("endpoint deletion cancels pending deliveries and retains history", func(t *testing.T) {
+		project, err := db.CreateProject(ctx, user.ID, CreateProjectParams{
+			OrganizationID: organization.ID,
+			Name:           "Endpoint project",
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		actor := auth.Principal{ProjectID: project.ID, UserID: user.ID}
+		endpoint, err := db.CreateEndpoint(ctx, actor, endpoints.Registration{
+			URL:        "https://receiver.example/hooks",
+			EventTypes: []string{"invoice.paid"},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		memberActor := auth.Principal{ProjectID: project.ID, UserID: invitee.ID}
+		if err := db.DeleteEndpoint(ctx, memberActor, endpoint.ID); !errors.Is(err, accounts.ErrForbidden) {
+			t.Fatal("read-only members must not delete endpoints")
+		}
+		other, err := db.CreateProject(ctx, user.ID, CreateProjectParams{
+			OrganizationID: organization.ID,
+			Name:           "Other project",
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		otherActor := auth.Principal{ProjectID: other.ID, UserID: user.ID}
+		if err := db.DeleteEndpoint(ctx, otherActor, endpoint.ID); !errors.Is(err, endpoints.ErrNotFound) {
+			t.Fatal("endpoint deletion must stay scoped to its project")
+		}
+		event, err := db.PublishEvent(
+			ctx,
+			project.ID,
+			[]byte(`{"type":"invoice.paid","data":{"test":true}}`),
+			"management-fixture",
+		)
+		if err != nil {
+			t.Fatal(err)
+		}
+		deliveryID := uuid.New()
+		_, err = db.pool.Exec(
+			ctx,
+			`INSERT INTO deliveries (id, project_id, event_id, endpoint_id) VALUES ($1,$2,$3,$4)`,
+			deliveryID,
+			project.ID,
+			event.ID,
+			endpoint.ID,
+		)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := db.DeleteEndpoint(ctx, actor, endpoint.ID); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := db.GetEndpoint(ctx, project.ID, endpoint.ID); !errors.Is(err, endpoints.ErrNotFound) {
+			t.Fatal("deleted endpoint must no longer be accessible")
+		}
+		delivery, err := db.GetDelivery(ctx, project.ID, deliveryID)
+		if err != nil || delivery.State != "canceled" {
+			t.Fatalf("pending delivery must be canceled and history retained: %v", err)
+		}
+	})
+
+	t.Run("owner can leave when another owner remains", func(t *testing.T) {
+		shared, err := db.CreateOrganization(ctx, user.ID, "Shared ownership")
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, err = db.AddMembership(ctx, user.ID, MembershipParams{
+			OrganizationID: shared.ID,
+			UserID:         invitee.ID,
+			Role:           accounts.Owner,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := db.RemoveMembership(ctx, user.ID, shared.ID, user.ID); err != nil {
+			t.Fatal(err)
+		}
+		if err := db.RemoveMembership(ctx, invitee.ID, shared.ID, invitee.ID); !errors.Is(err, accounts.ErrLastOwner) {
+			t.Fatal("remaining owner must be protected")
+		}
+	})
 }

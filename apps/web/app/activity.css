@@ -274,7 +274,22 @@
     margin-bottom: 12px;
   }
   .deletion-form {
-    max-width: 460px;
+    display: flex;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 12px;
+    max-width: 760px;
+  }
+  .deletion-form .form-field {
+    flex: 1 1 220px;
+    min-width: 0;
+    max-width: none;
+    margin-bottom: 0;
+  }
+  .deletion-form > .button {
+    flex-shrink: 0;
+    min-height: 40px;
+    white-space: nowrap;
   }
   .settings-section > .text-link {
     font-size: 14px;
@@ -282,7 +297,8 @@
   .settings-section > .field-help {
     margin-block: 12px 20px;
   }
-  .danger-zone > p {
+  .danger-zone > p,
+  .danger-zone-copy > p {
     max-width: 580px;
     margin-bottom: 20px;
     color: var(--muted);
@@ -291,6 +307,51 @@
   }
   .danger-zone .form-field {
     max-width: 460px;
+  }
+  .danger-zone-copy > :is(h2, h3) {
+    margin-bottom: 8px;
+    font-size: 16px;
+  }
+  .danger-zone-copy > h2 {
+    margin-bottom: 16px;
+    font-size: 19px;
+  }
+  .danger-zone > .danger-zone-copy {
+    margin-bottom: 20px;
+  }
+  .danger-zone-copy > p {
+    margin-bottom: 0;
+  }
+  .danger-zone-copy > p + p {
+    margin-top: 8px;
+  }
+  .danger-zone-actions {
+    border: 1px solid var(--danger-subtle);
+    border-radius: 9px;
+    background: var(--surface);
+  }
+  .danger-zone-action {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr));
+    align-items: center;
+    gap: 20px 36px;
+    padding: 24px;
+  }
+  .danger-zone-action + .danger-zone-action {
+    border-top: 1px solid var(--border);
+  }
+  .danger-zone-action > :is(.deletion-form, .button) {
+    justify-self: end;
+  }
+  .danger-zone-action > .deletion-form {
+    width: 100%;
+  }
+  .organization-danger-zone .deletion-form .form-field {
+    max-width: none;
+  }
+  .danger-zone-action > .form-error {
+    grid-column: 1 / -1;
+    margin: 0;
   }
   .usage-grid {
     display: grid;
@@ -329,6 +390,53 @@
   }
   .organization-settings .data-table-wrap {
     margin-top: 20px;
+  }
+  .members-table td {
+    vertical-align: middle;
+  }
+  .members-table th:first-child {
+    width: 45%;
+  }
+  .member-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .member-actions .filter-field {
+    width: 150px;
+    flex-shrink: 0;
+  }
+  .member-actions .text-link {
+    white-space: nowrap;
+  }
+  .member-identity {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 200px;
+  }
+  .member-avatar {
+    display: grid;
+    place-items: center;
+    flex: 0 0 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: var(--accent-subtle);
+    color: var(--accent);
+    font-size: 12px;
+  }
+  .member-identity-copy {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .member-identity .button.copy-button-icon {
+    flex-shrink: 0;
+    width: 36px;
+    padding: 0;
+  }
+  .member-self {
+    color: var(--muted);
+    font-size: 12px;
   }
   .onboarding-invitation {
     margin-top: 22px;

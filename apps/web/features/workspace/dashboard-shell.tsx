@@ -61,7 +61,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const navigation = {
     projectId,
     organizationId: organization.data?.id,
-    role: project.data?.role,
+    role: project.data?.role ?? organization.data?.role,
     pathname,
   };
 

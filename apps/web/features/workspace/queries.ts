@@ -1,8 +1,20 @@
-import { infiniteQueryOptions, queryOptions, skipToken } from "@tanstack/react-query";
+import {
+  infiniteQueryOptions,
+  queryOptions,
+  skipToken,
+} from "@tanstack/react-query";
 import { apiRequest } from "@/lib/api";
-import type { Organization, Page, Project } from "./types";
+import type { Account, Organization, Page, Project } from "./types";
 
 type GetToken = () => Promise<string | null>;
+
+export function accountQuery(userId: string, getToken: GetToken) {
+  return queryOptions({
+    queryKey: ["account", userId],
+    queryFn: ({ signal }) =>
+      apiRequest<Account>("/v1/me", getToken, { signal }),
+  });
+}
 
 export function organizationsQuery(userId: string, getToken: GetToken) {
   return infiniteQueryOptions({
@@ -24,12 +36,14 @@ export function organizationQuery(
 ) {
   return queryOptions({
     queryKey: ["organization", userId, organizationId],
-    queryFn: organizationId ? ({ signal }) =>
-      apiRequest<Organization>(
-        "/v1/organizations/" + encodeURIComponent(organizationId),
-        getToken,
-        { signal },
-      ) : skipToken,
+    queryFn: organizationId
+      ? ({ signal }) =>
+          apiRequest<Organization>(
+            "/v1/organizations/" + encodeURIComponent(organizationId),
+            getToken,
+            { signal },
+          )
+      : skipToken,
   });
 }
 
@@ -40,12 +54,14 @@ export function projectQuery(
 ) {
   return queryOptions({
     queryKey: ["project", userId, projectId],
-    queryFn: projectId ? ({ signal }) =>
-      apiRequest<Project>(
-        "/v1/projects/" + encodeURIComponent(projectId),
-        getToken,
-        { signal },
-      ) : skipToken,
+    queryFn: projectId
+      ? ({ signal }) =>
+          apiRequest<Project>(
+            "/v1/projects/" + encodeURIComponent(projectId),
+            getToken,
+            { signal },
+          )
+      : skipToken,
   });
 }
 
@@ -57,15 +73,22 @@ export function projectsQuery(
   return infiniteQueryOptions({
     queryKey: ["projects", userId, organizationId],
     initialPageParam: null as string | null,
-    queryFn: organizationId ? ({ pageParam, signal }) =>
-      apiRequest<Page<Project>>(
-        "/v1/organizations/" + encodeURIComponent(organizationId) + "/projects",
-        getToken,
-        {
-          signal,
-          params: { limit: 20, ...(pageParam ? { cursor: pageParam } : {}) },
-        },
-      ) : skipToken,
+    queryFn: organizationId
+      ? ({ pageParam, signal }) =>
+          apiRequest<Page<Project>>(
+            "/v1/organizations/" +
+              encodeURIComponent(organizationId) +
+              "/projects",
+            getToken,
+            {
+              signal,
+              params: {
+                limit: 20,
+                ...(pageParam ? { cursor: pageParam } : {}),
+              },
+            },
+          )
+      : skipToken,
     getNextPageParam: (page) => page.next_cursor ?? undefined,
   });
 }

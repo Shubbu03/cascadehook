@@ -130,7 +130,8 @@ func checkUserOrganizationQuota(ctx context.Context, tx pgx.Tx, userID uuid.UUID
 func checkResourceQuota(ctx context.Context, tx pgx.Tx, id uuid.UUID, resource string) error {
 	// Only fixed local statements enter this allowlist; no request SQL fragments.
 	queries := map[string]string{
-		"projects": `SELECT (SELECT count(*) FROM projects WHERE organization_id = o.id) < o.max_projects
+		"projects": `SELECT (SELECT count(*) FROM projects
+			WHERE organization_id = o.id AND deletion_requested_at IS NULL) < o.max_projects
 			FROM organizations o WHERE o.id = $1`,
 		"members": `SELECT (SELECT count(*) FROM memberships WHERE organization_id = o.id) < o.max_members
 			FROM organizations o WHERE o.id = $1`,

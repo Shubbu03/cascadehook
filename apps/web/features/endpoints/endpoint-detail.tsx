@@ -1,6 +1,6 @@
 "use client";
 
-import { useAuth } from "@clerk/nextjs";
+import { useAuth, useClerk } from "@clerk/nextjs";
 import {
   ArrowLeftIcon,
   ArrowSquareOutIcon,
@@ -18,10 +18,12 @@ import { useProject, projectHref } from "@/features/projects/project-workspace";
 import { ConnectionError } from "@/features/workspace/connection-error";
 import { ContentLoading } from "@/features/workspace/loading";
 import { useSessionUserId } from "@/features/workspace/session";
+import { deletionToken } from "@/features/settings/deletion";
 import { ApiError, apiRequest } from "@/lib/api";
 import { notify } from "@/lib/notify";
 import { EndpointForm } from "./endpoint-form";
 import { SigningSecret } from "./signing-secret";
+import { requestEndpointDeletion } from "./deletion";
 import {
   endpointKeys,
   endpointPath,
@@ -32,11 +34,13 @@ import {
 export function EndpointDetail({ endpointId }: { endpointId: string }) {
   const { project, canManage, suspended, availabilityKnown } = useProject();
   const userId = useSessionUserId();
-  const { getToken } = useAuth();
+  const { getToken, sessionId } = useAuth();
+  const clerk = useClerk();
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState(false);
   const [secretBusy, setSecretBusy] = useState(false);
   const [disableConfirmation, setDisableConfirmation] = useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState(false);
   const [cooldown, setCooldown] = useState({ until: 0, now: 0 });
   const detailKey = endpointKeys.detail(userId, project.id, endpointId);
   const path = endpointPath(project.id, endpointId);
@@ -104,21 +108,55 @@ export function EndpointDetail({ endpointId }: { endpointId: string }) {
     onError: (error) => notify(error.message, "error"),
     onSettled: refreshMetadata,
   });
+  const remove = useMutation({
+    retry: false,
+    mutationFn: () => {
+      if (!endpoint.data)
+        throw new Error("Refresh the endpoint before deleting.");
+      return requestEndpointDeletion(
+        project,
+        endpoint.data,
+        deletionToken(clerk.session, sessionId, userId),
+      );
+    },
+    onSuccess: async () => {
+      await queryClient.cancelQueries();
+      queryClient.clear();
+      if (clerk.user?.id === userId)
+        window.location.replace(href + "/endpoints");
+    },
+    onError: (error) => {
+      setDeleteConfirmation(false);
+      notify(error.message, "error");
+      refreshMetadata();
+    },
+  });
   const remaining = Math.max(
     0,
     Math.ceil((cooldown.until - cooldown.now) / 1000),
   );
-  const busy = verify.isPending || toggle.isPending || secretBusy;
+  const busy =
+    verify.isPending || toggle.isPending || secretBusy || remove.isPending;
   if (endpoint.isPending) return <ContentLoading />;
-  if (endpoint.isError && !endpoint.data)
+  if (
+    endpoint.isError &&
+    (!endpoint.data ||
+      (endpoint.error instanceof ApiError &&
+        [401, 403, 404, 410].includes(endpoint.error.status)))
+  )
     return (
-      <ConnectionError
-        error={endpoint.error}
-        retry={() => {
-          void endpoint.refetch();
-        }}
-        pending={endpoint.isFetching}
-      />
+      <section>
+        <Link href={href + "/endpoints"} className="text-link">
+          ← Endpoints
+        </Link>
+        <ConnectionError
+          error={endpoint.error}
+          retry={() => {
+            void endpoint.refetch();
+          }}
+          pending={endpoint.isFetching}
+        />
+      </section>
     );
   if (!endpoint.data) return null;
   const current = endpoint.data;
@@ -328,6 +366,45 @@ export function EndpointDetail({ endpointId }: { endpointId: string }) {
           </p>
         )}
       </section>
+      {canManage && (
+        <section className="settings-section danger-zone">
+          <h3>Delete endpoint</h3>
+          <p>
+            Remove this endpoint and cancel its pending deliveries. Requests
+            already in flight may finish. Delivery history is kept.
+          </p>
+          <button
+            type="button"
+            className="button button-secondary text-danger"
+            disabled={busy}
+            onClick={() => {
+              remove.reset();
+              setDeleteConfirmation(true);
+            }}
+          >
+            Delete endpoint
+          </button>
+          {remove.isError && (
+            <p className="form-error" role="alert">
+              {remove.error.message}
+            </p>
+          )}
+        </section>
+      )}
+      {deleteConfirmation && (
+        <ConfirmDialog
+          title="Delete this endpoint?"
+          confirmLabel="Delete"
+          pendingLabel="Deleting…"
+          destructive
+          pending={remove.isPending}
+          onConfirm={() => remove.mutate()}
+          onCancel={() => setDeleteConfirmation(false)}
+        >
+          <p className="endpoint-url">{current.url}</p>
+          <p>Pending deliveries will be canceled. This cannot be undone.</p>
+        </ConfirmDialog>
+      )}
       {disableConfirmation && (
         <ConfirmDialog
           title="Disable this endpoint?"

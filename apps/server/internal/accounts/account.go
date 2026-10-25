@@ -57,11 +57,19 @@ type Organization struct {
 }
 
 type Membership struct {
-	UserID         uuid.UUID `json:"user_id"`
-	OrganizationID uuid.UUID `json:"organization_id"`
-	Role           Role      `json:"role"`
-	CreatedAt      time.Time `json:"created_at"`
-	UpdatedAt      time.Time `json:"updated_at"`
+	UserID          uuid.UUID      `json:"user_id"`
+	OrganizationID  uuid.UUID      `json:"organization_id"`
+	Role            Role           `json:"role"`
+	CreatedAt       time.Time      `json:"created_at"`
+	UpdatedAt       time.Time      `json:"updated_at"`
+	Profile         *MemberProfile `json:"profile,omitempty"`
+	IdentityIssuer  string         `json:"-"`
+	IdentitySubject string         `json:"-"`
+}
+
+type MemberProfile struct {
+	Name  string `json:"name"`
+	Email string `json:"email,omitempty"`
 }
 
 type Project struct {

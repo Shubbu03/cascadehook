@@ -55,9 +55,35 @@ func (api *api) membershipCollection(w http.ResponseWriter, r *http.Request, use
 		api.accountProblem(w, r, err)
 		return
 	}
+	api.memberProfiles(r, members[:min(len(members), options.Limit)])
 	writePage(w, r, members, options.Limit, func(member accounts.Membership) any {
 		return pagination.Cursor{CreatedAt: member.CreatedAt, ID: member.UserID}
 	})
+}
+
+func (api *api) memberProfiles(r *http.Request, members []accounts.Membership) {
+	if api.clerkBackend == nil {
+		return
+	}
+	subjects := make([]string, 0, len(members))
+	for _, member := range members {
+		if member.IdentityIssuer == api.clerkBackend.Issuer() {
+			subjects = append(subjects, member.IdentitySubject)
+		}
+	}
+	profiles, err := api.clerkBackend.MemberProfiles(r.Context(), subjects)
+	if err != nil {
+		api.logger.Warn("member profiles unavailable", "error", err)
+		return
+	}
+	for index := range members {
+		if members[index].IdentityIssuer != api.clerkBackend.Issuer() {
+			continue
+		}
+		if profile, ok := profiles[members[index].IdentitySubject]; ok {
+			members[index].Profile = &profile
+		}
+	}
 }
 
 func (api *api) membershipResource(w http.ResponseWriter, r *http.Request, user accounts.User) {

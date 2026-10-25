@@ -35,6 +35,7 @@ export type Membership = {
   role: OrganizationRole;
   created_at: string;
   updated_at: string;
+  profile?: { name: string; email?: string };
 };
 export type Invitation = {
   id: string;

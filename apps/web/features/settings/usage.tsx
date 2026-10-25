@@ -8,7 +8,11 @@ import { projectPath } from "@/features/activity/types";
 import { useProject } from "@/features/projects/project-workspace";
 import { useSessionUserId } from "@/features/workspace/session";
 import { apiRequest } from "@/lib/api";
-import { formatBytes, formatTime } from "@/lib/format";
+import {
+  OrganizationUsageSummary,
+  Quota,
+  UsageActivity,
+} from "./usage-summary";
 import type { Usage } from "./types";
 
 export function ProjectUsage() {
@@ -57,38 +61,7 @@ function UsageContent() {
       />
       <QueryState query={organization}>
         {organization.data && (
-          <>
-            <p className="section-description">
-              {organization.data.period} · Resets{" "}
-              {formatTime(organization.data.resets_at)}
-            </p>
-            <h2 className="settings-section-title">Organization</h2>
-            <p className="section-description">
-              Event and delivery quotas are shared across projects.
-            </p>
-            <div className="usage-grid">
-              <Quota
-                label="Events"
-                value={organization.data.usage.events}
-                limit={organization.data.limits.monthly_events}
-              />
-              <Quota
-                label="Deliveries"
-                value={organization.data.usage.deliveries}
-                limit={organization.data.limits.monthly_deliveries}
-              />
-              <Quota
-                label="Projects"
-                value={organization.data.projects}
-                limit={organization.data.limits.projects}
-              />
-              <Quota
-                label="Members"
-                value={organization.data.members}
-                limit={organization.data.limits.members}
-              />
-            </div>
-          </>
+          <OrganizationUsageSummary usage={organization.data} />
         )}
       </QueryState>
       <QueryState query={projectUsage}>
@@ -113,85 +86,10 @@ function UsageContent() {
                 bytes
               />
             </div>
-            <dl className="detail-facts">
-              <div>
-                <dt>Accepted events this month</dt>
-                <dd>
-                  {projectUsage.data.usage.events.toLocaleString("en-US")}
-                </dd>
-              </div>
-              <div>
-                <dt>Deliveries created this month</dt>
-                <dd>
-                  {projectUsage.data.usage.deliveries.toLocaleString("en-US")}
-                </dd>
-              </div>
-              <div>
-                <dt>Attempts started</dt>
-                <dd>
-                  {projectUsage.data.usage.attempts_started.toLocaleString(
-                    "en-US",
-                  )}
-                </dd>
-              </div>
-              <div>
-                <dt>Successful attempts</dt>
-                <dd>
-                  {projectUsage.data.usage.successful_attempts.toLocaleString(
-                    "en-US",
-                  )}
-                </dd>
-              </div>
-              <div>
-                <dt>Unsuccessful attempts</dt>
-                <dd>
-                  {projectUsage.data.usage.unsuccessful_attempts.toLocaleString(
-                    "en-US",
-                  )}
-                </dd>
-              </div>
-              <div>
-                <dt>Replays</dt>
-                <dd>
-                  {projectUsage.data.usage.replays.toLocaleString("en-US")}
-                </dd>
-              </div>
-            </dl>
+            <UsageActivity usage={projectUsage.data} />
           </>
         )}
       </QueryState>
     </section>
-  );
-}
-
-function Quota({
-  label,
-  value,
-  limit,
-  bytes = false,
-}: {
-  label: string;
-  value: number;
-  limit: number;
-  bytes?: boolean;
-}) {
-  const format = bytes
-    ? formatBytes
-    : (item: number) => item.toLocaleString("en-US");
-  return (
-    <div className="usage-card">
-      <h3>{label}</h3>
-      <p>
-        {format(value)} <span>/ {format(limit)}</span>
-      </p>
-      {limit > 0 && (
-        <meter
-          min={0}
-          max={limit}
-          value={Math.min(value, limit)}
-          aria-label={label}
-        />
-      )}
-    </div>
   );
 }

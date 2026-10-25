@@ -89,7 +89,8 @@ func (s *Store) GetUsage(ctx context.Context, organizationID, projectID uuid.UUI
 		coalesce(sum((SELECT count(*) FROM api_keys k WHERE k.project_id = p.id AND k.revoked_at IS NULL
 			AND (k.expires_at IS NULL OR k.expires_at > now()) AND (k.revokes_at IS NULL OR k.revokes_at > now()))),0)
 		FROM projects p LEFT JOIN project_storage s ON s.project_id = p.id
-		WHERE p.organization_id = $1 AND ($2::uuid IS NULL OR (p.id = $2 AND p.deletion_requested_at IS NULL))`,
+		WHERE p.organization_id = $1 AND p.deletion_requested_at IS NULL
+		AND ($2::uuid IS NULL OR p.id = $2)`,
 		organizationID,
 		nullableUUID(projectID),
 	).Scan(

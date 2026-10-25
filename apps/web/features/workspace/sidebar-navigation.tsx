@@ -145,7 +145,10 @@ export function SidebarNavigation({
                   aria-label="Organization and team"
                   title="Organization and team"
                   aria-current={
-                    pathname.startsWith("/dashboard/organizations/")
+                    pathname ===
+                    "/dashboard/organizations/" +
+                      encodeURIComponent(organizationId) +
+                      "/settings"
                       ? "page"
                       : undefined
                   }
@@ -153,6 +156,32 @@ export function SidebarNavigation({
                 >
                   <UsersIcon size={18} aria-hidden="true" />
                   <span>Organization &amp; team</span>
+                </Link>
+              </li>
+            )}
+            {organizationId && canManage && (
+              <li>
+                <Link
+                  href={
+                    "/dashboard/organizations/" +
+                    encodeURIComponent(organizationId) +
+                    "/usage"
+                  }
+                  className="sidebar-link"
+                  aria-label="Organization usage"
+                  title="Organization usage"
+                  aria-current={
+                    pathname ===
+                    "/dashboard/organizations/" +
+                      encodeURIComponent(organizationId) +
+                      "/usage"
+                      ? "page"
+                      : undefined
+                  }
+                  onNavigate={onNavigate}
+                >
+                  <ChartBarIcon size={18} aria-hidden="true" />
+                  <span>Usage</span>
                 </Link>
               </li>
             )}

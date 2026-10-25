@@ -94,6 +94,9 @@ the API origin, authenticated users see a recoverable connection error.
   subscriptions, generate/rotate its signing secret, verify ownership, and
   explicitly enable or disable delivery. Changing the URL resets verification
   and disables delivery.
+- Endpoint settings also provide owner/admin deletion with a red confirmation.
+  Deletion cancels pending deliveries and retains delivery history. Accepted
+  deletion clears workspace caches before returning to the endpoint list.
 - /dashboard/projects/:projectId/receiver-guide — raw-body signature validation,
   challenge-proof instructions, and receiver handling guidance.
 - /dashboard/projects/:projectId/deliveries — delivery history with exact state,
@@ -117,11 +120,18 @@ the API origin, authenticated users see a recoverable connection error.
   project deletion with an exact-name confirmation.
 - /dashboard/organizations/:organizationId/settings — organization renaming,
   membership roles/removal, and invitation creation/revocation. These mutations
-  require the owner role. Members can inspect the membership list; the API exposes
-  account IDs rather than display names or member email addresses.
+  require the owner role. Members can inspect names and verified primary emails
+  loaded through a bounded, organization-authorized Clerk Backend API lookup.
+  Account IDs remain copyable, and serve as the fallback when profiles are
+  unavailable. Provider IDs, other emails, and private metadata are not exposed.
+  Any member can leave through a session-bound confirmation; the backend prevents
+  the last owner from leaving. Leaving clears cached access and returns to Projects.
   Owners can request permanent organization deletion after exact-name confirmation
   and a second modal confirmation. Access/dispatch stops on acceptance; cleanup
   continues in the background. Deletion requests never automatically retry.
+- /dashboard/organizations/:organizationId/usage — organization monthly quotas,
+  activity, project counts, and member counts, available to owners/admins even
+  with no projects. Linked from the sidebar, organization menu, and settings.
 - /account — account settings and deletion, linked from the sidebar.
   The ownership check scans every organizations page. Transfer/demote ownership
   or delete owned organizations before requesting account deletion with DELETE and
@@ -135,6 +145,9 @@ Account and organization settings require a session but do not require an existi
 project. Project routes and the projects home only gate unfinished first-time
 setup using the persisted account field in /v1/me; their public URLs are unchanged.
 Deleting the last project opens that organization's All projects empty state.
+The Projects usage count and project quota include only projects without a deletion
+request. Their slot is released immediately, before background cleanup completes;
+consumed monthly event/delivery totals remain in usage accounting.
 
 Apply migration 00019 with `bun run db:migrate` and restart the Go API before
 using this frontend version. The lifecycle regression uses an isolated schema in
@@ -150,6 +163,10 @@ a PostgreSQL database provided through TEST_DATABASE_URL:
   backend client (the root API CLERK_SECRET_KEY). Invitation links are shared
   manually; this UI does not send email. New accounts can also reach this page
   from organization onboarding.
+
+These management additions require an updated Go API but no new migration.
+Member details use the API's existing CLERK_SECRET_KEY for the same Clerk instance.
+Profile lookup failures retain membership controls and fall back to account IDs.
 
 Owners and admins can manage endpoints; members can review them. Go enforces
 authorization for every request. Paused projects allow inspection, editing,

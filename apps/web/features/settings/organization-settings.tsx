@@ -15,6 +15,7 @@ import { InvitationManagement } from "./invitations";
 import { Members } from "./members";
 import { RenameForm } from "./rename-form";
 import { DeleteOrganization } from "./delete-organization";
+import { LeaveOrganization } from "./leave-organization";
 
 export function OrganizationSettings({
   organizationId,
@@ -45,7 +46,23 @@ export function OrganizationSettings({
       <QueryState query={organization}>
         {organization.data && (
           <>
-            <PageHeader title="Organization settings" />
+            <PageHeader
+              title="Organization settings"
+              actions={
+                organization.data.role !== "member" && (
+                  <Link
+                    className="button button-small button-secondary"
+                    href={
+                      "/dashboard/organizations/" +
+                      encodeURIComponent(organizationId) +
+                      "/usage"
+                    }
+                  >
+                    View usage
+                  </Link>
+                )
+              }
+            />
             {organization.data.role === "owner" && (
               <RenameForm
                 kind="Organization"
@@ -67,17 +84,26 @@ export function OrganizationSettings({
             {organization.data.role === "owner" && (
               <InvitationManagement organization={organization.data} />
             )}
-            <DeleteOrganization
-              key={
-                organization.data.id +
-                ":" +
-                organization.data.name +
-                ":" +
-                organization.data.role
-              }
-              organization={organization.data}
-              returnTo={returnTo}
-            />
+            <section
+              className="settings-section danger-zone organization-danger-zone"
+              aria-labelledby="organization-danger-heading"
+            >
+              <h2 id="organization-danger-heading">Danger Zone</h2>
+              <div className="danger-zone-actions">
+                <DeleteOrganization
+                  key={
+                    organization.data.id +
+                    ":" +
+                    organization.data.name +
+                    ":" +
+                    organization.data.role
+                  }
+                  organization={organization.data}
+                  returnTo={returnTo}
+                />
+                <LeaveOrganization organization={organization.data} />
+              </div>
+            </section>
           </>
         )}
       </QueryState>

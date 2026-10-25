@@ -7,10 +7,12 @@ export function CopyButton({
   value,
   label = "Copy",
   successMessage = "Copied to clipboard.",
+  iconOnly = false,
 }: {
   value: string;
   label?: string;
   successMessage?: string;
+  iconOnly?: boolean;
 }) {
   async function copy() {
     try {
@@ -23,11 +25,16 @@ export function CopyButton({
   return (
     <button
       type="button"
-      className="button button-small button-quiet"
+      className={
+        "button button-small button-quiet" +
+        (iconOnly ? " copy-button-icon" : "")
+      }
+      aria-label={iconOnly ? label : undefined}
+      title={iconOnly ? label : undefined}
       onClick={copy}
     >
       <CopyIcon size={16} aria-hidden="true" />
-      {label}
+      {!iconOnly && label}
     </button>
   );
 }

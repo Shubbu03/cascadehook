@@ -31,6 +31,7 @@ try {
     ".docs-main",
     ".docs-code",
     ".deletion-form",
+    ".member-identity",
     ".ambient-background",
     ".ambient-background-particle",
     ".ambient-background-corner",

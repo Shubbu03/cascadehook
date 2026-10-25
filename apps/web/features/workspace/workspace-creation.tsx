@@ -130,6 +130,10 @@ function CreateDialog({
         void queryClient.invalidateQueries({
           queryKey: ["projects", userId, project.organization_id],
         });
+        void queryClient.invalidateQueries({
+          queryKey: ["usage", userId, "organization", project.organization_id],
+          refetchType: "all",
+        });
         notify("Project created.", "success");
         onProjectCreated(project);
       }

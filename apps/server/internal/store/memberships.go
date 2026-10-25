@@ -23,7 +23,8 @@ func (s *Store) ListMemberships(
 	if _, err := s.GetOrganization(ctx, userID, organizationID); err != nil {
 		return nil, err
 	}
-	query := `SELECT m.organization_id, m.user_id, m.role, m.created_at, m.updated_at
+	query := `SELECT m.organization_id, m.user_id, m.role, m.created_at, m.updated_at,
+		u.identity_issuer, u.identity_subject
 		FROM memberships m JOIN users u ON u.id = m.user_id
 		WHERE m.organization_id = $1 AND u.deletion_requested_at IS NULL`
 	args := []any{organizationID}
@@ -39,7 +40,15 @@ func (s *Store) ListMemberships(
 	}
 	result, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (accounts.Membership, error) {
 		var member accounts.Membership
-		err := scanMembership(row, &member)
+		err := row.Scan(
+			&member.OrganizationID,
+			&member.UserID,
+			&member.Role,
+			&member.CreatedAt,
+			&member.UpdatedAt,
+			&member.IdentityIssuer,
+			&member.IdentitySubject,
+		)
 		return member, err
 	})
 	if err != nil {

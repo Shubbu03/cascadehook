@@ -22,6 +22,57 @@ beforeAll(async () => {
 });
 
 describe("workspace sidebar", () => {
+  test("organization usage works outside a project and is hidden from members", async () => {
+    const { SidebarNavigation } = await import(
+      "../features/workspace/sidebar-navigation"
+    );
+    const props = {
+      organizationId: "organization",
+      pathname: "/dashboard/organizations/organization/usage",
+    };
+    const admin = renderToStaticMarkup(
+      <SidebarNavigation {...props} role="admin" />,
+    );
+    expect(admin).toContain(
+      'href="/dashboard/organizations/organization/usage"',
+    );
+    expect(admin.match(/aria-current="page"/g)).toHaveLength(1);
+    expect(admin.match(/<a\b[^>]*aria-current="page"[^>]*>/)?.[0]).toContain(
+      '/usage"',
+    );
+    const member = renderToStaticMarkup(
+      <SidebarNavigation {...props} role="member" />,
+    );
+    expect(member).not.toContain('/organization/usage"');
+  });
+
+  test("member identities show recognizable details with an honest provider fallback", async () => {
+    const { MemberIdentity } = await import(
+      "../features/settings/member-identity"
+    );
+    const member = {
+      user_id: "019a0000-0000-7000-8000-000000000001",
+      organization_id: "org",
+      role: "member" as const,
+      created_at: "now",
+      updated_at: "now",
+    };
+    const html = renderToStaticMarkup(
+      <MemberIdentity
+        member={{
+          ...member,
+          profile: { name: "Ada Lovelace", email: "ada@example.com" },
+        }}
+        self
+      />,
+    );
+    expect(html).toContain("Ada Lovelace");
+    expect(html).toContain("ada@example.com");
+    expect(html).toContain("(you)");
+    const fallback = renderToStaticMarkup(<MemberIdentity member={member} />);
+    expect(fallback).toContain("Member 00000001");
+    expect(fallback).toContain(member.user_id);
+  });
   test("marks Overview active only at the project root", async () => {
     const { SidebarNavigation } = await import(
       "../features/workspace/sidebar-navigation"
@@ -166,6 +217,112 @@ afterAll(() => {
 });
 
 describe("authenticated API transport", () => {
+  test("deletes only a manageable endpoint in the confirmed project without a request body", async () => {
+    const { requestEndpointDeletion } = await import(
+      "../features/endpoints/deletion"
+    );
+    const project = {
+      id: "019a0000-0000-7000-8000-000000000001",
+      organization_id: "org",
+      name: "Billing",
+      role: "owner" as const,
+      created_at: "now",
+      updated_at: "now",
+    };
+    const endpoint = {
+      id: "019a0000-0000-7000-8000-000000000002",
+      project_id: project.id,
+      url: "https://receiver.example/hooks",
+      enabled: false,
+      verified_at: null,
+      has_signing_secret: false,
+      event_types: ["invoice.paid"],
+      created_at: "now",
+      updated_at: "now",
+    };
+    let requests = 0;
+    replaceFetch(async (input, init) => {
+      requests++;
+      const request = new Request(input, init);
+      expect(request.url).toBe(
+        "https://api.example/v1/projects/" +
+          project.id +
+          "/endpoints/" +
+          endpoint.id,
+      );
+      expect(request.method).toBe("DELETE");
+      expect(request.headers.get("Authorization")).toBe("Bearer confirmed");
+      expect(await request.text()).toBe("");
+      return new Response(null, { status: 204 });
+    });
+    await expect(
+      requestEndpointDeletion(
+        { ...project, role: "member" },
+        endpoint,
+        async () => "confirmed",
+      ),
+    ).rejects.toMatchObject({ status: 403 });
+    await expect(
+      requestEndpointDeletion(
+        project,
+        { ...endpoint, project_id: "other" },
+        async () => "confirmed",
+      ),
+    ).rejects.toThrow("does not belong");
+    expect(requests).toBe(0);
+    await requestEndpointDeletion(
+      { ...project, role: "admin" },
+      endpoint,
+      async () => "confirmed",
+    );
+    expect(requests).toBe(1);
+  });
+
+  test("leaves using the authenticated Go account ID and preserves last-owner errors", async () => {
+    const { leaveOrganization } = await import(
+      "../features/settings/membership-actions"
+    );
+    const organizationId = "019a0000-0000-7000-8000-000000000001";
+    const accountId = "019a0000-0000-7000-8000-000000000002";
+    const requests: string[] = [];
+    replaceFetch(async (input, init) => {
+      const request = new Request(input, init);
+      expect(request.headers.get("Authorization")).toBe("Bearer confirmed");
+      requests.push(request.method + " " + new URL(request.url).pathname);
+      if (request.method === "GET") return Response.json({ id: accountId });
+      expect(await request.text()).toBe("");
+      return Response.json(
+        { code: "last_organization_owner" },
+        { status: 409 },
+      );
+    });
+    await expect(
+      leaveOrganization(organizationId, async () => "confirmed"),
+    ).rejects.toThrow("at least one owner");
+    expect(requests).toEqual([
+      "GET /v1/me",
+      "DELETE /v1/organizations/" + organizationId + "/members/" + accountId,
+    ]);
+  });
+
+  test("does not remove a membership when the current account cannot be confirmed", async () => {
+    const { leaveOrganization } = await import(
+      "../features/settings/membership-actions"
+    );
+    let requests = 0;
+    replaceFetch(async () => {
+      requests++;
+      return Response.json({ id: "user_clerk_identity" });
+    });
+    await expect(
+      leaveOrganization(
+        "019a0000-0000-7000-8000-000000000001",
+        async () => "token",
+      ),
+    ).rejects.toThrow("account could not be confirmed");
+    expect(requests).toBe(1);
+  });
+
   test("binds destructive operations to the confirmed session and rejects switched accounts", async () => {
     const { deletionToken } = await import("../features/settings/deletion");
     let current = {

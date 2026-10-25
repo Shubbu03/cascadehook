@@ -21,6 +21,7 @@ export function DeleteOrganization({
   if (organization.role !== "owner") return null;
   return (
     <DeleteAction
+      grouped
       title="Delete organization"
       confirmationText={organization.name}
       description="Permanently removes this organization, its projects, credentials, endpoints, and retained history. Activity stops when the request is accepted; cleanup runs in the background."

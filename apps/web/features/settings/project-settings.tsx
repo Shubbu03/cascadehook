@@ -50,6 +50,10 @@ export function ProjectSettings() {
             : data,
       );
       void client.invalidateQueries({ queryKey, refetchType: "none" });
+      void client.invalidateQueries({
+        queryKey: ["usage", userId, "organization", project.organization_id],
+        refetchType: "all",
+      });
       router.replace(organizationHref(project.organization_id));
       router.refresh();
     },

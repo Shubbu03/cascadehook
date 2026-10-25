@@ -2,6 +2,7 @@
 
 import { useAuth } from "@clerk/nextjs";
 import {
+  ChartBarIcon,
   BuildingsIcon,
   CheckIcon,
   FolderSimpleIcon,
@@ -136,6 +137,19 @@ function OrganizationSwitcher({ selection }: { selection: Selection }) {
           >
             <GearSixIcon size={18} aria-hidden="true" />
             Organization settings
+          </Link>
+        )}
+        {active && active.role !== "member" && (
+          <Link
+            className="switcher-action"
+            href={
+              "/dashboard/organizations/" +
+              encodeURIComponent(active.id) +
+              "/usage"
+            }
+          >
+            <ChartBarIcon size={18} aria-hidden="true" />
+            Organization usage
           </Link>
         )}
         <button

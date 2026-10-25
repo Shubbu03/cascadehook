@@ -1,17 +1,20 @@
 "use client";
 
 import { Select } from "@/components/select";
-import { useAuth } from "@clerk/nextjs";
+import { useAuth, useClerk } from "@clerk/nextjs";
 import {
   useInfiniteQuery,
   useMutation,
   useQueryClient,
+  useQuery,
 } from "@tanstack/react-query";
 import { useState } from "react";
 import { ConfirmDialog } from "@/components/confirm-dialog";
-import { CopyButton } from "@/components/copy-button";
 import { LoadMore, QueryState, RefreshButton } from "@/components/query-state";
 import { useSessionUserId } from "@/features/workspace/session";
+import { accountQuery } from "@/features/workspace/queries";
+import { deletionToken } from "./deletion";
+import { MemberIdentity, memberName } from "./member-identity";
 import type {
   Organization,
   OrganizationRole,
@@ -28,7 +31,9 @@ type MemberAction =
 
 export function Members({ organization }: { organization: Organization }) {
   const userId = useSessionUserId();
-  const { getToken } = useAuth();
+  const { getToken, sessionId } = useAuth();
+  const clerk = useClerk();
+  const account = useQuery(accountQuery(userId, getToken));
   const client = useQueryClient();
   const [action, setAction] = useState<MemberAction | null>(null);
   const path =
@@ -48,7 +53,7 @@ export function Members({ organization }: { organization: Organization }) {
     mutationFn: (action: MemberAction) =>
       apiRequest<unknown>(
         path + "/" + encodeURIComponent(action.member.user_id),
-        getToken,
+        deletionToken(clerk.session, sessionId, userId),
         "remove" in action
           ? { method: "DELETE" }
           : { method: "PATCH", data: { role: action.role } },
@@ -88,14 +93,17 @@ export function Members({ organization }: { organization: Organization }) {
         </p>
       )}
       <QueryState query={members}>
+        {items.some((member) => !member.profile) && (
+          <p className="field-help">
+            Some member details are unavailable. Account IDs are shown instead.
+          </p>
+        )}
         <div className="data-table-wrap">
-          <table className="data-table">
-            <caption className="sr-only">
-              Organization memberships, identified by account ID
-            </caption>
+          <table className="data-table members-table">
+            <caption className="sr-only">Organization members</caption>
             <thead>
               <tr>
-                <th>Account ID</th>
+                <th>Member</th>
                 <th>Role</th>
                 <th>Joined</th>
                 {organization.role === "owner" && <th>Manage</th>}
@@ -105,21 +113,19 @@ export function Members({ organization }: { organization: Organization }) {
               {items.map((member) => (
                 <tr key={member.user_id}>
                   <td>
-                    <code>{member.user_id}</code>
-                    <CopyButton
-                      value={member.user_id}
-                      label="Copy ID"
-                      successMessage="Account ID copied."
+                    <MemberIdentity
+                      member={member}
+                      self={account.data?.id === member.user_id}
                     />
                   </td>
                   <td>{member.role}</td>
                   <td>{formatTime(member.created_at)}</td>
                   {organization.role === "owner" && (
                     <td>
-                      <div className="form-actions">
+                      <div className="member-actions">
                         <label className="filter-field">
                           <span className="sr-only">
-                            Role for {member.user_id}
+                            Role for {memberName(member)}
                           </span>
                           <Select
                             value={member.role}
@@ -137,17 +143,20 @@ export function Members({ organization }: { organization: Organization }) {
                             <option value="member">Member</option>
                           </Select>
                         </label>
-                        <button
-                          type="button"
-                          className="text-link text-danger"
-                          disabled={update.isPending}
-                          onClick={() => {
-                            update.reset();
-                            setAction({ member, remove: true });
-                          }}
-                        >
-                          Remove
-                        </button>
+                        {account.isSuccess &&
+                          account.data.id !== member.user_id && (
+                            <button
+                              type="button"
+                              className="text-link text-danger"
+                              disabled={update.isPending}
+                              onClick={() => {
+                                update.reset();
+                                setAction({ member, remove: true });
+                              }}
+                            >
+                              Remove
+                            </button>
+                          )}
                       </div>
                     </td>
                   )}
@@ -170,7 +179,7 @@ export function Members({ organization }: { organization: Organization }) {
           onConfirm={() => update.mutate(action)}
           onCancel={() => setAction(null)}
         >
-          <p>Account {action.member.user_id}</p>
+          <p>{memberName(action.member)}</p>
           <p>
             {"remove" in action
               ? "They will lose access to all projects in this organization."

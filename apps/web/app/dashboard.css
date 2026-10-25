@@ -452,6 +452,13 @@
   .dashboard-main .danger-zone {
     max-width: 760px;
   }
+  .dashboard-main .organization-danger-zone {
+    max-width: none;
+  }
+  .dashboard-main .deletion-form > .button,
+  .dashboard-main .danger-zone-action > .button {
+    min-height: 40px;
+  }
   .dashboard-main .receiver-guide {
     max-width: 920px;
   }

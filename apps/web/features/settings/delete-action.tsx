@@ -11,14 +11,17 @@ export function DeleteAction({
   confirmationText,
   onDelete,
   onDeleted,
+  grouped = false,
 }: {
   title: string;
   description: string;
   confirmationText: string;
   onDelete: (confirmation: string) => Promise<void>;
   onDeleted: () => void;
+  grouped?: boolean;
 }) {
   const id = useId();
+  const Heading = grouped ? "h3" : "h2";
   const [typed, setTyped] = useState("");
   const [confirming, setConfirming] = useState(false);
   const remove = useMutation({
@@ -44,9 +47,15 @@ export function DeleteAction({
     setConfirming(true);
   }
   return (
-    <section className="settings-section danger-zone">
-      <h2>{title}</h2>
-      <p id={id + "-description"}>{description}</p>
+    <section
+      className={
+        grouped ? "danger-zone-action" : "settings-section danger-zone"
+      }
+    >
+      <div className="danger-zone-copy">
+        <Heading>{title}</Heading>
+        <p id={id + "-description"}>{description}</p>
+      </div>
       <form
         className="deletion-form"
         onSubmit={review}
