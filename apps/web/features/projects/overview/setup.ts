@@ -85,12 +85,8 @@ export function setupChecks(
   ];
 }
 
-const shellQuote = (value: string) =>
-  "'" + value.replaceAll("'", "'\\''") + "'";
-
 export function publicationBlock(
   endpoint: Endpoint | undefined,
-  key: ReadResult<boolean>,
   availability: "checking" | "paused" | "active",
 ) {
   if (availability === "paused")
@@ -102,32 +98,4 @@ export function publicationBlock(
     return "Set up the signing secret, then verify your receiver.";
   if (!endpoint.verified_at || !endpoint.enabled)
     return "Verify your receiver and enable the endpoint.";
-  if (key.status === "checking")
-    return "Checking for an active project API key…";
-  if (key.status === "unavailable")
-    return "Refresh API key status before publishing.";
-  if (!key.data) return "Create a project API key to publish an event.";
-}
-
-export function setupCommand(
-  origin: string,
-  eventType: string,
-  requestKey: string,
-) {
-  return [
-    "curl -X POST " +
-      shellQuote(origin.replace(/\/+$/, "") + "/v1/events") +
-      " \\",
-    "  -H 'Authorization: Bearer YOUR_PROJECT_API_KEY' \\",
-    "  -H 'Content-Type: application/json' \\",
-    "  -H " + shellQuote("Idempotency-Key: " + requestKey) + " \\",
-    "  -d " +
-      shellQuote(
-        JSON.stringify(
-          { type: eventType, data: { message: "Hello from Cascadehook" } },
-          null,
-          2,
-        ),
-      ),
-  ].join("\n");
 }

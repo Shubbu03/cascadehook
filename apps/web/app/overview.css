@@ -113,41 +113,88 @@
     line-height: 1.8;
   }
   .overview-waiting .text-link,
-  .overview-command-note .text-link,
   .overview-delivery .text-link {
     font-size: 12px;
   }
-  .overview-command {
-    margin-block: 18px 12px;
-    border: 1px solid var(--border);
-    border-radius: 7px;
-    background: var(--background);
-    overflow: hidden;
-  }
-  .overview-command-heading,
-  .overview-command-note {
+  .event-publish-heading {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 8px;
+    gap: 16px;
+    margin-bottom: 24px;
   }
-  .overview-command-heading {
-    padding: 6px 8px 6px 16px;
-    border-bottom: 1px solid var(--border);
-    color: var(--muted);
-    font-size: 11px;
+  .event-publish-heading .button {
+    padding: 8px;
+    flex-shrink: 0;
   }
-  .overview-command pre {
-    margin: 0;
-    padding: 18px;
-    overflow-x: auto;
-    font-size: 11px;
-    line-height: 1.9;
+  .event-publish-dialog {
+    width: min(660px, calc(100% - 32px));
+  }
+  .event-publish-form {
+    min-width: 0;
+  }
+  .event-publish-form .form-field {
+    margin-bottom: 14px;
+  }
+  .event-publish-form .form-field textarea {
+    min-height: 160px;
     tab-size: 2;
+    background: var(--surface-hover);
   }
-  .overview-command-note {
-    margin-bottom: 18px;
+  .event-publish-form .form-field input {
+    font-family: var(--font-plex-mono), monospace;
+  }
+  .event-publish-form > .field-help,
+  .event-publish-form > .form-error {
+    margin-block: -4px 18px;
+  }
+  .event-publish-form p {
+    font-size: 12px;
+    line-height: 1.7;
+  }
+  .event-publish-key {
+    margin-top: 20px;
+  }
+  .event-publish-result,
+  .event-publish-error {
+    margin-block: 20px;
+    padding: 16px;
+    border-radius: 7px;
+  }
+  .event-publish-result {
+    background: var(--accent-subtle);
+  }
+  .event-publish-result h3 {
+    font-size: 14px;
+  }
+  .event-publish-form .event-publish-result p {
+    margin-block: 6px 12px;
+    color: var(--foreground);
+  }
+  .event-publish-error {
+    background: var(--danger-subtle);
+    color: var(--danger);
+  }
+  .event-publish-form .event-publish-error p {
+    margin: 0;
+    color: inherit;
+  }
+  .event-publish-error p + p {
+    padding-top: 8px;
+  }
+  .event-publish-result .text-link {
+    font-size: 12px;
+    color: var(--accent);
+  }
+  .event-publish-result .form-actions {
+    margin-top: 12px;
+    gap: 16px;
+  }
+  .event-publish-form > .event-publish-actions {
+    margin-top: 20px;
+  }
+  .event-publish-form > .event-publish-routing {
+    margin-block: 12px 0;
   }
   .overview-delivery {
     padding-top: 24px;

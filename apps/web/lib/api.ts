@@ -24,6 +24,14 @@ const api = xior.create({
 
 function problemMessage(status: number, code?: string) {
   const endpointMessages: Record<string, string> = {
+    invalid_event: "Enter a JSON payload with a valid event type.",
+    invalid_event_type:
+      "Use 3–128 lowercase letters, numbers, dots, underscores, or hyphens for the event type.",
+    invalid_idempotency_key:
+      "Use 1–255 visible ASCII characters for the idempotency key.",
+    idempotency_conflict:
+      "This key was already used with a different payload. Start a new event to use a new key.",
+    request_too_large: "The complete event must be no larger than 256 KiB.",
     delivery_cycle_changed:
       "This delivery changed while you were reviewing it. Check its current cycle before replaying.",
     delivery_not_replayable:
@@ -108,10 +116,9 @@ function problemMessage(status: number, code?: string) {
 export async function apiRequest<T>(
   path: string,
   getToken: GetToken,
-  options: Pick<
-    XiorRequestConfig,
-    "method" | "data" | "params" | "signal"
-  > = {},
+  options: Pick<XiorRequestConfig, "method" | "data" | "params" | "signal"> & {
+    idempotencyKey?: string;
+  } = {},
 ): Promise<T> {
   if (!process.env.NEXT_PUBLIC_API_BASE_URL) {
     throw new ApiError(
@@ -130,11 +137,18 @@ export async function apiRequest<T>(
   }
   if (!token) throw new ApiError("Please sign in again to continue.", 401);
 
+  const { idempotencyKey, ...requestOptions } = options;
   try {
     const response = await api.request<T>({
-      ...options,
+      ...requestOptions,
       url: path,
-      headers: { Authorization: "Bearer " + token },
+      headers: {
+        Authorization: "Bearer " + token,
+        ...(typeof options.data === "string"
+          ? { "Content-Type": "application/json" }
+          : {}),
+        ...(idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {}),
+      },
     });
     return response.data;
   } catch (error) {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useAuth } from "@clerk/nextjs";
+import { PlusIcon } from "@phosphor-icons/react";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -14,14 +15,16 @@ import type { Page } from "@/features/workspace/types";
 import { apiRequest } from "@/lib/api";
 import { formatTime } from "@/lib/format";
 import { projectPath, type EventSummary } from "./types";
+import { PublishEventDialog } from "./publish-event-dialog";
 
 export function EventList() {
-  const { project } = useProject();
+  const { project, canManage, availabilityKnown, suspended } = useProject();
   const userId = useSessionUserId();
   const { getToken } = useAuth();
   const search = useSearchParams();
   const router = useRouter();
   const [validation, setValidation] = useState("");
+  const [publishing, setPublishing] = useState(false);
   const type = search.get("event_type") ?? "";
   const valid = !type || eventTypePattern.test(type);
   const href = projectHref(project.id) + "/events";
@@ -67,9 +70,27 @@ export function EventList() {
         title="Events"
         titleId="events-heading"
         actions={
-          <RefreshButton pending={list.isFetching} refresh={list.refetch} />
+          <>
+            <RefreshButton pending={list.isFetching} refresh={list.refetch} />
+            {canManage && (
+              <button
+                type="button"
+                className="button button-small button-primary"
+                disabled={!availabilityKnown || suspended}
+                onClick={() => setPublishing(true)}
+              >
+                <PlusIcon size={16} aria-hidden="true" /> Publish event
+              </button>
+            )}
+          </>
         }
       />
+      {canManage && publishing && (
+        <PublishEventDialog
+          key={userId + ":" + project.id}
+          onClose={() => setPublishing(false)}
+        />
+      )}
       <form key={type} className="activity-filters" onSubmit={apply}>
         <label className="filter-field">
           <span>Event type</span>

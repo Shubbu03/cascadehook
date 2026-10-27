@@ -84,21 +84,31 @@ export default function QuickstartPage() {
         </p>
       </section>
       <section id="publish">
-        <h2>4. Create an API key and publish</h2>
+        <h2>4. Publish an event</h2>
         <p>
-          Create a project API key in API keys and save its one-time value.
-          Replace <code>YOUR_PROJECT_API_KEY</code> below; use your API origin
-          if the host is still a placeholder.
+          In your project Overview, use <strong>Publish a test event</strong>.
+          Enter <code>invoice.paid</code> and a JSON payload such as{" "}
+          <code>{'{"invoice_id":"inv_1024"}'}</code>, then publish. You can also
+          open <strong>Events → Publish event</strong>. Dashboard publishing
+          uses your signed-in account; a project API key is needed when
+          integrating your application.
+        </p>
+        <p>
+          To publish from your application or terminal, create a project API key
+          in API keys and save its one-time value. Replace{" "}
+          <code>YOUR_PROJECT_API_KEY</code> below; use your API origin if the
+          host is still a placeholder.
         </p>
         <CodeBlock title="Publish invoice.paid" code={command} />
         <p>
-          A <code>202 Accepted</code> response means the event is saved and
-          queued. It does not confirm delivery. Reuse the same idempotency key
-          when retrying the same payload; change it when publishing a new event.
-          Keys remain idempotent for 24 hours.
+          A <code>202 Accepted</code> response means the event is saved. Its
+          receipt reports how many deliveries were created; it does not confirm
+          delivery success. Reuse the same idempotency key when retrying the
+          same payload; change it when publishing a new event. Keys remain
+          idempotent for 24 hours.
         </p>
         <p>
-          Project Overview provides a command matched to your chosen
+          Project Overview prefills an event type from your chosen
           endpoint&apos;s subscriptions. Development and Live key labels
           currently grant the same project scope.
         </p>

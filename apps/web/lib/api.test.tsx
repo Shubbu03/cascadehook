@@ -217,6 +217,137 @@ afterAll(() => {
 });
 
 describe("authenticated API transport", () => {
+  test("publishes through the session project route with an idempotency key and exact JSON bytes", async () => {
+    const { preparePublication, publishEvent } = await import(
+      "../features/activity/publication"
+    );
+    const project = {
+      id: "019a0000-0000-7000-8000-000000000001",
+      role: "admin" as const,
+    };
+    const receipt = {
+      id: "019a0000-0000-7000-8000-000000000002",
+      type: "order.created",
+      delivery_count: 1,
+      created_at: "2026-10-27T10:00:00Z",
+    };
+    const publication = preparePublication(
+      "order.created",
+      '{ "id": 9007199254740993, "amount": 1.00 }',
+      "dashboard-request",
+    );
+    let count = 0;
+    replaceFetch(async (input, init) => {
+      count++;
+      const request = new Request(input, init);
+      expect(new URL(request.url).pathname).toBe(
+        "/v1/projects/" + project.id + "/events",
+      );
+      expect(request.method).toBe("POST");
+      expect(request.headers.get("Authorization")).toBe("Bearer session-token");
+      expect(request.headers.get("Content-Type")).toBe("application/json");
+      expect(request.headers.get("Idempotency-Key")).toBe("dashboard-request");
+      expect(init?.credentials).toBe("omit");
+      expect(await request.text()).toBe(publication.body);
+      if (count === 1) throw new TypeError("Connection lost after sending");
+      return Response.json(receipt, { status: 202 });
+    });
+    await expect(
+      publishEvent(project, publication, async () => "session-token"),
+    ).rejects.toMatchObject({ status: 0 });
+    expect(count).toBe(1);
+    expect(
+      await publishEvent(project, publication, async () => "session-token"),
+    ).toEqual(receipt);
+    expect(count).toBe(2);
+  });
+  test("blocks member publication and missing sessions without making an API request", async () => {
+    const { preparePublication, publishEvent } = await import(
+      "../features/activity/publication"
+    );
+    const publication = preparePublication("order.created", "{}", "key");
+    let requests = 0;
+    replaceFetch(async () => {
+      requests++;
+      throw new Error("Must not fetch");
+    });
+    const project = {
+      id: "019a0000-0000-7000-8000-000000000001",
+      role: "member" as const,
+    };
+    await expect(
+      publishEvent(project, publication, async () => "token"),
+    ).rejects.toMatchObject({ status: 403 });
+    await expect(
+      publishEvent(
+        { ...project, role: "owner" },
+        publication,
+        async () => null,
+      ),
+    ).rejects.toMatchObject({ status: 401 });
+    expect(requests).toBe(0);
+  });
+  test("does not report publication accepted for a malformed or mismatched receipt", async () => {
+    const { preparePublication, publishEvent } = await import(
+      "../features/activity/publication"
+    );
+    const publication = preparePublication("order.created", "{}", "key");
+    const project = {
+      id: "019a0000-0000-7000-8000-000000000001",
+      role: "owner" as const,
+    };
+    const receipt = {
+      id: "019a0000-0000-7000-8000-000000000002",
+      type: "order.created",
+      created_at: "2026-10-27T10:00:00Z",
+      delivery_count: 0,
+    };
+    for (const result of [
+      null,
+      { ...receipt, id: "invalid" },
+      { ...receipt, type: "other.event" },
+      { ...receipt, delivery_count: -1 },
+      { ...receipt, created_at: "invalid" },
+    ]) {
+      replaceFetch(async () => Response.json(result, { status: 202 }));
+      await expect(
+        publishEvent(project, publication, async () => "token"),
+      ).rejects.toThrow("could not be confirmed");
+    }
+    replaceFetch(async () => Response.json(receipt, { status: 202 }));
+    expect(
+      await publishEvent(project, publication, async () => "token"),
+    ).toEqual(receipt);
+  });
+  test("explains publication conflicts and payload limits without exposing server responses", async () => {
+    const { preparePublication, publishEvent } = await import(
+      "../features/activity/publication"
+    );
+    const publication = preparePublication("order.created", "{}", "key");
+    const project = {
+      id: "019a0000-0000-7000-8000-000000000001",
+      role: "owner" as const,
+    };
+    replaceFetch(async () =>
+      Response.json(
+        { code: "idempotency_conflict", detail: "private diagnostic" },
+        { status: 409 },
+      ),
+    );
+    await expect(
+      publishEvent(project, publication, async () => "token"),
+    ).rejects.toMatchObject({
+      status: 409,
+      code: "idempotency_conflict",
+      message: expect.stringContaining("different payload"),
+    });
+    replaceFetch(async () =>
+      Response.json({ code: "request_too_large" }, { status: 413 }),
+    );
+    await expect(
+      publishEvent(project, publication, async () => "token"),
+    ).rejects.toThrow("256 KiB");
+  });
   test("deletes only a manageable endpoint in the confirmed project without a request body", async () => {
     const { requestEndpointDeletion } = await import(
       "../features/endpoints/deletion"

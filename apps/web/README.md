@@ -82,9 +82,12 @@ the API origin, authenticated users see a recoverable connection error.
   stored in the browser. Members inspect setup without API-key reads or publishing
   guidance. Endpoint choices support pagination. Reads refresh every 15 seconds,
   on returning to Overview, or with Refresh. Denied reads hide cached content.
-  Owners/admins get a copyable command using a subscribed event type and their
-  configured API origin; credentials remain placeholders. Reusing its request key
-  is idempotent; Use a new event generates a fresh key without sending a request.
+  Owners/admins can publish through a shared event form, prefilled with a subscribed
+  event type. The form uses their bound Clerk session and the existing project
+  publication endpoint; a project API key is only needed for application integration.
+  Receiver readiness gates guided publication, while API-key status remains a
+  separate integration check. Acceptance refreshes the event/delivery/usage reads;
+  the checklist still waits for observed delivery success.
   Pending/failed deliveries link to attempt history and never count as success.
 - /dashboard/projects/:projectId/endpoints — real endpoint listing with cursor
   pagination, delivery-status filters, and exact event-type filters.
@@ -108,6 +111,14 @@ the API origin, authenticated users see a recoverable connection error.
   does not return response bodies or sensitive response headers.
 - /dashboard/projects/:projectId/events — accepted events filtered by exact type.
   Event detail shows the accepted JSON envelope and links to its deliveries.
+- Events also provides an owner/admin Publish event dialog with event type, JSON
+  data, and an optional idempotency key. It creates a random key when omitted,
+  preserves the exact JSON data bytes, and enforces the complete 256 KiB envelope
+  limit. Pending submissions are locked; explicit retries reuse the frozen payload
+  and key without automatic retry. New event starts a separate request. Acceptance
+  is displayed separately from delivery success, including an explicit zero-match
+  result and links to the accepted event and its deliveries. Drafts and receipts
+  stay out of browser storage and query/mutation caches, and clear when hidden.
 - /dashboard/projects/:projectId/api-keys — owner/admin key creation, optional
   expiry, development/live labels, rotation, and revocation. Both labels grant the
   same project scope. Rotation leaves the previous key usable for five minutes.
@@ -298,8 +309,11 @@ Manually verify:
     dialogs does not toggle it. Verify borderless auth/setup/settings fields,
     select labels/carets, and workspace-menu alignment at narrow widths.
 19. Open a fresh project's Overview and follow its checklist to a successful
-    delivery. Return after each setup step and check refreshed progress, command
-    copying, repeat publication/new event keys, and pending/failed delivery links.
+    delivery. Publish from Overview and Events without pasting an API key. Check
+    invalid JSON/types/keys, UTF-8 size limits, zero matches, duplicate publication,
+    lost-response retries, new-event keys, pending/failed delivery links, and
+    clearing drafts on route/account changes. Acceptance must not complete the
+    successful-delivery check before a receiver acknowledges the webhook.
     Switch endpoints/projects, disable an endpoint, expire/revoke a key, and check
     member access, paused projects, API failures, and completed setup in both themes.
 20. Read the public docs while signed out; download and run each receiver adapter,

@@ -5,7 +5,6 @@ import {
   chooseEndpoint,
   publicationBlock,
   setupChecks,
-  setupCommand,
   type Activity,
   type ReadResult,
 } from "./setup";
@@ -121,51 +120,20 @@ describe("project setup progress", () => {
       setupChecks(endpoint, null, empty).some((check) => check.id === "key"),
     ).toBe(false);
   });
-  test("blocks publishing until availability, receiver readiness, and key status are confirmed", () => {
+  test("dashboard publishing requires a ready receiver but not a project API key", () => {
     const ready = {
       ...endpoint,
       enabled: true,
       has_signing_secret: true,
       verified_at: endpoint.created_at,
     };
-    expect(publicationBlock(ready, activeKey, "active")).toBeUndefined();
-    expect(publicationBlock(ready, activeKey, "paused")).toContain("paused");
-    expect(publicationBlock(ready, activeKey, "checking")).toContain(
-      "availability",
+    expect(publicationBlock(ready, "active")).toBeUndefined();
+    expect(publicationBlock(ready, "paused")).toContain("paused");
+    expect(publicationBlock(ready, "checking")).toContain("availability");
+    expect(publicationBlock({ ...ready, enabled: false }, "active")).toContain(
+      "enable",
     );
-    expect(
-      publicationBlock({ ...ready, enabled: false }, activeKey, "active"),
-    ).toContain("enable");
-    expect(
-      publicationBlock(ready, { status: "unavailable" }, "active"),
-    ).toContain("Refresh");
-    expect(
-      publicationBlock(ready, { status: "ready", data: false }, "active"),
-    ).toContain("Create");
-  });
-});
-
-test("the publish command preserves its URL, event type, and request key through a real shell", () => {
-  const origin = "https://api.example/it's/$(printf injected)/";
-  const requestKey = "setup-'$(printf injected)";
-  const command = setupCommand(origin, "order.created", requestKey);
-  // Capture curl arguments locally; no request is sent.
-  const result = Bun.spawnSync([
-    "/bin/sh",
-    "-c",
-    "curl() { printf '%s\\0' \"$@\"; }\n" + command,
-  ]);
-  expect(result.exitCode).toBe(0);
-  const args = result.stdout.toString().split("\0").filter(Boolean);
-  expect(args.slice(0, 3)).toEqual([
-    "-X",
-    "POST",
-    origin.replace(/\/+$/, "") + "/v1/events",
-  ]);
-  expect(args).toContain("Authorization: Bearer YOUR_PROJECT_API_KEY");
-  expect(args).toContain("Idempotency-Key: " + requestKey);
-  expect(JSON.parse(args.at(-1)!)).toEqual({
-    type: "order.created",
-    data: { message: "Hello from Cascadehook" },
+    expect(publicationBlock(undefined, "active")).toContain("Register");
+    expect(publicationBlock(endpoint, "active")).toContain("secret");
   });
 });

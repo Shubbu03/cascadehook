@@ -28,6 +28,8 @@ try {
     ".account-input",
     ".overview-grid",
     ".overview-checklist",
+    ".event-publish-form",
+    ".event-publish-dialog",
     ".docs-main",
     ".docs-code",
     ".deletion-form",

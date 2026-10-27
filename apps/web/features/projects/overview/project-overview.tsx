@@ -34,7 +34,7 @@ import {
   type ReadResult,
   type SetupCheck,
 } from "./setup";
-import { PublishExample } from "./publish-example";
+import { OverviewPublisher } from "./overview-publisher";
 
 export function ProjectOverview() {
   const { project } = useProject();
@@ -126,7 +126,6 @@ function OverviewSetup({ endpoints }: { endpoints: Endpoint[] }) {
   const mayRegister = canManage && availabilityKnown && !suspended;
   const blockedReason = publicationBlock(
     endpoint,
-    hasKey,
     !availabilityKnown ? "checking" : suspended ? "paused" : "active",
   );
 
@@ -191,8 +190,8 @@ function OverviewSetup({ endpoints }: { endpoints: Endpoint[] }) {
     endpoint: "Choose the HTTPS receiver for your events.",
     secret: "Save the secret and use it to verify request signatures.",
     receiver: "Complete the ownership challenge, then enable the endpoint.",
-    key: "Save a project key to publish from your application.",
-    event: "Send an event matching this endpoint’s subscriptions.",
+    key: "Create a key when connecting your application. Dashboard publishing uses your account access.",
+    event: "Publish a test event matching this endpoint’s subscriptions.",
     delivery: "Check that your receiver returned a successful response.",
   };
 
@@ -298,8 +297,7 @@ function OverviewSetup({ endpoints }: { endpoints: Endpoint[] }) {
         </section>
         <div className="overview-integration">
           {canManage ? (
-            <PublishExample
-              key={(endpoint?.id ?? "none") + ":" + endpoint?.event_types[0]}
+            <OverviewPublisher
               endpoint={endpoint}
               href={href}
               blockedReason={blockedReason}
