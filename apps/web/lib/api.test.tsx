@@ -829,7 +829,12 @@ describe("authenticated API transport", () => {
   });
   test("hides cached data after access is denied or a resource disappears", async () => {
     const { QueryState } = await import("../components/query-state");
-    for (const status of [401, 403, 404, 410]) {
+    for (const [status, title] of [
+      [401, "Session unavailable"],
+      [403, "Access denied"],
+      [404, "Resource unavailable"],
+      [410, "Resource unavailable"],
+    ] as const) {
       const query = {
         isPending: false,
         isError: true,
@@ -843,6 +848,26 @@ describe("authenticated API transport", () => {
       );
       expect(html).not.toContain("cached-private-metadata");
       expect(html).toContain("Access unavailable");
+      expect(html).toContain(`<h2>${title}</h2>`);
+      expect(html).not.toContain("reconnected");
+      if (status !== 401) {
+        expect(html).toContain('href="/dashboard"');
+        expect(html).toContain("Back to projects");
+        expect(html).not.toContain("Try again");
+      }
+    }
+  });
+  test("describes gone resources without suggesting a connection failure", async () => {
+    for (const status of [404, 410]) {
+      replaceFetch(async () =>
+        Response.json({ detail: "private diagnostic" }, { status }),
+      );
+      await expect(
+        api.apiRequest("/v1/projects/unavailable", async () => "token"),
+      ).rejects.toMatchObject({
+        status,
+        message: "This resource is no longer available to your account.",
+      });
     }
   });
   test("retains cached data with a visible error during a temporary outage", async () => {
@@ -860,5 +885,24 @@ describe("authenticated API transport", () => {
     );
     expect(html).toContain("cached-result");
     expect(html).toContain("Temporary outage");
+    expect(html).toContain("Try again");
+  });
+  test("keeps custom error headings and retry state for temporary failures", async () => {
+    const { ConnectionError } = await import(
+      "../features/workspace/connection-error"
+    );
+    const html = renderToStaticMarkup(
+      <ConnectionError
+        title="Couldn't load setup"
+        error={new Error("Connection interrupted")}
+        retry={() => undefined}
+        pending
+      />,
+    );
+    expect(html).toContain("Couldn&#x27;t load setup");
+    expect(html).toContain("Connection interrupted");
+    expect(html).toContain("Retrying…");
+    expect(html).toContain("disabled");
+    expect(html).not.toContain('href="/dashboard"');
   });
 });

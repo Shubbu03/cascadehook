@@ -149,7 +149,7 @@ function problemMessage(status: number, code?: string) {
     return "Your organization has reached its limit for this resource.";
   if (status === 409)
     return "This action conflicts with a recent change. Refresh and try again.";
-  if (status === 404)
+  if (status === 404 || status === 410)
     return "This resource is no longer available to your account.";
   return "We couldn't reach your workspace. Please try again shortly.";
 }

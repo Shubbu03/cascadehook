@@ -110,9 +110,10 @@ export function AcceptInvitation() {
                   <input
                     ref={input}
                     name="token"
-                    type="password"
+                    type="text"
                     required
                     autoComplete="off"
+                    autoCapitalize="none"
                     spellCheck={false}
                     disabled={busy}
                   />
