@@ -152,6 +152,9 @@
     font-size: 12px;
     line-height: 1.7;
   }
+  .event-publish-form .form-error {
+    color: var(--danger);
+  }
   .event-publish-key {
     margin-top: 20px;
   }

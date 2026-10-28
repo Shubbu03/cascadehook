@@ -1,4 +1,8 @@
-import xior, { isXiorError, type XiorRequestConfig } from "xior";
+import xior, {
+  isXiorError,
+  XiorTimeoutError,
+  type XiorRequestConfig,
+} from "xior";
 
 type Problem = { code?: string };
 type GetToken = () => Promise<string | null>;
@@ -17,10 +21,45 @@ export class ApiError extends Error {
 
 const api = xior.create({
   baseURL: process.env.NEXT_PUBLIC_API_BASE_URL,
-  timeout: 10_000,
+  // The API has a ten-second request deadline. Let it return its problem
+  // response before the browser aborts, including time for network transit.
+  timeout: 15_000,
   credentials: "omit",
   cache: "no-store",
 });
+
+async function sessionToken(getToken: GetToken, signal?: AbortSignal | null) {
+  signal?.throwIfAborted();
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  let cancel: (() => void) | undefined;
+  const interrupted = new Promise<never>((_resolve, reject) => {
+    timer = setTimeout(
+      () =>
+        reject(
+          new ApiError(
+            "Session refresh timed out. Check your connection and try again.",
+            0,
+            "session_timeout",
+          ),
+        ),
+      10_000,
+    );
+    cancel = () => reject(signal?.reason);
+    signal?.addEventListener("abort", cancel, { once: true });
+  });
+  try {
+    return await Promise.race([
+      Promise.resolve().then(() => {
+        signal?.throwIfAborted();
+        return getToken();
+      }),
+      interrupted,
+    ]);
+  } finally {
+    clearTimeout(timer);
+    if (cancel) signal?.removeEventListener("abort", cancel);
+  }
+}
 
 function problemMessage(status: number, code?: string) {
   const endpointMessages: Record<string, string> = {
@@ -94,6 +133,8 @@ function problemMessage(status: number, code?: string) {
     project_suspended: "This project is paused. This action is unavailable.",
     request_timeout:
       "The request timed out. Refresh to check the current state before trying again.",
+    authentication_unavailable:
+      "Session verification is temporarily unavailable. Please try again.",
   };
   if (code && endpointMessages[code]) return endpointMessages[code];
   if (status === 401)
@@ -129,8 +170,9 @@ export async function apiRequest<T>(
   }
   let token: string | null;
   try {
-    token = await getToken();
-  } catch {
+    token = await sessionToken(getToken, options.signal);
+  } catch (error) {
+    if (options.signal?.aborted || error instanceof ApiError) throw error;
     throw new ApiError(
       "Your session couldn't be refreshed. Check your connection and try again.",
     );
@@ -139,6 +181,7 @@ export async function apiRequest<T>(
 
   const { idempotencyKey, ...requestOptions } = options;
   try {
+    options.signal?.throwIfAborted();
     const response = await api.request<T>({
       ...requestOptions,
       url: path,
@@ -153,6 +196,13 @@ export async function apiRequest<T>(
     return response.data;
   } catch (error) {
     if (options.signal?.aborted) throw error;
+    if (error instanceof XiorTimeoutError) {
+      throw new ApiError(
+        problemMessage(0, "request_timeout"),
+        0,
+        "request_timeout",
+      );
+    }
     if (isXiorError<Problem>(error)) {
       const status = error.response?.status ?? 0;
       const code = error.response?.data?.code;

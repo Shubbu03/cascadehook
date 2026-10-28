@@ -13,7 +13,7 @@ import {
   PublicationError,
   publishEvent,
   type Publication,
-  type PublicationField,
+  type PublicationErrors,
   type PublicationReceipt,
 } from "./publication";
 
@@ -49,9 +49,7 @@ export function PublishEventForm({
   const [type, setType] = useState(initialType);
   const [payload, setPayload] = useState(initialPayload);
   const [requestKey, setRequestKey] = useState("");
-  const [errors, setErrors] = useState<
-    Partial<Record<PublicationField, string>>
-  >({});
+  const [errors, setErrors] = useState<PublicationErrors>({});
   const [state, setState] = useState<PublishState>({ status: "draft" });
   const pending = useRef(false);
   const controller = useRef<AbortController | null>(null);
@@ -94,11 +92,6 @@ export function PublishEventForm({
     if (pending.current || blockedReason || state.status === "accepted") return;
     let publication: Publication;
     try {
-      if (eventTypes && !eventTypes.includes(type.trim()))
-        throw new PublicationError(
-          "type",
-          "Choose an event type subscribed to by the setup endpoint.",
-        );
       publication =
         state.status === "error"
           ? state.publication
@@ -106,10 +99,10 @@ export function PublishEventForm({
               type,
               payload,
               requestKey || "dashboard-" + crypto.randomUUID(),
+              eventTypes,
             );
     } catch (error) {
-      if (error instanceof PublicationError)
-        setErrors({ [error.field]: error.message });
+      if (error instanceof PublicationError) setErrors(error.errors);
       else
         setErrors({
           idempotencyKey:
@@ -168,7 +161,12 @@ export function PublishEventForm({
   }
 
   return (
-    <form className="event-publish-form" onSubmit={submit} aria-busy={busy}>
+    <form
+      className="event-publish-form"
+      onSubmit={submit}
+      aria-busy={busy}
+      noValidate
+    >
       <label className="form-field" htmlFor={id + "-type"}>
         <span>Event type</span>
         <input

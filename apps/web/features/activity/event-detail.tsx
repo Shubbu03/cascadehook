@@ -45,7 +45,17 @@ export function EventDetail({ eventId }: { eventId: string }) {
           <>
             <PageHeader
               title={detail.data.type}
-              description={<code>{eventId}</code>}
+              description={
+                <div className="event-identifier">
+                  <code>{eventId}</code>
+                  <CopyButton
+                    value={eventId}
+                    label="Copy event ID"
+                    successMessage="Event ID copied."
+                    iconOnly
+                  />
+                </div>
+              }
               actions={
                 <Link
                   className="button button-small button-secondary"

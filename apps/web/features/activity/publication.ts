@@ -17,13 +17,13 @@ export type PublicationReceipt = {
   delivery_count: number;
 };
 export type PublicationField = "type" | "payload" | "idempotencyKey";
+export type PublicationErrors = Partial<Record<PublicationField, string>>;
 
 export class PublicationError extends Error {
-  constructor(
-    public readonly field: PublicationField,
-    message: string,
-  ) {
-    super(message);
+  constructor(public readonly errors: PublicationErrors) {
+    super(
+      Object.values(errors)[0] ?? "Check the event fields before publishing.",
+    );
     this.name = "PublicationError";
   }
 }
@@ -32,33 +32,28 @@ export function preparePublication(
   type: string,
   payload: string,
   idempotencyKey: string,
+  eventTypes?: readonly string[],
 ): Publication {
   type = type.trim();
+  const errors: PublicationErrors = {};
   if (!eventTypePattern.test(type))
-    throw new PublicationError(
-      "type",
-      "Use 3–128 lowercase letters, numbers, dots, underscores, or hyphens.",
-    );
+    errors.type =
+      "Use 3–128 lowercase letters, numbers, dots, underscores, or hyphens.";
+  else if (eventTypes && !eventTypes.includes(type))
+    errors.type = "Choose an event type subscribed to by the setup endpoint.";
   if (!/^[\x21-\x7e]{1,255}$/.test(idempotencyKey))
-    throw new PublicationError(
-      "idempotencyKey",
-      "Use 1–255 visible ASCII characters without spaces.",
-    );
+    errors.idempotencyKey =
+      "Use 1–255 visible ASCII characters without spaces.";
   // Validate without reserializing: preserve JSON numbers and the exact payload bytes.
   try {
     JSON.parse(payload);
   } catch {
-    throw new PublicationError(
-      "payload",
-      'Enter valid JSON, such as {"order_id": "ord_001"}.',
-    );
+    errors.payload = 'Enter valid JSON, such as {"order_id": "ord_001"}.';
   }
   const body = '{"type":' + JSON.stringify(type) + ',"data":' + payload + "}";
   if (new TextEncoder().encode(body).length > MAX_EVENT_BYTES)
-    throw new PublicationError(
-      "payload",
-      "The complete event must be no larger than 256 KiB.",
-    );
+    errors.payload = "The complete event must be no larger than 256 KiB.";
+  if (Object.keys(errors).length) throw new PublicationError(errors);
   return Object.freeze({ type, body, idempotencyKey });
 }
 

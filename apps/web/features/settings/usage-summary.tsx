@@ -9,7 +9,8 @@ export function OrganizationUsageSummary({ usage }: { usage: Usage }) {
       </p>
       <h2 className="settings-section-title">Organization</h2>
       <p className="section-description">
-        Event and delivery quotas are shared across projects.
+        Quotas are shared across projects. Replays count as new delivery cycles;
+        automatic retries don’t.
       </p>
       <div className="usage-grid">
         <Quota
@@ -18,7 +19,7 @@ export function OrganizationUsageSummary({ usage }: { usage: Usage }) {
           limit={usage.limits.monthly_events}
         />
         <Quota
-          label="Deliveries"
+          label="Delivery cycles"
           value={usage.usage.deliveries}
           limit={usage.limits.monthly_deliveries}
         />
@@ -40,7 +41,7 @@ export function OrganizationUsageSummary({ usage }: { usage: Usage }) {
 export function UsageActivity({ usage }: { usage: Usage }) {
   const values = [
     ["Accepted events this month", usage.usage.events],
-    ["Deliveries created this month", usage.usage.deliveries],
+    ["Delivery cycles this month", usage.usage.deliveries],
     ["Attempts started", usage.usage.attempts_started],
     ["Successful attempts", usage.usage.successful_attempts],
     ["Unsuccessful attempts", usage.usage.unsuccessful_attempts],

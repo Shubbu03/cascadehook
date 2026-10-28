@@ -5,6 +5,9 @@ import { EndpointDetail } from "@/features/endpoints/endpoint-detail";
 import { ContentLoading } from "@/features/workspace/loading";
 import { requireSession } from "@/lib/server/session";
 
+// The authenticated client workspace intentionally gates this page during SSR.
+export const instant = false;
+
 export const metadata: Metadata = { title: "Endpoint settings" };
 async function EndpointContent({
   params,

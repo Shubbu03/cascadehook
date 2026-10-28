@@ -4,6 +4,9 @@ import { WorkspaceHome } from "@/features/workspace/workspace-home";
 import { ContentLoading } from "@/features/workspace/loading";
 import { requireSession } from "@/lib/server/session";
 
+// The authenticated client workspace intentionally gates this page during SSR.
+export const instant = false;
+
 export const metadata: Metadata = {
   title: "Your workspace",
   robots: { index: false, follow: false },

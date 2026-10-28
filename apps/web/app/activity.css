@@ -1,4 +1,19 @@
 @layer components {
+  .event-identifier {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    max-width: 100%;
+  }
+  .event-identifier > code {
+    min-width: 0;
+  }
+  .event-identifier .button.copy-button-icon {
+    flex-shrink: 0;
+    min-height: 32px;
+    width: 32px;
+    padding: 6px;
+  }
   .activity-filters {
     display: flex;
     align-items: end;

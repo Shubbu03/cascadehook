@@ -6,6 +6,9 @@ import { ContentLoading } from "@/features/workspace/loading";
 import { requireSession } from "@/lib/server/session";
 import { uuidPattern } from "@/lib/format";
 
+// The authenticated client workspace intentionally gates this page during SSR.
+export const instant = false;
+
 export const metadata: Metadata = { title: "Organization settings" };
 async function Content({
   params,

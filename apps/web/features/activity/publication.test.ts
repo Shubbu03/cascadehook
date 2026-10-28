@@ -6,6 +6,22 @@ import {
 } from "./publication";
 
 describe("dashboard event validation", () => {
+  test("reports all three invalid fields in one validation pass", () => {
+    let failure: unknown;
+    try {
+      preparePublication("order created1", '{ "order_id" }', "key with spaces");
+    } catch (error) {
+      failure = error;
+    }
+    expect(failure).toBeInstanceOf(PublicationError);
+    expect(failure).toMatchObject({
+      errors: {
+        type: expect.any(String),
+        payload: expect.any(String),
+        idempotencyKey: expect.any(String),
+      },
+    });
+  });
   test("preserves payload whitespace and large JSON numbers in the event envelope", () => {
     const payload = '{\n  "id": 9007199254740993, "amount": 1.00\n}';
     const publication = preparePublication(
@@ -43,9 +59,43 @@ describe("dashboard event validation", () => {
         throw new Error("Invalid publication was accepted");
       } catch (error) {
         expect(error).toBeInstanceOf(PublicationError);
-        expect((error as PublicationError).field).toBe(field);
+        expect((error as PublicationError).errors[field]).toEqual(
+          expect.any(String),
+        );
       }
     }
+  });
+  test("a subscription mismatch does not hide payload and key errors on Overview", () => {
+    let failure: unknown;
+    try {
+      preparePublication("other.event", "{broken", "bad key", [
+        "order.created",
+      ]);
+    } catch (error) {
+      failure = error;
+    }
+    expect(failure).toMatchObject({
+      errors: {
+        type: expect.stringContaining("subscribed"),
+        payload: expect.any(String),
+        idempotencyKey: expect.any(String),
+      },
+    });
+  });
+  test("empty required fields are validated together while an automatically generated key is valid", () => {
+    let failure: unknown;
+    try {
+      preparePublication("", "", "dashboard-generated-key");
+    } catch (error) {
+      failure = error;
+    }
+    expect(failure).toMatchObject({
+      errors: {
+        type: expect.any(String),
+        payload: expect.any(String),
+      },
+    });
+    expect((failure as PublicationError).errors.idempotencyKey).toBeUndefined();
   });
   test("bounds the UTF-8 bytes of the full envelope, including JSON wrapper overhead", () => {
     const overhead = new TextEncoder().encode(

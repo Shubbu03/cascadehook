@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, test } from "bun:test";
+import { afterAll, beforeAll, describe, expect, jest, test } from "bun:test";
 import { renderToStaticMarkup } from "react-dom/server";
 
 const originalFetch = globalThis.fetch;
@@ -217,6 +217,131 @@ afterAll(() => {
 });
 
 describe("authenticated API transport", () => {
+  test("cancels while refreshing a session and never sends a late request", async () => {
+    const token = Promise.withResolvers<string | null>();
+    const controller = new AbortController();
+    const reason = new DOMException(
+      "Navigation cancelled the request",
+      "AbortError",
+    );
+    let requests = 0;
+    replaceFetch(async () => {
+      requests++;
+      return Response.json({});
+    });
+    const result = api
+      .apiRequest(
+        "/v1/projects/project/endpoints/endpoint/signing-secret",
+        () => token.promise,
+        { method: "POST", signal: controller.signal },
+      )
+      .catch((error: unknown) => error);
+    controller.abort(reason);
+    await new Promise(setImmediate);
+    try {
+      expect(await Promise.race([result, Promise.resolve("still waiting")])).toBe(
+        reason,
+      );
+    } finally {
+      token.resolve("late-token");
+      await result;
+    }
+    expect(requests).toBe(0);
+  });
+
+  test("bounds a stalled session refresh without sending the mutation", async () => {
+    jest.useFakeTimers();
+    let requests = 0;
+    replaceFetch(async () => {
+      requests++;
+      return Response.json({});
+    });
+    try {
+      const result = api
+        .apiRequest(
+          "/v1/projects/project/endpoints/endpoint/signing-secret",
+          () => new Promise(() => {}),
+          { method: "POST" },
+        )
+        .catch((error: unknown) => error);
+      await new Promise(setImmediate);
+      jest.advanceTimersByTime(10_001);
+      await new Promise(setImmediate);
+      expect(
+        await Promise.race([result, Promise.resolve("still waiting")]),
+      ).toMatchObject({ status: 0, code: "session_timeout" });
+      expect(requests).toBe(0);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  test("allows the API deadline to return a structured timeout response", async () => {
+    jest.useFakeTimers();
+    replaceFetch(
+      (_input, init) =>
+        new Promise((resolve, reject) => {
+          const timer = setTimeout(() => {
+            resolve(Response.json({ code: "request_timeout" }, { status: 503 }));
+          }, 10_500);
+          init?.signal?.addEventListener(
+            "abort",
+            () => {
+              clearTimeout(timer);
+              reject(init.signal?.reason);
+            },
+            { once: true },
+          );
+        }),
+    );
+    try {
+      const result = api
+        .apiRequest("/v1/me", async () => "token")
+        .catch((error: unknown) => error);
+      await new Promise(setImmediate);
+      jest.advanceTimersByTime(10_500);
+      await new Promise(setImmediate);
+      expect(await result).toMatchObject({
+        status: 503,
+        code: "request_timeout",
+      });
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  test("identifies a transport timeout and never retries a mutation automatically", async () => {
+    jest.useFakeTimers();
+    let requests = 0;
+    replaceFetch(
+      (_input, init) =>
+        new Promise((_resolve, reject) => {
+          requests++;
+          init?.signal?.addEventListener(
+            "abort",
+            () => reject(init.signal?.reason),
+            { once: true },
+          );
+        }),
+    );
+    try {
+      const result = api
+        .apiRequest("/v1/projects/project/events", async () => "token", {
+          method: "POST",
+          data: '{"type":"order.created","data":{}}',
+          idempotencyKey: "same-request",
+        })
+        .catch((error: unknown) => error);
+      await new Promise(setImmediate);
+      jest.advanceTimersByTime(20_000);
+      await new Promise(setImmediate);
+      expect(await result).toMatchObject({ status: 0, code: "request_timeout" });
+      expect(requests).toBe(1);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
   test("publishes through the session project route with an idempotency key and exact JSON bytes", async () => {
     const { preparePublication, publishEvent } = await import(
       "../features/activity/publication"
