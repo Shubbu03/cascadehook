@@ -15,6 +15,6 @@ const server = Bun.serve({
   idleTimeout: 15,
   fetch: receive,
 });
-console.log(
+console.info(
   "Receiver listening on http://127.0.0.1:" + server.port + "/webhooks",
 );

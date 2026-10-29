@@ -1,5 +1,4 @@
-// Package store owns the PostgreSQL connection pool shared by the API and
-// worker, and will grow the persistence methods they need.
+// Package store owns PostgreSQL persistence for the API, worker, and operator commands.
 package store
 
 import (
@@ -44,11 +43,6 @@ func Open(ctx context.Context, databaseURL string) (*Store, error) {
 // Close releases all pooled connections. The store must not be used after.
 func (s *Store) Close() {
 	s.pool.Close()
-}
-
-// Ping reports whether the database is reachable.
-func (s *Store) Ping(ctx context.Context) error {
-	return s.pool.Ping(ctx)
 }
 
 func rollbackTransaction(tx pgx.Tx) {

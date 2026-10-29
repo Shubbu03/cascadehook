@@ -7,7 +7,7 @@ export const deliveryStates = [
   "failed",
   "canceled",
 ] as const;
-export type DeliveryState = (typeof deliveryStates)[number];
+type DeliveryState = (typeof deliveryStates)[number];
 export type Delivery = {
   id: string;
   project_id: string;

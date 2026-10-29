@@ -14,10 +14,6 @@ const ciphertextVersion = 1
 // identity. Copying ciphertext between endpoints or projects fails decryption.
 type Vault struct{ aead, previous cipher.AEAD }
 
-func NewVault(key []byte) (*Vault, error) {
-	return NewVaultWithPrevious(key, nil)
-}
-
 // New writes use the current key. A previous key permits a rolling deployment
 // and bounded ciphertext rewrapping without changing receiver credentials.
 func NewVaultWithPrevious(key, previous []byte) (*Vault, error) {

@@ -51,7 +51,7 @@ const server = createServer(
 );
 
 server.listen(port, process.env.HOST ?? "127.0.0.1", () => {
-  console.log(
+  console.info(
     "Receiver listening on http://127.0.0.1:" +
       server.address().port +
       "/webhooks",

@@ -16,7 +16,7 @@ export type PublicationReceipt = {
   created_at: string;
   delivery_count: number;
 };
-export type PublicationField = "type" | "payload" | "idempotencyKey";
+type PublicationField = "type" | "payload" | "idempotencyKey";
 export type PublicationErrors = Partial<Record<PublicationField, string>>;
 
 export class PublicationError extends Error {

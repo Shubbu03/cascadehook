@@ -5,14 +5,19 @@ import nextTs from "eslint-config-next/typescript";
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
-  // Override default ignores of eslint-config-next.
   globalIgnores([
-    // Default ignores of eslint-config-next:
     ".next/**",
     "out/**",
     "build/**",
     "next-env.d.ts",
   ]),
+  {
+    rules: {
+      "no-debugger": "error",
+      "no-console": ["error", { allow: ["warn", "error", "info"] }],
+      "@typescript-eslint/no-unused-vars": "error",
+    },
+  },
 ]);
 
 export default eslintConfig;

@@ -96,7 +96,7 @@ export default async function ReceiversPage() {
       </section>
       <section>
         <h2>Source</h2>
-        <p>The copied source and downloads below are the same tested files.</p>
+        <p>The copied source and downloads below use the same files.</p>
         <details className="docs-source">
           <summary>Shared receiver: receiver-core.mjs</summary>
           <CodeBlock

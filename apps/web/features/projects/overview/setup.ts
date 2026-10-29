@@ -6,7 +6,7 @@ export type ReadResult<T> =
   | { status: "checking" }
   | { status: "unavailable" }
   | { status: "ready"; data: T };
-export type CheckState = "complete" | "todo" | "checking" | "unavailable";
+type CheckState = "complete" | "todo" | "checking" | "unavailable";
 export type SetupCheck = {
   id: "endpoint" | "secret" | "receiver" | "key" | "event" | "delivery";
   title: string;

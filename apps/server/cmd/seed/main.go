@@ -9,11 +9,10 @@ import (
 	"log/slog"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 	"time"
-	"unicode/utf8"
 
+	"cascadehook/internal/accounts"
 	"cascadehook/internal/auth"
 	"cascadehook/internal/config"
 	"cascadehook/internal/store"
@@ -43,26 +42,22 @@ func run() error {
 		return fmt.Errorf("seed does not accept positional arguments")
 	}
 
-	params := store.BootstrapParams{
-		OrganizationName: strings.TrimSpace(*organization),
-		ProjectName:      strings.TrimSpace(*project),
-		KeyName:          strings.TrimSpace(*keyName),
-	}
-	validatedKeyName, err := auth.NormalizeKeyName(params.KeyName)
+	organizationName, err := accounts.NormalizeName(*organization)
 	if err != nil {
-		return err
+		return fmt.Errorf("organization: %w", err)
 	}
-	params.KeyName = validatedKeyName
-	for _, field := range []struct{ name, value string }{
-		{name: "organization", value: params.OrganizationName},
-		{name: "project", value: params.ProjectName},
-		{name: "key-name", value: params.KeyName},
-	} {
-		length := utf8.RuneCountInString(field.value)
-		invalidLength := length < 1 || length > 100
-		if !utf8.ValidString(field.value) || invalidLength {
-			return fmt.Errorf("%s must contain between 1 and 100 characters after trimming whitespace", field.name)
-		}
+	projectName, err := accounts.NormalizeName(*project)
+	if err != nil {
+		return fmt.Errorf("project: %w", err)
+	}
+	validatedKeyName, err := auth.NormalizeKeyName(*keyName)
+	if err != nil {
+		return fmt.Errorf("key-name: %w", err)
+	}
+	params := store.BootstrapParams{
+		OrganizationName: organizationName,
+		ProjectName:      projectName,
+		KeyName:          validatedKeyName,
 	}
 
 	cfg, err := config.Load()
@@ -74,7 +69,7 @@ func run() error {
 	})).With("service", "seed")
 	slog.SetDefault(logger)
 
-	key, err := auth.NewDevelopmentAPIKey()
+	key, err := auth.NewAPIKey(auth.EnvironmentDevelopment)
 	if err != nil {
 		return err
 	}

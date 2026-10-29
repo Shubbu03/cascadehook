@@ -3,7 +3,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { CopyButton } from "./copy-button";
 
-export type SecretValue = { value: string; label: string; note?: string };
+type SecretValue = { value: string; label: string; note?: string };
 type SecretState =
   | { status: "idle" }
   | { status: "pending" }

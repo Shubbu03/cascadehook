@@ -8,7 +8,7 @@ import {
 } from "@phosphor-icons/react";
 import toast, { type ToastOptions } from "react-hot-toast";
 
-export type NotificationType = "success" | "error" | "warn" | "info";
+type NotificationType = "success" | "error" | "warn" | "info";
 
 export function notify(message: string, type: NotificationType = "info") {
   const options: ToastOptions = {

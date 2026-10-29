@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { ProjectWorkspace } from "@/features/projects/project-workspace";
 import { ContentLoading } from "@/features/workspace/loading";
+import { uuidPattern } from "@/lib/format";
 import { requireSession } from "@/lib/server/session";
 
 async function ProjectLayoutContent({
@@ -13,12 +14,7 @@ async function ProjectLayoutContent({
 }) {
   await requireSession();
   const { projectId } = await params;
-  if (
-    !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-      projectId,
-    )
-  )
-    notFound();
+  if (!uuidPattern.test(projectId)) notFound();
   return (
     <ProjectWorkspace key={projectId} projectId={projectId}>
       {children}

@@ -22,15 +22,8 @@ func (GeneratedAPIKey) GoString() string { return "[redacted API key]" }
 
 func (GeneratedAPIKey) LogValue() slog.Value { return slog.StringValue("[redacted API key]") }
 
-// NewDevelopmentAPIKey generates a development credential with 256 bits of
-// random entropy. The display prefix exposes only the first 12 hex characters;
-// it is not an authentication lookup key. Hash the full token for lookup.
-func NewDevelopmentAPIKey() (GeneratedAPIKey, error) {
-	return NewAPIKey(EnvironmentDevelopment)
-}
-
 // NewAPIKey never accepts a caller-chosen secret. Environment is a display
-// label; all V1 credentials have the same project scope.
+// label; all V1 credentials have the same project scope and 256 bits of entropy.
 func NewAPIKey(environment KeyEnvironment) (GeneratedAPIKey, error) {
 	if !ValidKeyEnvironment(environment) {
 		return GeneratedAPIKey{}, ErrInvalidKeyEnvironment
