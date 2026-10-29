@@ -1,0 +1,277 @@
+@layer components {
+  .endpoint-detail {
+    max-width: 1200px;
+    container: endpoint-settings / inline-size;
+  }
+  .project-content > .endpoint-detail > .text-link:first-child {
+    margin-bottom: 12px;
+  }
+  .endpoint-detail .page-heading {
+    gap: 12px 24px;
+    margin-bottom: 20px;
+  }
+  .endpoint-inline-fields {
+    margin-top: 12px;
+  }
+  .endpoint-inline-fields .form-field {
+    margin-bottom: 0;
+  }
+  .endpoint-inline-fields input,
+  .endpoint-inline-fields textarea {
+    font-family: var(--font-plex-mono), monospace;
+  }
+  .endpoint-inline-fields textarea {
+    min-height: 96px;
+    background: var(--surface-hover);
+  }
+  .endpoint-inline-fields .notice {
+    margin-block: 12px 0;
+    padding: 10px 12px;
+    font-size: 12px;
+  }
+  .endpoint-registration-dialog {
+    width: min(600px, calc(100% - 32px));
+  }
+  .endpoint-dialog-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+  .endpoint-dialog-heading .button {
+    flex-shrink: 0;
+    padding: 8px;
+  }
+  .endpoint-registration-dialog .form-field {
+    margin-bottom: 18px;
+  }
+  .endpoint-registration-dialog .field-help {
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.7;
+  }
+  .endpoint-registration-dialog .form-field p {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.7;
+  }
+  .endpoint-registration-dialog .form-error {
+    color: var(--danger);
+  }
+  .endpoint-registration-dialog .notice-warning {
+    color: var(--warning);
+  }
+  .endpoint-registration-dialog textarea {
+    min-height: 110px;
+  }
+  .endpoint-overview,
+  .endpoint-configuration {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface);
+  }
+  .endpoint-overview {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(270px, 0.55fr);
+    margin-bottom: 16px;
+  }
+  .endpoint-destination,
+  .endpoint-delivery,
+  .endpoint-subscriptions,
+  .endpoint-security-card {
+    min-width: 0;
+    padding: 20px 22px;
+  }
+  .endpoint-panel-heading {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .endpoint-panel-heading > svg {
+    flex-shrink: 0;
+    color: var(--muted);
+  }
+  .endpoint-panel-heading h2 {
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.5;
+    letter-spacing: -0.01em;
+  }
+  .endpoint-panel-heading .status {
+    margin-left: auto;
+    max-width: 100%;
+    white-space: normal;
+    font-size: 10px;
+  }
+  .endpoint-panel-description {
+    margin-block: 8px 14px;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.65;
+    overflow-wrap: anywhere;
+  }
+  .endpoint-destination-url {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .endpoint-destination-url .endpoint-url {
+    flex: 1;
+    min-width: 0;
+    padding-block: 5px;
+    color: var(--foreground);
+  }
+  .endpoint-destination-url .copy-button-icon,
+  .endpoint-metadata .copy-button-icon {
+    flex-shrink: 0;
+  }
+  .endpoint-metadata {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    margin: 16px 0 0;
+    color: var(--muted);
+    font-size: 11px;
+  }
+  .endpoint-metadata dd {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+    margin: 0;
+  }
+  .endpoint-metadata code {
+    overflow-wrap: anywhere;
+  }
+  .endpoint-delivery {
+    border-left: 1px solid var(--border);
+    background: var(--background);
+    border-radius: 0 9px 9px 0;
+  }
+  .endpoint-subscriptions {
+    border-bottom: 1px solid var(--border);
+  }
+  .endpoint-subscription-count {
+    color: var(--muted);
+    font-size: 12px;
+  }
+  .endpoint-detail .event-type-list {
+    gap: 6px;
+  }
+  .endpoint-detail .event-type-list li {
+    padding: 4px 8px;
+    background: var(--background);
+    font-size: 11px;
+  }
+  .endpoint-security-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .endpoint-security-card + .endpoint-security-card {
+    border-left: 1px solid var(--border);
+  }
+  .endpoint-security-card .text-link {
+    font-size: 12px;
+  }
+  .endpoint-security-card > .endpoint-panel-description:last-child {
+    margin-bottom: 0;
+  }
+  .endpoint-security-card .verification-action {
+    display: grid;
+    justify-items: start;
+    gap: 8px;
+    margin-top: 14px;
+  }
+  .endpoint-security-card .secret-disclosure {
+    margin-top: 12px;
+  }
+  .endpoint-security-card .secret-disclosure .notice {
+    margin-block: 0 16px;
+    padding: 10px 12px;
+    font-size: 12px;
+  }
+  .endpoint-security-card .form-actions {
+    gap: 6px;
+  }
+  .endpoint-danger {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px 24px;
+    margin-top: 20px;
+    padding-block: 18px;
+    border-top: 1px solid var(--border);
+  }
+  .endpoint-danger > div {
+    flex: 1 1 320px;
+  }
+  .endpoint-danger h2 {
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .endpoint-danger p {
+    margin-top: 4px;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.65;
+  }
+  .endpoint-danger > .button {
+    flex-shrink: 0;
+    border-color: var(--border);
+  }
+  .endpoint-danger > .button:hover {
+    border-color: var(--danger);
+    background: var(--danger-subtle);
+  }
+  .endpoint-danger > .form-error {
+    flex-basis: 100%;
+    color: var(--danger);
+  }
+}
+
+@container endpoint-settings (max-width: 760px) {
+  .endpoint-security-grid {
+    grid-template-columns: 1fr;
+  }
+  .endpoint-security-card + .endpoint-security-card {
+    border-top: 1px solid var(--border);
+    border-left: 0;
+  }
+}
+
+@container endpoint-settings (max-width: 620px) {
+  .endpoint-detail .page-heading {
+    align-items: flex-start;
+    margin-bottom: 16px;
+  }
+  .endpoint-overview {
+    grid-template-columns: 1fr;
+  }
+  .endpoint-destination,
+  .endpoint-delivery,
+  .endpoint-subscriptions,
+  .endpoint-security-card {
+    padding: 16px;
+  }
+  .endpoint-delivery {
+    border-top: 1px solid var(--border);
+    border-left: 0;
+    border-radius: 0 0 9px 9px;
+  }
+  .endpoint-metadata {
+    display: block;
+    margin-top: 12px;
+  }
+  .endpoint-metadata dd {
+    margin-top: 2px;
+  }
+  .endpoint-danger {
+    align-items: flex-start;
+    margin-top: 16px;
+    padding-top: 16px;
+  }
+}

@@ -10,6 +10,7 @@ import {
 } from "@phosphor-icons/react";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useId, useState, type FormEvent } from "react";
 import { PageHeader } from "@/components/page-header";
 import { useProject, projectHref } from "@/features/projects/project-workspace";
@@ -18,6 +19,7 @@ import { ContentLoading } from "@/features/workspace/loading";
 import { useSessionUserId } from "@/features/workspace/session";
 import type { Page } from "@/features/workspace/types";
 import { apiRequest } from "@/lib/api";
+import { EndpointRegistrationDialog } from "./endpoint-registration-dialog";
 import {
   endpointKeys,
   endpointPath,
@@ -31,6 +33,9 @@ export function EndpointList() {
   const userId = useSessionUserId();
   const { getToken } = useAuth();
   const id = useId();
+  const router = useRouter();
+  const search = useSearchParams();
+  const [registering, setRegistering] = useState(false);
   const [enabled, setEnabled] = useState("");
   const [eventType, setEventType] = useState("");
   const [draftType, setDraftType] = useState("");
@@ -56,6 +61,18 @@ export function EndpointList() {
   });
   const items = list.data?.pages.flatMap((page) => page.data) ?? [];
   const filtered = Boolean(enabled || eventType);
+  const registrationRequested = search.get("register") === "1";
+
+  function closeRegistration() {
+    setRegistering(false);
+    if (registrationRequested) {
+      const params = new URLSearchParams(search.toString());
+      params.delete("register");
+      router.replace(href + (params.size ? "?" + params.toString() : ""), {
+        scroll: false,
+      });
+    }
+  }
 
   function applyFilter(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -74,20 +91,24 @@ export function EndpointList() {
         title="Endpoints"
         actions={
           canManage && (
-            <Link
-              href={href + "/new"}
+            <button
+              type="button"
               className="button button-primary"
-              aria-disabled={suspended || !availabilityKnown}
-              onClick={(event) => {
-                if (suspended || !availabilityKnown) event.preventDefault();
-              }}
+              disabled={suspended || !availabilityKnown}
+              onClick={() => setRegistering(true)}
             >
               <PlusIcon size={17} aria-hidden="true" />
               Register endpoint
-            </Link>
+            </button>
           )
         }
       />
+      {canManage && (registering || registrationRequested) && (
+        <EndpointRegistrationDialog
+          onClose={closeRegistration}
+          onRegistered={() => setRegistering(false)}
+        />
+      )}
       <div className="endpoint-toolbar">
         <label className="filter-field">
           <span>Status</span>
@@ -197,9 +218,13 @@ export function EndpointList() {
                   : "Add a destination to receive your events."}
               </p>
               {!filtered && canManage && availabilityKnown && !suspended && (
-                <Link href={href + "/new"} className="button button-secondary">
+                <button
+                  type="button"
+                  className="button button-secondary"
+                  onClick={() => setRegistering(true)}
+                >
                   Register an endpoint
-                </Link>
+                </button>
               )}
             </div>
           ) : (

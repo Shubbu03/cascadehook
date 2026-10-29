@@ -118,10 +118,22 @@ export function SigningSecret({
   }
 
   return (
-    <section id="signing-secret" className="endpoint-section">
-      <div className="endpoint-section-title">
-        <KeyIcon size={21} aria-hidden="true" />
-        <h3>Signing secret</h3>
+    <section
+      id="signing-secret"
+      className="endpoint-security-card"
+      aria-labelledby={id + "-title"}
+    >
+      <div className="endpoint-panel-heading">
+        <KeyIcon size={18} aria-hidden="true" />
+        <h2 id={id + "-title"}>Signing secret</h2>
+        <span
+          className={
+            "status " +
+            (endpoint.has_signing_secret ? "status-success" : "status-warning")
+          }
+        >
+          {endpoint.has_signing_secret ? "Configured" : "Not configured"}
+        </span>
       </div>
       {disclosure.status === "revealed" ? (
         <div className="secret-disclosure">
@@ -193,9 +205,9 @@ export function SigningSecret({
         </div>
       ) : (
         <>
-          <p className="section-description">
+          <p className="endpoint-panel-description">
             {endpoint.has_signing_secret
-              ? "A signing secret is configured. Existing secrets cannot be retrieved; rotate only when you need a replacement."
+              ? "Your secret is configured and cannot be retrieved. Rotate it only when you need a replacement."
               : "Generate a secret and configure your receiver to validate signed requests."}
           </p>
           {disclosure.status === "error" && (
@@ -209,7 +221,7 @@ export function SigningSecret({
           )}
           <button
             type="button"
-            className="button button-secondary"
+            className="button button-small button-secondary"
             disabled={busy || disclosure.status === "pending"}
             onClick={() => {
               if (endpoint.has_signing_secret) setConfirmRotation(true);

@@ -140,13 +140,6 @@
   .detail-facts .mono {
     font-size: 11px;
   }
-  .replay-actions {
-    display: grid;
-    justify-items: start;
-    gap: 12px;
-    margin-block: 20px;
-  }
-  .attempts-heading,
   .payload-heading {
     display: flex;
     align-items: center;
@@ -155,59 +148,8 @@
     gap: 16px;
     margin-top: 30px;
   }
-  .attempts-heading h3,
   .payload-heading h3 {
     font-size: 18px;
-  }
-  .attempts-heading .activity-filters {
-    margin-block: 0;
-  }
-  .attempts-heading input {
-    width: 120px;
-  }
-  .attempt-timeline {
-    padding: 0;
-    margin-block: 24px;
-    list-style: none;
-    border-left: 1px solid var(--border);
-  }
-  .attempt-timeline li {
-    position: relative;
-    padding: 0 0 26px 24px;
-  }
-  .attempt-timeline li::before {
-    position: absolute;
-    top: 7px;
-    left: -4px;
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: var(--accent);
-    content: "";
-  }
-  .attempt-record-heading {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 12px;
-    margin-bottom: 12px;
-  }
-  .attempt-record-heading h4 {
-    font-size: 14px;
-    font-weight: 500;
-  }
-  .attempt-record-heading h4 > span {
-    color: var(--muted);
-    font-weight: 400;
-  }
-  .attempt-error {
-    margin-top: 10px;
-    color: var(--danger);
-    font-size: 12px;
-  }
-  .attempt-timeline .field-help {
-    margin-top: 10px;
   }
   .payload-view {
     max-height: 600px;

@@ -4,7 +4,15 @@ import { XIcon } from "@phosphor-icons/react";
 import { useEffect, useId, useRef, useState } from "react";
 import { PublishEventForm } from "./publish-event-form";
 
-export function PublishEventDialog({ onClose }: { onClose: () => void }) {
+export function PublishEventDialog({
+  onClose,
+  initialType,
+  eventTypes,
+}: {
+  onClose: () => void;
+  initialType?: string;
+  eventTypes?: string[];
+}) {
   const dialog = useRef<HTMLDialogElement>(null);
   const [pending, setPending] = useState(false);
   const id = useId();
@@ -35,7 +43,12 @@ export function PublishEventDialog({ onClose }: { onClose: () => void }) {
           <XIcon size={18} aria-hidden="true" />
         </button>
       </div>
-      <PublishEventForm onClose={onClose} onPendingChange={setPending} />
+      <PublishEventForm
+        initialType={initialType}
+        eventTypes={eventTypes}
+        onClose={onClose}
+        onPendingChange={setPending}
+      />
     </dialog>
   );
 }

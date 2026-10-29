@@ -3,7 +3,7 @@ import {
   queryOptions,
   skipToken,
 } from "@tanstack/react-query";
-import type { Delivery } from "@/features/activity/types";
+import type { Delivery, EventSummary } from "@/features/activity/types";
 import { projectPath } from "@/features/activity/types";
 import type { APIKey } from "@/features/api-keys/types";
 import {
@@ -12,6 +12,7 @@ import {
   type Endpoint,
 } from "@/features/endpoints/types";
 import type { Page } from "@/features/workspace/types";
+import type { Usage } from "@/features/settings/types";
 import { apiRequest } from "@/lib/api";
 import type { Activity } from "./setup";
 
@@ -97,6 +98,58 @@ export function setupActivityQuery(
             successful: successful.data[0] ?? null,
           };
         }
+      : skipToken,
+    ...freshness,
+  });
+}
+
+export function overviewDeliveriesQuery(
+  userId: string,
+  projectId: string,
+  getToken: GetToken,
+) {
+  return queryOptions({
+    queryKey: ["deliveries", userId, projectId, "overview-recent"],
+    queryFn: ({ signal }) =>
+      apiRequest<Page<Delivery>>(
+        projectPath(projectId, "deliveries"),
+        getToken,
+        { signal, params: { limit: 5 } },
+      ),
+    ...freshness,
+  });
+}
+
+export function overviewEventsQuery(
+  userId: string,
+  projectId: string,
+  getToken: GetToken,
+) {
+  return queryOptions({
+    queryKey: ["events", userId, projectId, "overview-recent"],
+    queryFn: ({ signal }) =>
+      apiRequest<Page<EventSummary>>(
+        projectPath(projectId, "events"),
+        getToken,
+        { signal, params: { limit: 5 } },
+      ),
+    ...freshness,
+  });
+}
+
+export function overviewUsageQuery(
+  userId: string,
+  projectId: string,
+  canManage: boolean,
+  getToken: GetToken,
+) {
+  return queryOptions({
+    queryKey: ["usage", userId, "project", projectId],
+    queryFn: canManage
+      ? ({ signal }) =>
+          apiRequest<Usage>(projectPath(projectId, "usage"), getToken, {
+            signal,
+          })
       : skipToken,
     ...freshness,
   });
