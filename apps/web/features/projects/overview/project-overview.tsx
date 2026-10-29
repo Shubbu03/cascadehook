@@ -1,5 +1,6 @@
 "use client";
 
+import { SetupSkeleton } from "@/features/workspace/skeletons";
 import { useAuth } from "@clerk/nextjs";
 import { PlusIcon } from "@phosphor-icons/react";
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
@@ -74,7 +75,7 @@ export function ProjectOverview() {
           </>
         }
       />
-      <QueryState query={endpoints}>
+      <QueryState query={endpoints} loading={<SetupSkeleton />}>
         {endpoints.data && (
           <OverviewSetup
             endpoints={items}

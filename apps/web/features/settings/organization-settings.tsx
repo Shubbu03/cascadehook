@@ -1,5 +1,6 @@
 "use client";
 
+import { PageSkeleton } from "@/features/workspace/skeletons";
 import { useAuth } from "@clerk/nextjs";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
@@ -43,7 +44,7 @@ export function OrganizationSettings({
       >
         {returnTo === "/account" ? "← Account settings" : "← Projects"}
       </Link>
-      <QueryState query={organization}>
+      <QueryState query={organization} loading={<PageSkeleton variant="settings" />}>
         {organization.data && (
           <>
             <PageHeader

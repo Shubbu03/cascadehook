@@ -1,5 +1,6 @@
 "use client";
 
+import { TableSkeleton } from "@/features/workspace/skeletons";
 import { Select } from "@/components/select";
 import { useAuth } from "@clerk/nextjs";
 import {
@@ -272,7 +273,7 @@ function KeyManagement() {
           </Select>
         </label>
       </div>
-      <QueryState query={list}>
+      <QueryState query={list} loading={<TableSkeleton columns={4} label="Loading API keys…" />}>
         {items.length ? (
           <div className="data-table-wrap">
             <table className="data-table">

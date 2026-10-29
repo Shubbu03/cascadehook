@@ -1,5 +1,6 @@
 "use client";
 
+import { PageSkeleton, UsageSkeleton } from "@/features/workspace/skeletons";
 import { useAuth } from "@clerk/nextjs";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
@@ -32,7 +33,7 @@ export function OrganizationUsage({
       >
         ← Projects
       </Link>
-      <QueryState query={organization}>
+      <QueryState query={organization} loading={<PageSkeleton variant="usage" />}>
         {organization.data &&
           (organization.data.role === "member" ? (
             <p className="notice">
@@ -70,7 +71,7 @@ function OrganizationUsageContent({
           <RefreshButton pending={usage.isFetching} refresh={usage.refetch} />
         }
       />
-      <QueryState query={usage}>
+      <QueryState query={usage} loading={<UsageSkeleton />}>
         {usage.data && (
           <>
             <OrganizationUsageSummary usage={usage.data} />

@@ -1,5 +1,6 @@
 "use client";
 
+import { SettingsSkeleton } from "@/features/workspace/skeletons";
 import { useAuth, useClerk } from "@clerk/nextjs";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
@@ -98,7 +99,7 @@ export function AccountSettings() {
           </p>
         </div>
       ) : (
-        <QueryState query={details}>
+        <QueryState query={details} loading={<SettingsSkeleton />}>
           {details.data && accountId && (
             <>
               {details.data.organizations.length ? (

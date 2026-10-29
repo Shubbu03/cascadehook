@@ -1,5 +1,6 @@
 "use client";
 
+import { TableSkeleton } from "@/features/workspace/skeletons";
 import { Select } from "@/components/select";
 import { useAuth, useClerk } from "@clerk/nextjs";
 import {
@@ -92,7 +93,7 @@ export function Members({ organization }: { organization: Organization }) {
           {update.error.message}
         </p>
       )}
-      <QueryState query={members}>
+      <QueryState query={members} loading={<TableSkeleton columns={organization.role === "owner" ? 4 : 3} rows={4} label="Loading members…" />}>
         {items.some((member) => !member.profile) && (
           <p className="field-help">
             Some member details are unavailable. Account IDs are shown instead.

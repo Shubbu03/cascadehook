@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { createContext, useContext } from "react";
 import { apiRequest } from "@/lib/api";
 import { ConnectionError } from "@/features/workspace/connection-error";
-import { ContentLoading } from "@/features/workspace/loading";
+import { RouteContentLoading } from "@/features/workspace/route-loading";
 import { useSessionUserId } from "@/features/workspace/session";
 import { projectQuery } from "@/features/workspace/queries";
 import type { Project } from "@/features/workspace/types";
@@ -53,7 +53,7 @@ export function ProjectWorkspace({
   if (project.isPending)
     return (
       <main id="main-content" className="dashboard-main">
-        <ContentLoading />
+        <RouteContentLoading />
       </main>
     );
   if (project.isError)

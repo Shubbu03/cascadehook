@@ -3,6 +3,7 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 import { AcceptInvitation } from "@/features/settings/accept-invitation";
 import { isAuthConfigured } from "@/lib/server/auth";
+import { AccountLoading } from "@/features/workspace/loading";
 
 export const metadata: Metadata = {
   title: "Join organization",
@@ -24,9 +25,7 @@ export default function Page() {
   return (
     <Suspense
       fallback={
-        <main id="main-content" className="auth-loading" role="status">
-          Loading invitation…
-        </main>
+        <AccountLoading />
       }
     >
       <Content />

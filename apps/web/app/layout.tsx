@@ -15,6 +15,7 @@ import "./dashboard.css";
 import "./controls.css";
 import "./overview.css";
 import "./docs.css";
+import "./skeleton.css";
 
 const sans = localFont({
   src: "./fonts/ibm-plex-sans-latin.woff2",

@@ -18,7 +18,7 @@ import { CopyButton } from "@/components/copy-button";
 import { PageHeader } from "@/components/page-header";
 import { useProject, projectHref } from "@/features/projects/project-workspace";
 import { ConnectionError } from "@/features/workspace/connection-error";
-import { ContentLoading } from "@/features/workspace/loading";
+import { PageSkeleton } from "@/features/workspace/skeletons";
 import { useSessionUserId } from "@/features/workspace/session";
 import { deletionToken } from "@/features/settings/deletion";
 import { ApiError, apiRequest } from "@/lib/api";
@@ -176,7 +176,7 @@ export function EndpointDetail({ endpointId }: { endpointId: string }) {
     setInputErrors({});
     save.mutate(result.input);
   }
-  if (endpoint.isPending) return <ContentLoading />;
+  if (endpoint.isPending) return <PageSkeleton variant="endpoint" />;
   if (
     endpoint.isError &&
     (!endpoint.data ||

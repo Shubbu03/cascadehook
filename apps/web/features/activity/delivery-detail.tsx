@@ -1,5 +1,6 @@
 "use client";
 
+import { PageSkeleton, AttemptsSkeleton } from "@/features/workspace/skeletons";
 import { useAuth } from "@clerk/nextjs";
 import {
   ArrowClockwiseIcon,
@@ -208,7 +209,7 @@ export function DeliveryDetail({ deliveryId }: { deliveryId: string }) {
         <ArrowLeftIcon size={15} aria-hidden="true" />
         Deliveries
       </Link>
-      <QueryState query={detail}>
+      <QueryState query={detail} loading={<PageSkeleton variant="delivery" />}>
         {detail.data && (
           <>
             <PageHeader
@@ -398,7 +399,7 @@ export function DeliveryDetail({ deliveryId }: { deliveryId: string }) {
                     </div>
                   </div>
                 )}
-                <QueryState query={attempts}>
+                <QueryState query={attempts} loading={<AttemptsSkeleton />}>
                   {records.length ? (
                     <DeliveryAttempts records={records} />
                   ) : (
@@ -422,6 +423,7 @@ export function DeliveryDetail({ deliveryId }: { deliveryId: string }) {
                 delivery={detail.data}
                 endpoint={currentEndpoint}
                 unavailable={endpoint.isError}
+                loading={endpoint.isPending}
                 href={href}
               />
             </div>

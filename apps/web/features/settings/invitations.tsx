@@ -1,5 +1,6 @@
 "use client";
 
+import { TableSkeleton } from "@/features/workspace/skeletons";
 import { Select } from "@/components/select";
 import { useAuth } from "@clerk/nextjs";
 import {
@@ -162,7 +163,7 @@ export function InvitationManagement({
           {revoke.error.message}
         </p>
       )}
-      <QueryState query={list}>
+      <QueryState query={list} loading={<TableSkeleton columns={5} rows={3} label="Loading invitations…" />}>
         {items.length ? (
           <div className="data-table-wrap">
             <table className="data-table">

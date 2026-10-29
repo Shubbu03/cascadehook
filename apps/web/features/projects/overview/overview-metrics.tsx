@@ -1,5 +1,6 @@
 "use client";
 
+import { StatsSkeleton } from "@/features/workspace/skeletons";
 import { useAuth } from "@clerk/nextjs";
 import { ArrowRightIcon } from "@phosphor-icons/react";
 import { useQuery } from "@tanstack/react-query";
@@ -55,7 +56,7 @@ export function OverviewMetrics() {
           Usage details <ArrowRightIcon size={14} aria-hidden="true" />
         </Link>
       </div>
-      <QueryState query={usage}>
+      <QueryState query={usage} loading={<StatsSkeleton />}>
         {usage.data && (
           <dl className="overview-metrics">
             {metrics.map((metric) => (

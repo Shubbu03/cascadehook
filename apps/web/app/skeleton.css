@@ -1,0 +1,293 @@
+@layer components {
+  .skeleton-block {
+    display: block;
+    flex-shrink: 0;
+    max-width: 100%;
+    height: 12px;
+    overflow: hidden;
+    position: relative;
+    border-radius: 4px;
+    background: var(--surface-hover);
+  }
+  .skeleton-circle {
+    border-radius: 50%;
+  }
+  .skeleton-view {
+    width: 100%;
+    min-width: 0;
+    container: skeleton-view / inline-size;
+  }
+  .skeleton-stack {
+    display: grid;
+    gap: 10px;
+    min-width: 0;
+  }
+  .skeleton-page-body {
+    gap: 20px;
+  }
+  .skeleton-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  .skeleton-page > [aria-hidden] > .skeleton-heading {
+    margin-bottom: 24px;
+  }
+  .skeleton-panel {
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    background: var(--surface);
+    overflow: hidden;
+  }
+  .skeleton-section {
+    padding: 20px;
+  }
+  .skeleton-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .skeleton-table {
+    overflow: hidden;
+  }
+  .skeleton-table-inner {
+    min-width: 520px;
+  }
+  .skeleton-table-head,
+  .skeleton-table-row {
+    display: grid;
+    align-items: center;
+    gap: 24px;
+    padding: 14px 16px;
+  }
+  .skeleton-table-head {
+    min-height: 40px;
+    background: var(--background);
+  }
+  .skeleton-table-row {
+    min-height: 67px;
+    border-top: 1px solid var(--border);
+  }
+  .skeleton-table-row .skeleton-stack {
+    gap: 7px;
+  }
+  .skeleton-project-card {
+    display: grid;
+    grid-template-columns: 40px minmax(0, 1fr) 16px;
+    align-items: center;
+    gap: 16px;
+    min-height: 112px;
+    padding: 20px;
+  }
+  .skeleton-stats {
+    display: grid;
+    grid-template-columns: repeat(var(--skeleton-stat-columns, 4), minmax(0, 1fr));
+  }
+  .skeleton-stats > div {
+    padding: 20px;
+  }
+  .skeleton-stats > div + div {
+    border-left: 1px solid var(--border);
+  }
+  .skeleton-setup-region {
+    margin-bottom: 24px;
+  }
+  .skeleton-setup {
+    padding: 18px 20px;
+  }
+  .skeleton-setup-next {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 16px;
+    margin-block: 18px 8px;
+    border-radius: 6px;
+    background: var(--background);
+  }
+  .skeleton-setup-next > div {
+    flex: 1;
+  }
+  .skeleton-checks {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 28px;
+  }
+  .skeleton-checks > div {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-block: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .skeleton-workspace-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 300px;
+    gap: 20px;
+    align-items: start;
+  }
+  .skeleton-readiness-counts {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    padding: 0 20px 20px;
+  }
+  .skeleton-list-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+    border-top: 1px solid var(--border);
+  }
+  .skeleton-list-row > .skeleton-stack {
+    flex: 1;
+  }
+  .skeleton-navigation .skeleton-list-row {
+    padding: 10px;
+    border: 0;
+  }
+  .skeleton-attempt {
+    display: grid;
+    gap: 14px;
+    padding: 20px;
+    border-top: 1px solid var(--border);
+  }
+  .skeleton-form {
+    display: grid;
+    gap: 22px;
+  }
+  .skeleton-settings-form {
+    max-width: 560px;
+    margin-bottom: 12px;
+  }
+  .skeleton-endpoint-context {
+    margin-top: 12px;
+  }
+  .skeleton-detail-summary {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(230px, 0.55fr);
+  }
+  .skeleton-detail-summary > div {
+    padding: 22px;
+    gap: 18px;
+  }
+  .skeleton-detail-summary > div + div {
+    border-left: 1px solid var(--border);
+  }
+  .skeleton-security-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    border-top: 1px solid var(--border);
+  }
+  .skeleton-security-grid > div + div {
+    border-left: 1px solid var(--border);
+  }
+  .skeleton-result {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px;
+  }
+  .skeleton-result > div {
+    flex: 1;
+  }
+  .skeleton-divider {
+    height: 1px;
+    margin-block: 6px;
+    background: var(--border);
+  }
+  .skeleton-payload {
+    display: grid;
+    gap: 16px;
+    padding: 24px;
+    min-height: 260px;
+    align-content: start;
+  }
+  .skeleton-shell-switchers {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    min-width: 0;
+    gap: 12px;
+  }
+  .skeleton-shell .dashboard-topbar > .skeleton-circle {
+    margin-left: auto;
+  }
+  .skeleton-shell-nav {
+    display: grid;
+    gap: 20px;
+    padding: 28px 22px;
+  }
+  .skeleton-shell-nav > div {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .skeleton-account-loading {
+    display: grid;
+    place-items: center;
+    min-height: 100svh;
+    padding: 32px 20px;
+  }
+  .skeleton-account-loading > .skeleton-view {
+    width: min(100%, 400px);
+  }
+  .onboarding-card > .skeleton-heading {
+    margin-bottom: 26px;
+  }
+}
+
+@container skeleton-view (max-width: 880px) {
+  .skeleton-workspace-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@container skeleton-view (max-width: 620px) {
+  .skeleton-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .skeleton-stats > div:nth-child(odd) {
+    border-left: 0;
+  }
+  .skeleton-stats > div:nth-child(n + 3) {
+    border-top: 1px solid var(--border);
+  }
+  .skeleton-checks,
+  .skeleton-detail-summary,
+  .skeleton-security-grid {
+    grid-template-columns: 1fr;
+  }
+  .skeleton-detail-summary > div + div,
+  .skeleton-security-grid > div + div {
+    border-top: 1px solid var(--border);
+    border-left: 0;
+  }
+  .skeleton-result > .skeleton-block:last-child {
+    display: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .skeleton-shell-switchers > .skeleton-block:nth-child(2) {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .skeleton-block::after {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--foreground) 7%, transparent), transparent);
+    transform: translateX(-100%);
+    animation: skeleton-sweep 1.8s ease-in-out infinite;
+    content: "";
+  }
+  @keyframes skeleton-sweep {
+    to { transform: translateX(100%); }
+  }
+}

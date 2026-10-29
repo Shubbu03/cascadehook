@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { DeliveryDetail } from "@/features/activity/delivery-detail";
-import { ContentLoading } from "@/features/workspace/loading";
+import { PageSkeleton } from "@/features/workspace/skeletons";
 import { requireSession } from "@/lib/server/session";
 import { uuidPattern } from "@/lib/format";
 
@@ -24,7 +24,7 @@ export default function Page(props: {
   params: Promise<{ deliveryId: string }>;
 }) {
   return (
-    <Suspense fallback={<ContentLoading />}>
+    <Suspense fallback={<PageSkeleton variant="delivery" />}>
       <Content {...props} />
     </Suspense>
   );

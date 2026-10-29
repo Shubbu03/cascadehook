@@ -1,5 +1,6 @@
 "use client";
 
+import { TableSkeleton } from "@/features/workspace/skeletons";
 import { Select } from "@/components/select";
 import { useAuth } from "@clerk/nextjs";
 import { useInfiniteQuery } from "@tanstack/react-query";
@@ -151,7 +152,7 @@ export function DeliveryList() {
         </p>
       )}
       {!invalid && (
-        <QueryState query={list}>
+        <QueryState query={list} loading={<TableSkeleton columns={5} label="Loading deliveries…" />}>
           {items.length ? (
             <div className="data-table-wrap">
               <table className="data-table">

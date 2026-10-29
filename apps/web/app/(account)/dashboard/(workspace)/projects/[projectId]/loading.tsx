@@ -1,5 +1,5 @@
-import { ContentLoading } from "@/features/workspace/loading";
+import { RouteContentLoading } from "@/features/workspace/route-loading";
 
 export default function Loading() {
-  return <ContentLoading />;
+  return <RouteContentLoading />;
 }

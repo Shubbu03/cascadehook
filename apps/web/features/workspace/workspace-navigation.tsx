@@ -13,6 +13,8 @@ import {
 import { useInfiniteQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { NavigationDropdown } from "@/components/navigation-dropdown";
+import { Skeleton } from "@/components/skeleton";
+import { NavigationSkeleton } from "./skeletons";
 import { organizationHref, projectsQuery } from "./queries";
 import { useSessionUserId } from "./session";
 import { useWorkspaceSelection } from "./use-workspace-selection";
@@ -82,9 +84,7 @@ function OrganizationSwitcher({ selection }: { selection: Selection }) {
       </div>
       <div className="switcher-options">
         {organizations.isPending && (
-          <p className="switcher-message" role="status">
-            Loading organizations…
-          </p>
+          <NavigationSkeleton label="Loading organizations…" />
         )}
         {organizations.isError && (
           <SwitcherError
@@ -198,7 +198,7 @@ function ProjectSwitcher({ selection }: { selection: Selection }) {
               (project.isError
                 ? "Project unavailable"
                 : projectId
-                  ? "Loading project…"
+                  ? <Skeleton width={110} height={12} />
                   : "All projects")}
           </span>
         </>
@@ -225,9 +225,7 @@ function ProjectSwitcher({ selection }: { selection: Selection }) {
           />
         )}
         {active && projects.isPending && (
-          <p className="switcher-message" role="status">
-            Loading projects…
-          </p>
+          <NavigationSkeleton label="Loading projects…" />
         )}
         {projects.isError && (
           <SwitcherError

@@ -9,7 +9,7 @@ import {
 import Link from "next/link";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { ConnectionError } from "./connection-error";
-import { ContentLoading } from "./loading";
+import { ProjectCardsSkeleton } from "./skeletons";
 import { projectsQuery } from "./queries";
 import { useWorkspaceCreation } from "./workspace-creation";
 import type { Organization } from "./types";
@@ -49,7 +49,7 @@ export function Projects({
         }
       />
       {projects.isPending ? (
-        <ContentLoading />
+        <ProjectCardsSkeleton />
       ) : (
         <>
           {projects.isError && (

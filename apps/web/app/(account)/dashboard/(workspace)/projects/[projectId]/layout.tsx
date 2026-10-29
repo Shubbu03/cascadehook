@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { ProjectWorkspace } from "@/features/projects/project-workspace";
-import { ContentLoading } from "@/features/workspace/loading";
+import { RouteContentLoading } from "@/features/workspace/route-loading";
 import { uuidPattern } from "@/lib/format";
 import { requireSession } from "@/lib/server/session";
 
@@ -27,7 +27,13 @@ export default function ProjectLayout(props: {
   params: Promise<{ projectId: string }>;
 }) {
   return (
-    <Suspense fallback={<ContentLoading />}>
+    <Suspense
+      fallback={
+        <main id="main-content" className="dashboard-main">
+          <RouteContentLoading />
+        </main>
+      }
+    >
       <ProjectLayoutContent {...props} />
     </Suspense>
   );

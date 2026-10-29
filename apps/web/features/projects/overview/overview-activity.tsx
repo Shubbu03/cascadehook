@@ -1,5 +1,6 @@
 "use client";
 
+import { TableSkeleton } from "@/features/workspace/skeletons";
 import { useAuth } from "@clerk/nextjs";
 import { ArrowRightIcon, BroadcastIcon } from "@phosphor-icons/react";
 import { useQuery } from "@tanstack/react-query";
@@ -59,7 +60,7 @@ export function OverviewActivity({ endpoints }: { endpoints: Endpoint[] }) {
         </button>
       </div>
       {view === "deliveries" ? (
-        <QueryState query={deliveries}>
+        <QueryState query={deliveries} loading={<TableSkeleton columns={4} contained={false} label="Loading recent deliveries…" />}>
           {deliveries.data && (deliveries.data.data.length ? (
             <div className="overview-activity-table">
               <table>
@@ -109,7 +110,7 @@ export function OverviewActivity({ endpoints }: { endpoints: Endpoint[] }) {
           ) : <ActivityEmpty view="deliveries" />)}
         </QueryState>
       ) : (
-        <QueryState query={events}>
+        <QueryState query={events} loading={<TableSkeleton columns={3} contained={false} label="Loading recent events…" />}>
           {events.data && (events.data.data.length ? (
             <div className="overview-activity-table">
               <table>

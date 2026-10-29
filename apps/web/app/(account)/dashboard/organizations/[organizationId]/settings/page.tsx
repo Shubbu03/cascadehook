@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { OrganizationSettings } from "@/features/settings/organization-settings";
-import { ContentLoading } from "@/features/workspace/loading";
+import { PageSkeleton } from "@/features/workspace/skeletons";
 import { requireSession } from "@/lib/server/session";
 import { uuidPattern } from "@/lib/format";
 
@@ -29,7 +29,13 @@ export default function Page(props: {
   params: Promise<{ organizationId: string }>;
 }) {
   return (
-    <Suspense fallback={<ContentLoading />}>
+    <Suspense
+      fallback={
+        <main id="main-content" className="dashboard-main">
+          <PageSkeleton variant="settings" />
+        </main>
+      }
+    >
       <Content {...props} />
     </Suspense>
   );

@@ -6,6 +6,7 @@ import {
   PlusIcon,
 } from "@phosphor-icons/react";
 import Link from "next/link";
+import { EndpointReadinessSkeleton } from "@/features/workspace/skeletons";
 import { endpointState, type Endpoint } from "@/features/endpoints/types";
 import { projectHref, useProject } from "../project-workspace";
 
@@ -53,9 +54,7 @@ export function OverviewEndpoints({
         )}
       </div>
       {loading ? (
-        <p className="overview-panel-message" role="status">
-          Loading endpoints…
-        </p>
+        <EndpointReadinessSkeleton />
       ) : unavailable ? (
         <p className="overview-panel-message">
           Endpoint data is unavailable. Refresh to check readiness.

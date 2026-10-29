@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { WorkspaceHome } from "@/features/workspace/workspace-home";
-import { ContentLoading } from "@/features/workspace/loading";
+import { PageSkeleton } from "@/features/workspace/skeletons";
 import { requireSession } from "@/lib/server/session";
 
 // The authenticated client workspace intentionally gates this page during SSR.
@@ -19,7 +19,13 @@ async function AuthenticatedWorkspace() {
 
 export default function DashboardPage() {
   return (
-    <Suspense fallback={<ContentLoading />}>
+    <Suspense
+      fallback={
+        <main id="main-content" className="dashboard-main">
+          <PageSkeleton variant="projects" />
+        </main>
+      }
+    >
       <AuthenticatedWorkspace />
     </Suspense>
   );

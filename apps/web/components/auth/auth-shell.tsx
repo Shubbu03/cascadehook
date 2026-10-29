@@ -1,6 +1,7 @@
 import { ArrowLeftIcon } from "@phosphor-icons/react/dist/ssr";
 import Link from "next/link";
 import { Brand } from "@/components/brand";
+import { FormSkeleton } from "@/features/workspace/skeletons";
 import { isAuthConfigured } from "@/lib/server/auth";
 import { AuthBrand } from "./auth-brand";
 
@@ -57,9 +58,6 @@ export function AuthShell({
 
 export function AuthLoading() {
   return (
-    <div className="auth-loading" role="status">
-      <span className="loading-dot" aria-hidden="true" />
-      Loading…
-    </div>
+    <FormSkeleton label="Loading account form…" />
   );
 }

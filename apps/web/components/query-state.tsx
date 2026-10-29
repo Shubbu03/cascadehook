@@ -2,12 +2,13 @@
 
 import { ArrowClockwiseIcon } from "@phosphor-icons/react";
 import { ConnectionError } from "@/features/workspace/connection-error";
-import { ContentLoading } from "@/features/workspace/loading";
+import { TableSkeleton } from "@/features/workspace/skeletons";
 import { ApiError } from "@/lib/api";
 
 export function QueryState({
   query,
   children,
+  loading = <TableSkeleton />,
 }: {
   query: {
     isPending: boolean;
@@ -18,8 +19,9 @@ export function QueryState({
     refetch: () => unknown;
   };
   children: React.ReactNode;
+  loading?: React.ReactNode;
 }) {
-  if (query.isPending) return <ContentLoading />;
+  if (query.isPending) return loading;
   const inaccessible =
     query.error instanceof ApiError &&
     [401, 403, 404, 410].includes(query.error.status);

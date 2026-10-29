@@ -2,6 +2,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { isAuthConfigured } from "@/lib/server/auth";
+import { AccountLoading } from "@/features/workspace/loading";
 
 export default function AccountLayout({
   children,
@@ -11,9 +12,7 @@ export default function AccountLayout({
   return (
     <Suspense
       fallback={
-        <main id="main-content" className="auth-loading" role="status">
-          Loading your account…
-        </main>
+        <AccountLoading />
       }
     >
       <ConfiguredAccount>{children}</ConfiguredAccount>

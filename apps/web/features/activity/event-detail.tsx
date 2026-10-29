@@ -1,5 +1,6 @@
 "use client";
 
+import { PageSkeleton } from "@/features/workspace/skeletons";
 import { useAuth } from "@clerk/nextjs";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
@@ -40,7 +41,7 @@ export function EventDetail({ eventId }: { eventId: string }) {
       >
         ← Events
       </Link>
-      <QueryState query={detail}>
+      <QueryState query={detail} loading={<PageSkeleton variant="event" />}>
         {detail.data && (
           <>
             <PageHeader

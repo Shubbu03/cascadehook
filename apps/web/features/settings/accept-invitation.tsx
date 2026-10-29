@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { AmbientBackground } from "@/components/ambient-background";
 import { Brand } from "@/components/brand";
+import { FormSkeleton } from "@/features/workspace/skeletons";
 import { apiRequest } from "@/lib/api";
 import type { Membership } from "./types";
 import { invitationToken } from "./invitation-token";
@@ -92,7 +93,7 @@ export function AcceptInvitation() {
           <div className="onboarding-card">
             <h1>Join organization</h1>
             {!isLoaded ? (
-              <p role="status">Loading your account…</p>
+              <FormSkeleton fields={1} label="Loading your account…" />
             ) : !isSignedIn ? (
               <>
                 <p className="section-description">

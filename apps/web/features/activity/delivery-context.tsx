@@ -1,6 +1,7 @@
 import { ArrowRightIcon } from "@phosphor-icons/react";
 import Link from "next/link";
 import { CopyButton } from "@/components/copy-button";
+import { Skeleton, SkeletonRegion } from "@/components/skeleton";
 import { endpointState, type Endpoint } from "@/features/endpoints/types";
 import { formatTime } from "@/lib/format";
 import type { Delivery } from "./types";
@@ -9,11 +10,13 @@ export function DeliveryContext({
   delivery,
   endpoint,
   unavailable,
+  loading,
   href,
 }: {
   delivery: Delivery;
   endpoint: Endpoint | undefined;
   unavailable: boolean;
+  loading: boolean;
   href: string;
 }) {
   const timing = [
@@ -40,6 +43,15 @@ export function DeliveryContext({
             </span>
           )}
         </div>
+        {loading ? (
+          <SkeletonRegion label="Loading endpoint…" className="skeleton-endpoint-context">
+            <div className="skeleton-stack">
+              <Skeleton width="95%" height={12} />
+              <Skeleton width="80%" height={12} />
+              <Skeleton width="65%" height={10} />
+            </div>
+          </SkeletonRegion>
+        ) : (
         <Link
           className="record-link mono delivery-destination"
           href={href + "/endpoints/" + delivery.endpoint_id}
@@ -47,6 +59,7 @@ export function DeliveryContext({
           {endpoint?.url ?? delivery.endpoint_id}
           <ArrowRightIcon size={13} aria-hidden="true" />
         </Link>
+        )}
         {endpoint && (
           <div className="delivery-copy-value delivery-endpoint-id">
             <code>{endpoint.id}</code>

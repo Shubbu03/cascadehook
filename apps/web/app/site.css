@@ -810,18 +810,6 @@
     color: var(--muted);
     font-size: 13px;
   }
-  .workspace-loading {
-    max-width: 800px;
-    margin-top: 36px;
-    display: grid;
-    gap: 14px;
-  }
-  .skeleton {
-    height: 80px;
-    border: 1px solid var(--border);
-    background: var(--surface-hover);
-    border-radius: 9px;
-  }
 }
 
 @media (max-width: 1050px) {

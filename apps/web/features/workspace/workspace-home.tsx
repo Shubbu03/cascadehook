@@ -1,7 +1,7 @@
 "use client";
 
 import { ConnectionError } from "./connection-error";
-import { ContentLoading } from "./loading";
+import { PageSkeleton } from "./skeletons";
 import { Projects } from "./projects";
 import { useSessionUserId } from "./session";
 import { useWorkspaceSelection } from "./use-workspace-selection";
@@ -30,7 +30,7 @@ export function WorkspaceHome() {
           pending={organization.isFetching || organizations.isFetching}
         />
       ) : loading ? (
-        <ContentLoading />
+        <PageSkeleton variant="projects" />
       ) : organization.data ? (
         <Projects
           key={organization.data.id}

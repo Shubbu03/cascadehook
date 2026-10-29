@@ -15,7 +15,7 @@ import { useId, useState, type FormEvent } from "react";
 import { PageHeader } from "@/components/page-header";
 import { useProject, projectHref } from "@/features/projects/project-workspace";
 import { ConnectionError } from "@/features/workspace/connection-error";
-import { ContentLoading } from "@/features/workspace/loading";
+import { TableSkeleton } from "@/features/workspace/skeletons";
 import { useSessionUserId } from "@/features/workspace/session";
 import type { Page } from "@/features/workspace/types";
 import { apiRequest } from "@/lib/api";
@@ -184,7 +184,7 @@ export function EndpointList() {
         </div>
       )}
       {list.isPending ? (
-        <ContentLoading />
+        <TableSkeleton columns={2} label="Loading endpoints…" />
       ) : list.isError && !list.data ? (
         <ConnectionError
           error={list.error}

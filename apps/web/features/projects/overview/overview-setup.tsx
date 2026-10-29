@@ -14,6 +14,7 @@ import { Select } from "@/components/select";
 import type { Endpoint } from "@/features/endpoints/types";
 import { ConnectionError } from "@/features/workspace/connection-error";
 import { useSessionUserId } from "@/features/workspace/session";
+import { SetupSkeleton } from "@/features/workspace/skeletons";
 import { projectHref, useProject } from "../project-workspace";
 import { setupActivityQuery, setupKeyQuery } from "./queries";
 import {
@@ -170,6 +171,9 @@ export function OverviewSetup({
       </Link>
     );
   }
+
+  if ((canManage && key.isPending) || (endpoint && activity.isPending))
+    return <SetupSkeleton />;
 
   return (
     <details className="overview-setup" open={!complete} data-complete={complete}>

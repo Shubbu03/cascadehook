@@ -1,5 +1,6 @@
 "use client";
 
+import { TableSkeleton } from "@/features/workspace/skeletons";
 import { useAuth } from "@clerk/nextjs";
 import { PlusIcon } from "@phosphor-icons/react";
 import { useInfiniteQuery } from "@tanstack/react-query";
@@ -120,7 +121,7 @@ export function EventList() {
         </p>
       )}
       {valid && (
-        <QueryState query={list}>
+        <QueryState query={list} loading={<TableSkeleton columns={4} label="Loading events…" />}>
           {items.length ? (
             <div className="data-table-wrap">
               <table className="data-table">

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { EndpointDetail } from "@/features/endpoints/endpoint-detail";
-import { ContentLoading } from "@/features/workspace/loading";
+import { PageSkeleton } from "@/features/workspace/skeletons";
 import { uuidPattern } from "@/lib/format";
 import { requireSession } from "@/lib/server/session";
 
@@ -24,7 +24,7 @@ export default function EndpointPage(props: {
   params: Promise<{ endpointId: string }>;
 }) {
   return (
-    <Suspense fallback={<ContentLoading />}>
+    <Suspense fallback={<PageSkeleton variant="endpoint" />}>
       <EndpointContent {...props} />
     </Suspense>
   );

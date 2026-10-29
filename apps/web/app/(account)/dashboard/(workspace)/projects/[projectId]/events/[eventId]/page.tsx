@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { EventDetail } from "@/features/activity/event-detail";
-import { ContentLoading } from "@/features/workspace/loading";
+import { PageSkeleton } from "@/features/workspace/skeletons";
 import { requireSession } from "@/lib/server/session";
 import { uuidPattern } from "@/lib/format";
 
@@ -18,7 +18,7 @@ async function Content({ params }: { params: Promise<{ eventId: string }> }) {
 }
 export default function Page(props: { params: Promise<{ eventId: string }> }) {
   return (
-    <Suspense fallback={<ContentLoading />}>
+    <Suspense fallback={<PageSkeleton variant="event" />}>
       <Content {...props} />
     </Suspense>
   );

@@ -1,5 +1,6 @@
 "use client";
 
+import { UsageSkeleton } from "@/features/workspace/skeletons";
 import { useAuth } from "@clerk/nextjs";
 import { useQuery } from "@tanstack/react-query";
 import { PageHeader } from "@/components/page-header";
@@ -59,12 +60,12 @@ function UsageContent() {
           />
         }
       />
-      <QueryState query={organization}>
+      <QueryState query={organization} loading={<UsageSkeleton />}>
         {organization.data && (
           <OrganizationUsageSummary usage={organization.data} />
         )}
       </QueryState>
-      <QueryState query={projectUsage}>
+      <QueryState query={projectUsage} loading={<UsageSkeleton />}>
         {projectUsage.data && (
           <>
             <h2 className="settings-section-title">This project</h2>
