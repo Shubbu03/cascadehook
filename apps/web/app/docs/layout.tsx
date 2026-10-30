@@ -14,6 +14,7 @@ export default function DocsLayout({
         <nav aria-label="Documentation">
           <Link href="/docs/quickstart">Quickstart</Link>
           <Link href="/docs/receivers">Receivers</Link>
+          <Link href="/docs/agents">AI setup</Link>
         </nav>
         <div className="docs-header-actions">
           <ThemeSwitcher />

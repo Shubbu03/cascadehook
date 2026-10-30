@@ -2,8 +2,8 @@
 
 import { useAuth } from "@clerk/nextjs";
 import { useMutation } from "@tanstack/react-query";
-import { useState, type FormEvent } from "react";
-import { apiRequest } from "@/lib/api";
+import { useId, useState, type FormEvent } from "react";
+import { ApiError, apiRequest } from "@/lib/api";
 import { notify } from "@/lib/notify";
 
 export function RenameForm({
@@ -18,6 +18,7 @@ export function RenameForm({
   saved: () => Promise<unknown>;
 }) {
   const { getToken } = useAuth();
+  const id = useId();
   const [validation, setValidation] = useState("");
   const rename = useMutation({
     mutationFn: (name: string) =>
@@ -39,6 +40,13 @@ export function RenameForm({
     setValidation("");
     rename.mutate(value);
   }
+  const message = validation || rename.error?.message;
+  const invalidName =
+    Boolean(validation) ||
+    (rename.error instanceof ApiError &&
+      (rename.error.code === "invalid_name" ||
+        rename.error.code === "project_name_exists"));
+
   return (
     <form
       className="settings-form"
@@ -49,10 +57,13 @@ export function RenameForm({
         <label className="form-field">
           <span>{kind} name</span>
           <input
+            id={id}
             name="name"
             defaultValue={name}
             required
             disabled={rename.isPending}
+            aria-invalid={invalidName}
+            aria-describedby={message ? id + "-error" : undefined}
           />
         </label>
         <button
@@ -63,9 +74,9 @@ export function RenameForm({
           {rename.isPending ? "Saving…" : "Save name"}
         </button>
       </div>
-      {(validation || rename.isError) && (
-        <p role="alert" className="form-error">
-          {validation || rename.error?.message}
+      {message && (
+        <p id={id + "-error"} role="alert" className="form-error">
+          {message}
         </p>
       )}
     </form>

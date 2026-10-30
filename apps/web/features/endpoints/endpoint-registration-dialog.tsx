@@ -1,7 +1,8 @@
 "use client";
 
 import { XIcon } from "@phosphor-icons/react";
-import { useEffect, useId, useRef, useState } from "react";
+import { useId, useState } from "react";
+import { Modal } from "@/components/modal";
 import { EndpointForm } from "./endpoint-form";
 
 export function EndpointRegistrationDialog({
@@ -11,25 +12,15 @@ export function EndpointRegistrationDialog({
   onClose: () => void;
   onRegistered?: () => void;
 }) {
-  const dialog = useRef<HTMLDialogElement>(null);
   const id = useId();
   const [pending, setPending] = useState(false);
 
-  useEffect(() => {
-    const element = dialog.current;
-    element?.showModal();
-    return () => element?.close();
-  }, []);
-
   return (
-    <dialog
-      ref={dialog}
+    <Modal
       className="confirmation-dialog endpoint-registration-dialog"
       aria-labelledby={id}
-      onCancel={(event) => {
-        event.preventDefault();
-        if (!pending) onClose();
-      }}
+      onDismiss={onClose}
+      dismissDisabled={pending}
     >
       <div className="endpoint-dialog-heading">
         <h2 id={id}>Register endpoint</h2>
@@ -48,6 +39,6 @@ export function EndpointRegistrationDialog({
         onPendingChange={setPending}
         onRegistered={onRegistered}
       />
-    </dialog>
+    </Modal>
   );
 }

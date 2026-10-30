@@ -86,6 +86,9 @@
     font-size: 12px;
     border-bottom: 1px solid var(--border);
   }
+  .docs-article > .page-heading + p {
+    margin-bottom: 24px;
+  }
   .docs-code {
     margin-block: 18px;
     overflow: hidden;

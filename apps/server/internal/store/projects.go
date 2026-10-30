@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 
 	"cascadehook/internal/accounts"
 	"cascadehook/internal/auth"
@@ -110,6 +111,9 @@ func (s *Store) CreateProject(
 		RETURNING created_at, updated_at`, id, params.OrganizationID, name,
 	).Scan(&project.CreatedAt, &project.UpdatedAt)
 	if err != nil {
+		if projectNameConflict(err) {
+			return accounts.Project{}, accounts.ErrProjectNameTaken
+		}
 		return accounts.Project{}, fmt.Errorf("create organization project: %w", err)
 	}
 	if err := completeOnboarding(ctx, tx, userID); err != nil {
@@ -144,12 +148,23 @@ func (s *Store) RenameProject(ctx context.Context, userID, id uuid.UUID, name st
 		return accounts.Project{}, accounts.ErrNotFound
 	}
 	if err != nil {
+		if projectNameConflict(err) {
+			return accounts.Project{}, accounts.ErrProjectNameTaken
+		}
 		return accounts.Project{}, fmt.Errorf("rename project: %w", err)
 	}
 	if err := tx.Commit(ctx); err != nil {
 		return accounts.Project{}, fmt.Errorf("commit project update: %w", err)
 	}
 	return project, nil
+}
+
+func projectNameConflict(err error) bool {
+	var conflict *pgconn.PgError
+	if !errors.As(err, &conflict) {
+		return false
+	}
+	return conflict.Code == "23505" && conflict.ConstraintName == "projects_organization_name_key"
 }
 
 // Human mutations hold the active user, then the organization, before project

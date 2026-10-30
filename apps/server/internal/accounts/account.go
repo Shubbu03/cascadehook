@@ -15,6 +15,7 @@ var (
 	ErrNotFound          = errors.New("account resource not found")
 	ErrForbidden         = errors.New("organization permission required")
 	ErrInvalidName       = errors.New("name must contain 1 to 100 characters without control characters")
+	ErrProjectNameTaken  = errors.New("project name already exists in this organization")
 	ErrInvalidRole       = errors.New("role must be owner, admin, or member")
 	ErrUserNotFound      = errors.New("user must sign in before being added to an organization")
 	ErrAlreadyMember     = errors.New("user is already an organization member")

@@ -2,12 +2,13 @@
 
 import { SetupSkeleton } from "@/features/workspace/skeletons";
 import { useAuth } from "@clerk/nextjs";
-import { PlusIcon } from "@phosphor-icons/react";
+import { PlusIcon, TerminalWindowIcon } from "@phosphor-icons/react";
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { PageHeader } from "@/components/page-header";
 import { LoadMore, QueryState, RefreshButton } from "@/components/query-state";
 import { PublishEventDialog } from "@/features/activity/publish-event-dialog";
+import { AgentSetupDialog } from "@/features/agent-setup/agent-setup-dialog";
 import type { Endpoint } from "@/features/endpoints/types";
 import { EndpointRegistrationDialog } from "@/features/endpoints/endpoint-registration-dialog";
 import { useSessionUserId } from "@/features/workspace/session";
@@ -29,6 +30,7 @@ export function ProjectOverview() {
   const [refreshing, setRefreshing] = useState(false);
   const [publisher, setPublisher] = useState<{ endpoint?: Endpoint } | null>(null);
   const [registering, setRegistering] = useState(false);
+  const [agentSiteOrigin, setAgentSiteOrigin] = useState<string | null>(null);
   const items = endpoints.data?.pages.flatMap((page) => page.data) ?? [];
 
   async function refresh() {
@@ -61,6 +63,16 @@ export function ProjectOverview() {
               pending={refreshing || endpoints.isFetching}
               refresh={refresh}
             />
+            {canManage && (
+              <button
+                type="button"
+                className="button button-small button-secondary"
+                onClick={() => setAgentSiteOrigin(window.location.origin)}
+              >
+                <TerminalWindowIcon size={16} aria-hidden="true" />
+                Set up with AI
+              </button>
+            )}
             {canManage && (
               <button
                 type="button"
@@ -98,6 +110,13 @@ export function ProjectOverview() {
       </div>
       {canManage && registering && (
         <EndpointRegistrationDialog onClose={() => setRegistering(false)} />
+      )}
+      {canManage && agentSiteOrigin && (
+        <AgentSetupDialog
+          key={project.id}
+          siteOrigin={agentSiteOrigin}
+          onClose={() => setAgentSiteOrigin(null)}
+        />
       )}
       {canManage && publisher && (
         <PublishEventDialog

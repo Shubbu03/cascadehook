@@ -110,6 +110,8 @@ function problemMessage(status: number, code?: string) {
     account_deleted: "This account is no longer available. Please sign out.",
     already_member: "This account is already an organization member.",
     invalid_role: "Choose a valid organization role.",
+    project_name_exists:
+      "A project with this name already exists in this organization.",
     invalid_endpoint_url:
       "Use an HTTPS URL without credentials or a fragment, up to 2,048 bytes.",
     invalid_event_types:

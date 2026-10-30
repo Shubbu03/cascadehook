@@ -21,6 +21,11 @@ export default function QuickstartPage() {
         title="Send your first webhook"
         description="From a new project to a confirmed delivery."
       />
+      <p>
+        Using a coding agent? After creating your project, select{" "}
+        <strong>Set up with AI</strong> in its Overview, or read the{" "}
+        <Link href="/docs/agents">agent setup guide</Link>.
+      </p>
       <nav className="docs-contents" aria-label="On this page">
         <a href="#project">Create a project</a>
         <a href="#receiver">Prepare a receiver</a>

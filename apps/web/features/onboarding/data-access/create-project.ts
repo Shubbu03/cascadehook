@@ -18,6 +18,7 @@ export async function createProject(
   if (!name) {
     return {
       error: "Enter a name with 1–100 characters and no control characters.",
+      code: "invalid_name",
     };
   }
 
@@ -50,6 +51,7 @@ export async function createProject(
       error: error instanceof ApiError
         ? error.message
         : "Couldn't create the project. Please try again.",
+      code: error instanceof ApiError ? error.code : undefined,
     };
   }
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useState, type FormEvent } from "react";
+import { ApiError } from "@/lib/api";
 
 export function NameForm({
   titleId,
@@ -35,6 +36,10 @@ export function NameForm({
   }
 
   const message = validation ?? error?.message;
+  const invalidName =
+    Boolean(validation) ||
+    (error instanceof ApiError &&
+      (error.code === "invalid_name" || error.code === "project_name_exists"));
   return (
     <form className="setup-form" onSubmit={submit} aria-busy={pending}>
       <h2 id={titleId}>
@@ -54,7 +59,7 @@ export function NameForm({
           }
           required
           disabled={pending}
-          aria-invalid={Boolean(validation)}
+          aria-invalid={invalidName}
           aria-describedby={message ? id + "-error" : undefined}
           autoComplete="off"
         />

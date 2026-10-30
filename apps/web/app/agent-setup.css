@@ -1,0 +1,87 @@
+@layer components {
+  .agent-setup-dialog {
+    width: min(720px, calc(100% - 40px));
+  }
+  .agent-setup-heading,
+  .agent-prompt-heading,
+  .agent-setup-links {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .agent-setup-heading {
+    align-items: start;
+  }
+  .agent-setup-heading .eyebrow {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--muted);
+  }
+  .agent-setup-steps {
+    display: grid;
+    gap: 20px;
+    margin-block: 24px;
+    padding-left: 22px;
+    font-size: 13px;
+  }
+  .agent-setup-steps li {
+    padding-left: 6px;
+  }
+  .agent-setup-steps li::marker {
+    color: var(--accent);
+    font-family: var(--font-plex-mono), monospace;
+  }
+  .agent-setup-steps h3 {
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .agent-setup-steps p {
+    margin-top: 6px;
+    font-size: 13px;
+  }
+  .agent-setup-dialog code {
+    font-size: 0.9em;
+    overflow-wrap: anywhere;
+    color: var(--foreground);
+  }
+  .agent-prompt {
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+  }
+  .agent-prompt-heading {
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+    font-size: 13px;
+  }
+  .agent-prompt textarea {
+    display: block;
+    width: 100%;
+    min-height: 180px;
+    max-height: 420px;
+    padding: 14px;
+    resize: vertical;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--background);
+    color: var(--foreground);
+    font: 12px/1.8 var(--font-plex-mono), monospace;
+  }
+  .agent-prompt .field-help {
+    margin-top: 8px;
+    font-size: 12px;
+  }
+  .agent-setup-links {
+    justify-content: start;
+    flex-wrap: wrap;
+    gap: 12px 20px;
+    margin-top: 24px;
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 520px) {
+  .agent-prompt textarea {
+    font-size: 16px;
+  }
+}

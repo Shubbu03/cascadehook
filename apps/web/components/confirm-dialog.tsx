@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useId, useRef } from "react";
+import { useId } from "react";
+import { Modal } from "./modal";
 
 export function ConfirmDialog({
   title,
@@ -21,23 +22,14 @@ export function ConfirmDialog({
   onConfirm: () => void;
   onCancel: () => void;
 }) {
-  const dialog = useRef<HTMLDialogElement>(null);
   const id = useId();
-  useEffect(() => {
-    const element = dialog.current;
-    element?.showModal();
-    return () => element?.close();
-  }, []);
   return (
-    <dialog
-      ref={dialog}
+    <Modal
       className="confirmation-dialog"
       aria-labelledby={id}
       aria-describedby={id + "-description"}
-      onCancel={(event) => {
-        event.preventDefault();
-        if (!pending) onCancel();
-      }}
+      onDismiss={onCancel}
+      dismissDisabled={pending}
     >
       <h2 id={id}>{title}</h2>
       <div id={id + "-description"}>{children}</div>
@@ -61,6 +53,6 @@ export function ConfirmDialog({
           {pending ? pendingLabel : confirmLabel}
         </button>
       </div>
-    </dialog>
+    </Modal>
   );
 }

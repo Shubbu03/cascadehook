@@ -1,7 +1,8 @@
 "use client";
 
 import { XIcon } from "@phosphor-icons/react";
-import { useEffect, useId, useRef, useState } from "react";
+import { useId, useState } from "react";
+import { Modal } from "@/components/modal";
 import { PublishEventForm } from "./publish-event-form";
 
 export function PublishEventDialog({
@@ -13,23 +14,14 @@ export function PublishEventDialog({
   initialType?: string;
   eventTypes?: string[];
 }) {
-  const dialog = useRef<HTMLDialogElement>(null);
   const [pending, setPending] = useState(false);
   const id = useId();
-  useEffect(() => {
-    const element = dialog.current;
-    element?.showModal();
-    return () => element?.close();
-  }, []);
   return (
-    <dialog
-      ref={dialog}
+    <Modal
       className="confirmation-dialog event-publish-dialog"
       aria-labelledby={id}
-      onCancel={(event) => {
-        event.preventDefault();
-        if (!pending) onClose();
-      }}
+      onDismiss={onClose}
+      dismissDisabled={pending}
     >
       <div className="event-publish-heading">
         <h2 id={id}>Publish event</h2>
@@ -49,6 +41,6 @@ export function PublishEventDialog({
         onClose={onClose}
         onPendingChange={setPending}
       />
-    </dialog>
+    </Modal>
   );
 }

@@ -3,15 +3,9 @@
 import { useAuth } from "@clerk/nextjs";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useId,
-  useRef,
-  useState,
-} from "react";
-import { apiRequest } from "@/lib/api";
+import { createContext, useContext, useId, useState } from "react";
+import { Modal } from "@/components/modal";
+import { ApiError, apiRequest } from "@/lib/api";
 import { notify } from "@/lib/notify";
 import { NameForm } from "./name-form";
 import { organizationHref } from "./queries";
@@ -91,7 +85,6 @@ function CreateDialog({
   const { getToken } = useAuth();
   const userId = useSessionUserId();
   const queryClient = useQueryClient();
-  const dialog = useRef<HTMLDialogElement>(null);
   const titleId = useId();
   const create = useMutation({
     mutationFn: async (name: string): Promise<CreatedResource> => {
@@ -138,24 +131,24 @@ function CreateDialog({
         onProjectCreated(project);
       }
     },
-    onError: (error) => notify(error.message, "error"),
+    onError: (error) => {
+      if (
+        target.kind === "project" &&
+        error instanceof ApiError &&
+        error.code === "project_name_exists"
+      ) {
+        return;
+      }
+      notify(error.message, "error");
+    },
   });
 
-  useEffect(() => {
-    const element = dialog.current;
-    element?.showModal();
-    return () => element?.close();
-  }, []);
-
   return (
-    <dialog
-      ref={dialog}
+    <Modal
       className="workspace-create-dialog"
       aria-labelledby={titleId}
-      onCancel={(event) => {
-        event.preventDefault();
-        if (!create.isPending) onCancel();
-      }}
+      onDismiss={onCancel}
+      dismissDisabled={create.isPending}
     >
       {target.kind === "project" && (
         <p className="workspace-create-context">{target.organization.name}</p>
@@ -168,6 +161,6 @@ function CreateDialog({
         onSubmit={(name) => create.mutate(name)}
         onCancel={onCancel}
       />
-    </dialog>
+    </Modal>
   );
 }

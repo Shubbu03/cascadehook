@@ -50,3 +50,17 @@ API and schedule `db:cleanup` regularly. The API exposes `/healthz` and `/readyz
 for health checks.
 
 See [frontend documentation](apps/web/README.md) for dashboard configuration.
+
+## Agent-assisted integration
+
+After creating an account, organization, and project, open the project's
+Overview and select **Set up with AI**. Create a project API key and store it
+locally as `CASCADEHOOK_API_KEY`, then copy the project-specific prompt into
+your coding agent. The prompt contains context and documentation links without
+credentials. Keys currently grant project-wide access; Development and Live
+labels have identical permissions.
+
+The web app publishes a [Markdown agent guide](apps/web/public/docs/agents.md)
+at `/docs/agents.md` and the project API schema at `/openapi.json`. The schema
+uses `NEXT_PUBLIC_API_BASE_URL` for the API server address and returns 503 if
+that configuration is missing or invalid. The human guide is at `/docs/agents`.

@@ -1,0 +1,2093 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Cascadehook project API",
+    "version": "1.0.0",
+    "description": "Project API for application integration after human signup, organization and project creation. Authenticate with the selected project API key; compare GET /v1/project-status project_id before mutations. The WEB origin hosting this document can differ from the API server origin. Project API keys have broad project access; dev/live labels have identical permissions. All JSON request bodies require application/json. Management JSON bodies are capped at 64 KiB; event bodies at 256 KiB. Errors are application/problem+json. Observe Retry-After, use bounded retries, and inspect state after uncertain mutations. A 202 receipt never confirms delivery. See /docs/agents.md on this document host for the full workflow and receiver protocol."
+  },
+  "security": [
+    {
+      "projectAPIKey": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "Project"
+    },
+    {
+      "name": "Endpoints"
+    },
+    {
+      "name": "Events"
+    },
+    {
+      "name": "Deliveries"
+    },
+    {
+      "name": "API keys"
+    }
+  ],
+  "paths": {
+    "/v1/project-status": {
+      "get": {
+        "operationId": "getProjectStatus",
+        "summary": "Read project status and credential project ID",
+        "tags": [
+          "Project"
+        ],
+        "responses": {
+          "200": {
+            "description": "Read project status and credential project ID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectStatus"
+                },
+                "example": {
+                  "project_id": "01900000-0000-7000-8000-000000000003",
+                  "suspended": false,
+                  "suspended_at": null,
+                  "reason": null,
+                  "version": 0
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "description": "Call before mutations and compare project_id with the selected project. Query parameters are rejected. A suspended project can be inspected but only an operator can resume it."
+      },
+      "head": {
+        "operationId": "getProjectStatusHead",
+        "summary": "Read project status and credential project ID (headers only)",
+        "tags": [
+          "Project"
+        ],
+        "responses": {
+          "200": {
+            "description": "Same status as GET, with no response body."
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "description": "Call before mutations and compare project_id with the selected project. Query parameters are rejected. A suspended project can be inspected but only an operator can resume it."
+      }
+    },
+    "/v1/endpoints": {
+      "get": {
+        "operationId": "listEndpoints",
+        "summary": "List endpoints",
+        "tags": [
+          "Endpoints"
+        ],
+        "responses": {
+          "200": {
+            "description": "List endpoints",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EndpointPage"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "description": "Returns newest-first retained data. Unknown or repeated query parameters are rejected. Follow next_cursor until null; preserve filters. Omit cursor on the first page.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/limit"
+          },
+          {
+            "$ref": "#/components/parameters/cursor"
+          },
+          {
+            "name": "enabled",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "event_type",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/EventType"
+            }
+          }
+        ]
+      },
+      "head": {
+        "operationId": "listEndpointsHead",
+        "summary": "List endpoints (headers only)",
+        "tags": [
+          "Endpoints"
+        ],
+        "responses": {
+          "200": {
+            "description": "Same status as GET, with no response body."
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "description": "Returns newest-first retained data. Unknown or repeated query parameters are rejected. Follow next_cursor until null; preserve filters. Omit cursor on the first page.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/limit"
+          },
+          {
+            "$ref": "#/components/parameters/cursor"
+          },
+          {
+            "name": "enabled",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "event_type",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/EventType"
+            }
+          }
+        ]
+      },
+      "post": {
+        "operationId": "createEndpoint",
+        "summary": "Register a disabled endpoint",
+        "tags": [
+          "Endpoints"
+        ],
+        "responses": {
+          "201": {
+            "description": "New disabled, unverified endpoint.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Endpoint"
+                },
+                "example": {
+                  "id": "01900000-0000-7000-8000-000000000001",
+                  "project_id": "01900000-0000-7000-8000-000000000003",
+                  "url": "https://receiver.example.com/webhooks",
+                  "enabled": false,
+                  "verified_at": null,
+                  "has_signing_secret": false,
+                  "event_types": [
+                    "invoice.paid"
+                  ],
+                  "created_at": "2026-01-01T00:00:00Z",
+                  "updated_at": "2026-01-01T00:00:00Z"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "description": "Registration does not perform a network request. Reuse matching endpoints before creating one; creation is not idempotent.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateEndpoint"
+              },
+              "example": {
+                "url": "https://receiver.example.com/webhooks",
+                "event_types": [
+                  "invoice.paid"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/endpoints/{endpoint_id}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/endpoint_id"
+        }
+      ],
+      "get": {
+        "operationId": "getEndpoint",
+        "summary": "Read endpoint readiness and subscriptions",
+        "tags": [
+          "Endpoints"
+        ],
+        "responses": {
+          "200": {
+            "description": "Read endpoint readiness and subscriptions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Endpoint"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      },
+      "head": {
+        "operationId": "getEndpointHead",
+        "summary": "Read endpoint readiness and subscriptions (headers only)",
+        "tags": [
+          "Endpoints"
+        ],
+        "responses": {
+          "200": {
+            "description": "Same status as GET, with no response body."
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "updateEndpoint",
+        "summary": "Update endpoint configuration or enabled state",
+        "tags": [
+          "Endpoints"
+        ],
+        "responses": {
+          "200": {
+            "description": "Updated endpoint.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Endpoint"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "description": "URL changes clear verification and disable delivery. Enabling requires verification and a signing secret. Replacing subscriptions changes future fan-out. Ask before modifying existing receiver configuration.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateEndpoint"
+              },
+              "example": {
+                "enabled": true
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteEndpoint",
+        "summary": "Delete an endpoint",
+        "tags": [
+          "Endpoints"
+        ],
+        "responses": {
+          "204": {
+            "description": "Endpoint disabled and marked deleted."
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "description": "Destructive. Requires explicit human approval."
+      }
+    },
+    "/v1/endpoints/{endpoint_id}/signing-secret": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/endpoint_id"
+        }
+      ],
+      "post": {
+        "operationId": "provisionOrRotateSigningSecret",
+        "summary": "Provision or rotate a signing secret",
+        "tags": [
+          "Endpoints"
+        ],
+        "responses": {
+          "200": {
+            "description": "One-time secret. Capture directly to the receiver environment; never print this response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SigningSecretReceipt"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "description": "EMPTY BODY required: do not send {}. Also rotates an existing secret; ask for explicit approval before rotation. Not idempotent. Previous secret has a five-minute grace period; overlapping rotation returns 409 signing_secret_rotation_in_progress. Does not disable an already active endpoint or clear verified_at. Inspect state after a lost response."
+      }
+    },
+    "/v1/endpoints/{endpoint_id}/verify": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/endpoint_id"
+        }
+      ],
+      "post": {
+        "operationId": "verifyEndpoint",
+        "summary": "Verify receiver ownership with a signed challenge",
+        "tags": [
+          "Endpoints"
+        ],
+        "responses": {
+          "200": {
+            "description": "Verified endpoint. Delivery is not automatically enabled.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Endpoint"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "description": "EMPTY BODY required: do not send {}. Install the current secret on a running public HTTPS receiver first. Receiver must verify the raw signed request and return exactly {\"proof\":\"<base64 HMAC-SHA256>\"}, using message cascadehook.verify.v1.<Webhook-Id>.<data.challenge>. One attempt per 30 seconds; respect Retry-After. Plain empty 200 is insufficient. Errors include endpoint_verification_failed (502), invalid_verification_proof (422), unsafe_endpoint_destination (422), endpoint_verification_rate_limited (429), and endpoint_verification_changed (409)."
+      }
+    },
+    "/v1/events": {
+      "get": {
+        "operationId": "listEvents",
+        "summary": "List event summaries",
+        "tags": [
+          "Events"
+        ],
+        "responses": {
+          "200": {
+            "description": "List event summaries",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventPage"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "description": "Returns newest-first retained data. Unknown or repeated query parameters are rejected. Follow next_cursor until null; preserve filters. Omit cursor on the first page.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/limit"
+          },
+          {
+            "$ref": "#/components/parameters/cursor"
+          },
+          {
+            "name": "event_type",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/EventType"
+            }
+          }
+        ]
+      },
+      "head": {
+        "operationId": "listEventsHead",
+        "summary": "List event summaries (headers only)",
+        "tags": [
+          "Events"
+        ],
+        "responses": {
+          "200": {
+            "description": "Same status as GET, with no response body."
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "description": "Returns newest-first retained data. Unknown or repeated query parameters are rejected. Follow next_cursor until null; preserve filters. Omit cursor on the first page.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/limit"
+          },
+          {
+            "$ref": "#/components/parameters/cursor"
+          },
+          {
+            "name": "event_type",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/EventType"
+            }
+          }
+        ]
+      },
+      "post": {
+        "operationId": "publishEvent",
+        "summary": "Publish an event",
+        "tags": [
+          "Events"
+        ],
+        "responses": {
+          "202": {
+            "description": "Acceptance only, not confirmed delivery. Zero delivery_count means no matching ready endpoint. Publish a NEW event after fixing setup.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AcceptedEvent"
+                },
+                "example": {
+                  "id": "01900000-0000-7000-8000-000000000002",
+                  "type": "invoice.paid",
+                  "created_at": "2026-01-01T00:00:00Z",
+                  "delivery_count": 1
+                }
+              }
+            },
+            "headers": {
+              "Idempotent-Replay": {
+                "description": "true when returning a previously accepted receipt.",
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "true"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "description": "Maximum 256 KiB envelope; exactly type and data. Same key/exact bytes within 24 hours returns the original receipt without fan-out again. Different bytes return 409 idempotency_conflict. Keys remain project-wide regardless of dev/live label; use only agreed test data.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublishEvent"
+              },
+              "example": {
+                "type": "invoice.paid",
+                "data": {
+                  "invoice_id": "inv_test_1024"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/idempotencyKey"
+          }
+        ]
+      }
+    },
+    "/v1/events/{event_id}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/event_id"
+        }
+      ],
+      "get": {
+        "operationId": "getEvent",
+        "summary": "Read an event including its original envelope",
+        "tags": [
+          "Events"
+        ],
+        "responses": {
+          "200": {
+            "description": "Read an event including its original envelope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Event"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      },
+      "head": {
+        "operationId": "getEventHead",
+        "summary": "Read an event including its original envelope (headers only)",
+        "tags": [
+          "Events"
+        ],
+        "responses": {
+          "200": {
+            "description": "Same status as GET, with no response body."
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      }
+    },
+    "/v1/deliveries": {
+      "get": {
+        "operationId": "listDeliveries",
+        "summary": "List deliveries",
+        "tags": [
+          "Deliveries"
+        ],
+        "responses": {
+          "200": {
+            "description": "List deliveries",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeliveryPage"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "description": "Returns newest-first retained data. Unknown or repeated query parameters are rejected. Follow next_cursor until null; preserve filters. Omit cursor on the first page. To confirm a test, filter by BOTH the accepted event ID and the chosen endpoint ID. Poll at intervals of at least five seconds for at most 60 seconds; honor Retry-After.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/limit"
+          },
+          {
+            "$ref": "#/components/parameters/cursor"
+          },
+          {
+            "name": "event_id",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "endpoint_id",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "state",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/DeliveryState"
+            }
+          }
+        ]
+      },
+      "head": {
+        "operationId": "listDeliveriesHead",
+        "summary": "List deliveries (headers only)",
+        "tags": [
+          "Deliveries"
+        ],
+        "responses": {
+          "200": {
+            "description": "Same status as GET, with no response body."
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "description": "Returns newest-first retained data. Unknown or repeated query parameters are rejected. Follow next_cursor until null; preserve filters. Omit cursor on the first page. To confirm a test, filter by BOTH the accepted event ID and the chosen endpoint ID. Poll at intervals of at least five seconds for at most 60 seconds; honor Retry-After.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/limit"
+          },
+          {
+            "$ref": "#/components/parameters/cursor"
+          },
+          {
+            "name": "event_id",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "endpoint_id",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "state",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/DeliveryState"
+            }
+          }
+        ]
+      }
+    },
+    "/v1/deliveries/{delivery_id}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/delivery_id"
+        }
+      ],
+      "get": {
+        "operationId": "getDelivery",
+        "summary": "Read current delivery state",
+        "tags": [
+          "Deliveries"
+        ],
+        "responses": {
+          "200": {
+            "description": "Read current delivery state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Delivery"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "description": "succeeded confirms receiver acknowledgement, not downstream business completion. pending/leased are not terminal. Inspect attempts and terminal_reason for failures."
+      },
+      "head": {
+        "operationId": "getDeliveryHead",
+        "summary": "Read current delivery state (headers only)",
+        "tags": [
+          "Deliveries"
+        ],
+        "responses": {
+          "200": {
+            "description": "Same status as GET, with no response body."
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "description": "succeeded confirms receiver acknowledgement, not downstream business completion. pending/leased are not terminal. Inspect attempts and terminal_reason for failures."
+      }
+    },
+    "/v1/deliveries/{delivery_id}/attempts": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/delivery_id"
+        }
+      ],
+      "get": {
+        "operationId": "listDeliveryAttempts",
+        "summary": "List completed delivery attempts",
+        "tags": [
+          "Deliveries"
+        ],
+        "responses": {
+          "200": {
+            "description": "List completed delivery attempts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttemptPage"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "description": "Newest logical attempt first; cursor is bound to its delivery and cycle filter. Response bodies and sensitive headers are never exposed. Unknown or repeated query parameters are rejected.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/limit"
+          },
+          {
+            "$ref": "#/components/parameters/cursor"
+          },
+          {
+            "name": "cycle",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 2147483647
+            }
+          }
+        ]
+      },
+      "head": {
+        "operationId": "listDeliveryAttemptsHead",
+        "summary": "List completed delivery attempts (headers only)",
+        "tags": [
+          "Deliveries"
+        ],
+        "responses": {
+          "200": {
+            "description": "Same status as GET, with no response body."
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "description": "Newest logical attempt first; cursor is bound to its delivery and cycle filter. Response bodies and sensitive headers are never exposed. Unknown or repeated query parameters are rejected.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/limit"
+          },
+          {
+            "$ref": "#/components/parameters/cursor"
+          },
+          {
+            "name": "cycle",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 2147483647
+            }
+          }
+        ]
+      }
+    },
+    "/v1/deliveries/{delivery_id}/replay": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/delivery_id"
+        }
+      ],
+      "post": {
+        "operationId": "replayDelivery",
+        "summary": "Replay a completed delivery",
+        "tags": [
+          "Deliveries"
+        ],
+        "responses": {
+          "202": {
+            "description": "Immutable replay acceptance receipt; inspect current delivery state separately.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReplayReceipt"
+                }
+              }
+            },
+            "headers": {
+              "Idempotent-Replay": {
+                "description": "true when returning a previously accepted receipt.",
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "true"
+                  ]
+                }
+              },
+              "Location": {
+                "description": "Project API path for the resource.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "description": "Explicit human approval required. Query parameters are rejected. Only succeeded/failed deliveries with a ready endpoint can be replayed. expected_cycle is the current delivery cycle. Same delivery/from-cycle returns its first receipt; stale cycle conflicts. Preserves Webhook-Id, so receiver deduplication may skip business work.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReplayRequest"
+              },
+              "example": {
+                "expected_cycle": 0
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/api-keys": {
+      "get": {
+        "operationId": "listAPIKeys",
+        "summary": "List API key metadata",
+        "tags": [
+          "API keys"
+        ],
+        "responses": {
+          "200": {
+            "description": "List API key metadata",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIKeyPage"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "description": "Returns newest-first retained data. Unknown or repeated query parameters are rejected. Follow next_cursor until null; preserve filters. Omit cursor on the first page. Metadata excludes complete credentials.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/limit"
+          },
+          {
+            "$ref": "#/components/parameters/cursor"
+          },
+          {
+            "name": "environment",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "dev",
+                "live"
+              ]
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "active",
+                "expired",
+                "revoked"
+              ]
+            }
+          }
+        ]
+      },
+      "head": {
+        "operationId": "listAPIKeysHead",
+        "summary": "List API key metadata (headers only)",
+        "tags": [
+          "API keys"
+        ],
+        "responses": {
+          "200": {
+            "description": "Same status as GET, with no response body."
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "description": "Returns newest-first retained data. Unknown or repeated query parameters are rejected. Follow next_cursor until null; preserve filters. Omit cursor on the first page. Metadata excludes complete credentials.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/limit"
+          },
+          {
+            "$ref": "#/components/parameters/cursor"
+          },
+          {
+            "name": "environment",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "dev",
+                "live"
+              ]
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "active",
+                "expired",
+                "revoked"
+              ]
+            }
+          }
+        ]
+      },
+      "post": {
+        "operationId": "createAPIKey",
+        "summary": "Create a project API key",
+        "tags": [
+          "API keys"
+        ],
+        "responses": {
+          "201": {
+            "description": "One-time credential. Capture directly to an authorized environment; never print the response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIKeyReceipt"
+                }
+              }
+            },
+            "headers": {
+              "Location": {
+                "description": "Project API path for the resource.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "description": "Requires explicit human approval. Query parameters are rejected. dev/live labels grant the same project scope; neither is a sandbox or a restricted agent credential. Human setup should use the dashboard to obtain the initial key.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAPIKey"
+              },
+              "example": {
+                "name": "Application integration",
+                "environment": "dev",
+                "expires_at": null
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/api-keys/{api_key_id}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/api_key_id"
+        }
+      ],
+      "get": {
+        "operationId": "getAPIKey",
+        "summary": "Read API key metadata",
+        "tags": [
+          "API keys"
+        ],
+        "responses": {
+          "200": {
+            "description": "Read API key metadata",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIKey"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "description": "Query parameters are rejected. Does not return the complete credential."
+      },
+      "head": {
+        "operationId": "getAPIKeyHead",
+        "summary": "Read API key metadata (headers only)",
+        "tags": [
+          "API keys"
+        ],
+        "responses": {
+          "200": {
+            "description": "Same status as GET, with no response body."
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "description": "Query parameters are rejected. Does not return the complete credential."
+      },
+      "delete": {
+        "operationId": "revokeAPIKey",
+        "summary": "Revoke an API key",
+        "tags": [
+          "API keys"
+        ],
+        "responses": {
+          "204": {
+            "description": "Revocation confirmed."
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "description": "EMPTY BODY, no query parameters. Requires explicit human approval. Cannot revoke the last usable key without a replacement."
+      }
+    },
+    "/v1/api-keys/{api_key_id}/rotate": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/api_key_id"
+        }
+      ],
+      "post": {
+        "operationId": "rotateAPIKey",
+        "summary": "Rotate an API key",
+        "tags": [
+          "API keys"
+        ],
+        "responses": {
+          "201": {
+            "description": "One-time replacement key; previous key remains usable for five minutes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIKeyRotationReceipt"
+                }
+              }
+            },
+            "headers": {
+              "Location": {
+                "description": "Project API path for the resource.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Problem"
+          }
+        },
+        "description": "EMPTY BODY, no query parameters. Requires explicit human approval. Existing replacement/inactive key conflicts; never rotate automatically on an ambiguous response."
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "projectAPIKey": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "ch_dev_ or ch_live_ project API key",
+        "description": "Read CASCADEHOOK_API_KEY from the local environment. Never print keys or headers. Scope is the project selected when the key was created."
+      }
+    },
+    "parameters": {
+      "limit": {
+        "name": "limit",
+        "in": "query",
+        "schema": {
+          "type": "integer",
+          "default": 20,
+          "minimum": 1,
+          "maximum": 100
+        }
+      },
+      "cursor": {
+        "name": "cursor",
+        "in": "query",
+        "schema": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "description": "Opaque next_cursor from the preceding page; omit on the first page. Keep filters unchanged."
+      },
+      "idempotencyKey": {
+        "name": "Idempotency-Key",
+        "in": "header",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255,
+          "pattern": "^[!-~]+$"
+        },
+        "description": "One key per logical event. Reuse with the EXACT serialized bytes on retry, within 24 hours. Whitespace changes also cause idempotency_conflict."
+      },
+      "endpoint_id": {
+        "name": "endpoint_id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "event_id": {
+        "name": "event_id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "delivery_id": {
+        "name": "delivery_id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "api_key_id": {
+        "name": "api_key_id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
+    "responses": {
+      "Problem": {
+        "description": "Non-success response. Inspect code: invalid_api_key (401); project_suspended (403); resource not found (404); quota_exceeded, idempotency_conflict or readiness/version conflicts (409); validation failures (400/422); request_too_large (413); unsupported_media_type (415); project/global/verification rate limits (429); endpoint_verification_failed (502); request_timeout, request_controls_unavailable or authentication_unavailable (503); internal_error (500). Retry-After is present on rate-limited responses.",
+        "headers": {
+          "Retry-After": {
+            "description": "Seconds to wait before retrying, when supplied.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        },
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "#/components/schemas/Problem"
+            },
+            "example": {
+              "type": "about:blank",
+              "title": "Unauthorized",
+              "status": 401,
+              "code": "invalid_api_key"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "EventType": {
+        "type": "string",
+        "pattern": "^[a-z0-9][a-z0-9_.-]{2,127}$",
+        "minLength": 3,
+        "maxLength": 128,
+        "example": "invoice.paid"
+      },
+      "Problem": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "type": "integer",
+            "minimum": 400,
+            "maximum": 599
+          },
+          "code": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "title",
+          "status",
+          "code"
+        ],
+        "additionalProperties": false
+      },
+      "ProjectStatus": {
+        "type": "object",
+        "properties": {
+          "project_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "suspended": {
+            "type": "boolean"
+          },
+          "suspended_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "reason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "project_id",
+          "suspended",
+          "suspended_at",
+          "reason",
+          "version"
+        ],
+        "additionalProperties": false
+      },
+      "Endpoint": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "project_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "pattern": "^[Hh][Tt][Tt][Pp][Ss]://",
+            "maxLength": 2048,
+            "description": "HTTPS, no credentials/fragment. Maximum 2048 UTF-8 bytes. Public destination required at verification/delivery; redirects are rejected."
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "verified_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "has_signing_secret": {
+            "type": "boolean"
+          },
+          "event_types": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 100,
+            "uniqueItems": true,
+            "items": {
+              "$ref": "#/components/schemas/EventType"
+            }
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "project_id",
+          "url",
+          "enabled",
+          "verified_at",
+          "has_signing_secret",
+          "event_types",
+          "created_at",
+          "updated_at"
+        ],
+        "additionalProperties": false
+      },
+      "CreateEndpoint": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "pattern": "^[Hh][Tt][Tt][Pp][Ss]://",
+            "maxLength": 2048,
+            "description": "HTTPS, no credentials/fragment. Maximum 2048 UTF-8 bytes. Public destination required at verification/delivery; redirects are rejected."
+          },
+          "event_types": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 100,
+            "uniqueItems": true,
+            "items": {
+              "$ref": "#/components/schemas/EventType"
+            }
+          }
+        },
+        "required": [
+          "url",
+          "event_types"
+        ],
+        "additionalProperties": false
+      },
+      "UpdateEndpoint": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "pattern": "^[Hh][Tt][Tt][Pp][Ss]://",
+            "maxLength": 2048,
+            "description": "HTTPS, no credentials/fragment. Maximum 2048 UTF-8 bytes. Public destination required at verification/delivery; redirects are rejected."
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "event_types": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 100,
+            "uniqueItems": true,
+            "items": {
+              "$ref": "#/components/schemas/EventType"
+            }
+          }
+        },
+        "required": [],
+        "additionalProperties": false,
+        "minProperties": 1,
+        "description": "Only supplied fields change; null is rejected. URL changes clear verification and disable delivery. Enabling requires a signing secret and verified ownership. event_types replaces the subscription list."
+      },
+      "SigningSecretReceipt": {
+        "type": "object",
+        "properties": {
+          "endpoint_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "signing_secret": {
+            "type": "string",
+            "pattern": "^whsec_[A-Za-z0-9+/]{43}=$",
+            "description": "One-time credential. Capture directly to the receiver environment; never print or log it."
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "previous_secret_expires_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "endpoint_id",
+          "signing_secret",
+          "updated_at",
+          "previous_secret_expires_at"
+        ],
+        "additionalProperties": false
+      },
+      "PublishEvent": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "$ref": "#/components/schemas/EventType"
+          },
+          "data": {
+            "description": "Any JSON value, including null."
+          }
+        },
+        "required": [
+          "type",
+          "data"
+        ],
+        "additionalProperties": false,
+        "description": "Exactly type and data; duplicate envelope keys are rejected. Entire serialized body maximum 262144 bytes. Retries must preserve exact bytes and Idempotency-Key."
+      },
+      "AcceptedEvent": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "type": {
+            "$ref": "#/components/schemas/EventType"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "delivery_count": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "created_at",
+          "delivery_count"
+        ],
+        "additionalProperties": false
+      },
+      "DeliveryState": {
+        "type": "string",
+        "enum": [
+          "pending",
+          "leased",
+          "succeeded",
+          "failed",
+          "canceled"
+        ]
+      },
+      "Delivery": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "project_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "event_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "endpoint_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "state": {
+            "$ref": "#/components/schemas/DeliveryState"
+          },
+          "attempt_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "cycle": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "cycle_started_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "retry_deadline": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "next_attempt_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "terminal_reason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "active_attempt_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "active_attempt_started_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "lease_expires_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "project_id",
+          "event_id",
+          "endpoint_id",
+          "state",
+          "attempt_count",
+          "cycle",
+          "cycle_started_at",
+          "retry_deadline",
+          "next_attempt_at",
+          "terminal_reason",
+          "active_attempt_id",
+          "active_attempt_started_at",
+          "lease_expires_at",
+          "created_at",
+          "updated_at"
+        ],
+        "additionalProperties": false
+      },
+      "Attempt": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "project_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "delivery_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "cycle": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "attempt_number": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "finished_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "duration_ms": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "status_code": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 100,
+            "maximum": 999
+          },
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "succeeded",
+              "retryable",
+              "terminal",
+              "interrupted"
+            ]
+          },
+          "error_code": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "response_truncated": {
+            "type": "boolean"
+          },
+          "response_read_error": {
+            "type": "boolean"
+          },
+          "delivery_state": {
+            "$ref": "#/components/schemas/DeliveryState"
+          },
+          "terminal_reason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "retry_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "project_id",
+          "delivery_id",
+          "cycle",
+          "attempt_number",
+          "started_at",
+          "finished_at",
+          "duration_ms",
+          "status_code",
+          "outcome",
+          "error_code",
+          "response_truncated",
+          "response_read_error",
+          "delivery_state",
+          "terminal_reason",
+          "retry_at"
+        ],
+        "additionalProperties": false
+      },
+      "ReplayRequest": {
+        "type": "object",
+        "properties": {
+          "expected_cycle": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2147483647
+          }
+        },
+        "required": [
+          "expected_cycle"
+        ],
+        "additionalProperties": false
+      },
+      "ReplayReceipt": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "delivery_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "from_cycle": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "cycle": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "retry_deadline": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "delivery_id",
+          "from_cycle",
+          "cycle",
+          "created_at",
+          "retry_deadline"
+        ],
+        "additionalProperties": false
+      },
+      "APIKey": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "project_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "prefix": {
+            "type": "string"
+          },
+          "environment": {
+            "type": "string",
+            "enum": [
+              "dev",
+              "live"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "expired",
+              "revoked"
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "expires_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "revoked_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "revokes_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "rotated_to_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "created_by_api_key_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "revoked_by_api_key_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "created_by_user_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "revoked_by_user_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "id",
+          "project_id",
+          "name",
+          "prefix",
+          "environment",
+          "status",
+          "created_at",
+          "expires_at",
+          "revoked_at",
+          "revokes_at",
+          "rotated_to_id",
+          "created_by_api_key_id",
+          "revoked_by_api_key_id",
+          "created_by_user_id",
+          "revoked_by_user_id"
+        ],
+        "additionalProperties": false
+      },
+      "CreateAPIKey": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "description": "Trimmed; control characters are rejected."
+          },
+          "environment": {
+            "type": "string",
+            "enum": [
+              "dev",
+              "live"
+            ]
+          },
+          "expires_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Optional future expiry; null or omitted means no expiry."
+          }
+        },
+        "required": [
+          "name",
+          "environment"
+        ],
+        "additionalProperties": false
+      },
+      "APIKeyReceipt": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "$ref": "#/components/schemas/APIKey"
+          },
+          "api_key": {
+            "type": "string",
+            "pattern": "^ch_(dev|live)_[0-9a-f]{64}$",
+            "description": "One-time credential. Never print or log it."
+          }
+        },
+        "required": [
+          "key",
+          "api_key"
+        ],
+        "additionalProperties": false
+      },
+      "APIKeyRotationReceipt": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "$ref": "#/components/schemas/APIKey"
+          },
+          "previous_key_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "previous_key_revokes_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "api_key": {
+            "type": "string",
+            "pattern": "^ch_(dev|live)_[0-9a-f]{64}$",
+            "description": "One-time replacement credential. Never print or log it."
+          }
+        },
+        "required": [
+          "key",
+          "previous_key_id",
+          "previous_key_revokes_at",
+          "api_key"
+        ],
+        "additionalProperties": false
+      },
+      "EventSummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "project_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "type": {
+            "$ref": "#/components/schemas/EventType"
+          },
+          "delivery_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "project_id",
+          "type",
+          "delivery_count",
+          "created_at"
+        ],
+        "additionalProperties": false
+      },
+      "Event": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "project_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "type": {
+            "$ref": "#/components/schemas/EventType"
+          },
+          "delivery_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "payload": {
+            "description": "Complete original event envelope, containing type and data; not just data."
+          }
+        },
+        "required": [
+          "id",
+          "project_id",
+          "type",
+          "delivery_count",
+          "created_at",
+          "payload"
+        ],
+        "additionalProperties": false
+      },
+      "EndpointPage": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Endpoint"
+            }
+          },
+          "next_cursor": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Opaque cursor. Null means the final page. Repeat the same filters when continuing."
+          }
+        },
+        "required": [
+          "data",
+          "next_cursor"
+        ],
+        "additionalProperties": false
+      },
+      "EventPage": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EventSummary"
+            }
+          },
+          "next_cursor": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Opaque cursor. Null means the final page. Repeat the same filters when continuing."
+          }
+        },
+        "required": [
+          "data",
+          "next_cursor"
+        ],
+        "additionalProperties": false
+      },
+      "DeliveryPage": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Delivery"
+            }
+          },
+          "next_cursor": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Opaque cursor. Null means the final page. Repeat the same filters when continuing."
+          }
+        },
+        "required": [
+          "data",
+          "next_cursor"
+        ],
+        "additionalProperties": false
+      },
+      "AttemptPage": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Attempt"
+            }
+          },
+          "next_cursor": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Opaque cursor. Null means the final page. Repeat the same filters when continuing."
+          }
+        },
+        "required": [
+          "data",
+          "next_cursor"
+        ],
+        "additionalProperties": false
+      },
+      "APIKeyPage": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/APIKey"
+            }
+          },
+          "next_cursor": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Opaque cursor. Null means the final page. Repeat the same filters when continuing."
+          }
+        },
+        "required": [
+          "data",
+          "next_cursor"
+        ],
+        "additionalProperties": false
+      }
+    }
+  }
+}

@@ -18,6 +18,7 @@ export async function createOrganization(
   if (!name) {
     return {
       error: "Enter a name with 1–100 characters and no control characters.",
+      code: "invalid_name",
     };
   }
 
@@ -43,6 +44,7 @@ export async function createOrganization(
       error: error instanceof ApiError
         ? error.message
         : "Couldn't create the organization. Please try again.",
+      code: error instanceof ApiError ? error.code : undefined,
     };
   }
 

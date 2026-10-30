@@ -65,6 +65,9 @@ export function OnboardingForm({
               placeholder={isProject ? "e.g. Billing service" : "e.g. Acme"}
               autoComplete={isProject ? "off" : "organization"}
               disabled={pending}
+              aria-invalid={
+                state.code === "invalid_name" || state.code === "project_name_exists"
+              }
               aria-describedby={state.error ? id + "-error" : undefined}
               required
             />

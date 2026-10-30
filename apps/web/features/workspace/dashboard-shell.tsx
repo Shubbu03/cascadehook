@@ -10,8 +10,9 @@ import {
 } from "@phosphor-icons/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useState } from "react";
 import { Brand } from "@/components/brand";
+import { Modal } from "@/components/modal";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import { SidebarNavigation } from "./sidebar-navigation";
 import { useWorkspaceSelection } from "./use-workspace-selection";
@@ -142,21 +143,17 @@ function MobileNavigation({
   children: React.ReactNode;
   onClose: () => void;
 }) {
-  const dialog = useRef<HTMLDialogElement>(null);
   const id = useId();
   useEffect(() => {
-    const element = dialog.current;
     const overflow = document.body.style.overflow;
     const desktop = window.matchMedia("(min-width: 901px)");
     const closeOnDesktop = (event: MediaQueryListEvent) => {
       if (event.matches) onClose();
     };
-    element?.showModal();
     document.body.style.overflow = "hidden";
     window.addEventListener("popstate", onClose);
     desktop.addEventListener("change", closeOnDesktop);
     return () => {
-      element?.close();
       document.body.style.overflow = overflow;
       window.removeEventListener("popstate", onClose);
       desktop.removeEventListener("change", closeOnDesktop);
@@ -164,28 +161,14 @@ function MobileNavigation({
   }, [onClose]);
 
   return (
-    <dialog
-      ref={dialog}
+    <Modal
       className="dashboard-navigation-dialog"
       aria-labelledby={id}
-      onCancel={(event) => {
-        event.preventDefault();
-        onClose();
-      }}
+      onDismiss={onClose}
       onClick={(event) => {
         if ((event.target as Element).closest("a")) {
           onClose();
-          return;
         }
-        if (event.target !== event.currentTarget) return;
-        const rect = event.currentTarget.getBoundingClientRect();
-        if (
-          event.clientX < rect.left ||
-          event.clientX > rect.right ||
-          event.clientY < rect.top ||
-          event.clientY > rect.bottom
-        )
-          onClose();
       }}
     >
       <h2 id={id} className="sr-only">
@@ -213,6 +196,6 @@ function MobileNavigation({
         <span>Appearance</span>
         <ThemeSwitcher />
       </div>
-    </dialog>
+    </Modal>
   );
 }

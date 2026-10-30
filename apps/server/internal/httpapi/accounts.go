@@ -303,6 +303,8 @@ func (api *api) accountProblem(w http.ResponseWriter, r *http.Request, err error
 		writeProblem(w, r, http.StatusForbidden, "insufficient_permissions")
 	case errors.Is(err, accounts.ErrInvalidName):
 		writeProblem(w, r, http.StatusUnprocessableEntity, "invalid_name")
+	case errors.Is(err, accounts.ErrProjectNameTaken):
+		writeProblem(w, r, http.StatusConflict, "project_name_exists")
 	case errors.Is(err, accounts.ErrInvalidRole):
 		writeProblem(w, r, http.StatusUnprocessableEntity, "invalid_role")
 	case errors.Is(err, accounts.ErrUserNotFound):

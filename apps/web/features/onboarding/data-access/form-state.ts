@@ -1,4 +1,4 @@
-export type NameActionState = { error: string | null };
+export type NameActionState = { error: string | null; code?: string };
 
 export function setupName(value: FormDataEntryValue | null) {
   if (typeof value !== "string") return null;
