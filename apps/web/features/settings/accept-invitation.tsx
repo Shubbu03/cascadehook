@@ -3,7 +3,7 @@
 import { useAuth } from "@clerk/nextjs";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type SubmitEvent } from "react";
 import { AmbientBackground } from "@/components/ambient-background";
 import { Brand } from "@/components/brand";
 import { FormSkeleton } from "@/features/workspace/skeletons";
@@ -40,7 +40,7 @@ export function AcceptInvitation() {
     };
   }, [isSignedIn, userId]);
 
-  async function accept(event: FormEvent<HTMLFormElement>) {
+  async function accept(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     if (pending.current) return;
     const token = invitationToken(

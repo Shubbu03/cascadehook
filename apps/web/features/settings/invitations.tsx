@@ -8,7 +8,7 @@ import {
   useMutation,
   useQueryClient,
 } from "@tanstack/react-query";
-import { useState, type FormEvent } from "react";
+import { useState, type SubmitEvent } from "react";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { OneTimeSecret, useOneTimeSecret } from "@/components/one-time-secret";
 import { LoadMore, QueryState, RefreshButton } from "@/components/query-state";
@@ -69,7 +69,7 @@ export function InvitationManagement({
     revoke.isPending;
   const items = list.data?.pages.flatMap((page) => page.data) ?? [];
 
-  function invite(event: FormEvent<HTMLFormElement>) {
+  function invite(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     const email = String(form.get("email") ?? "").trim();

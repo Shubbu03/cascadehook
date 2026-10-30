@@ -8,7 +8,7 @@ import {
   useMutation,
   useQueryClient,
 } from "@tanstack/react-query";
-import { useState, type FormEvent } from "react";
+import { useState, type SubmitEvent } from "react";
 import { PageHeader } from "@/components/page-header";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { CopyButton } from "@/components/copy-button";
@@ -130,7 +130,7 @@ function KeyManagement() {
     });
   }
 
-  function create(event: FormEvent<HTMLFormElement>) {
+  function create(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     const name = String(form.get("name") ?? "").trim();

@@ -6,7 +6,7 @@ import { useAuth } from "@clerk/nextjs";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState, type FormEvent } from "react";
+import { useState, type SubmitEvent } from "react";
 import { PageHeader } from "@/components/page-header";
 import { LoadMore, QueryState, RefreshButton } from "@/components/query-state";
 import { useProject, projectHref } from "@/features/projects/project-workspace";
@@ -62,7 +62,7 @@ export function DeliveryList() {
   const items = list.data?.pages.flatMap((page) => page.data) ?? [];
   const filtered = Object.keys(filters).length > 0;
 
-  function apply(event: FormEvent<HTMLFormElement>) {
+  function apply(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     const params = new URLSearchParams();

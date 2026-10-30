@@ -12,7 +12,7 @@ import {
 } from "@phosphor-icons/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
-import { useEffect, useId, useState, type FormEvent } from "react";
+import { useEffect, useId, useState, type SubmitEvent } from "react";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { CopyButton } from "@/components/copy-button";
 import { PageHeader } from "@/components/page-header";
@@ -165,7 +165,7 @@ export function EndpointDetail({ endpointId }: { endpointId: string }) {
     editing || save.isPending || verify.isPending || toggle.isPending ||
     secretBusy || remove.isPending;
 
-  function submitChanges(event: FormEvent<HTMLFormElement>) {
+  function submitChanges(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!draft || !canManage || save.isPending) return;
     const result = validateEndpointDraft(draft);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState, type FormEvent } from "react";
+import { useId, useState, type SubmitEvent } from "react";
 import { ApiError } from "@/lib/api";
 
 export function NameForm({
@@ -22,7 +22,7 @@ export function NameForm({
   const [name, setName] = useState("");
   const [validation, setValidation] = useState<string | null>(null);
 
-  function submit(event: FormEvent<HTMLFormElement>) {
+  function submit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     const trimmed = name.trim();
     if (!trimmed || [...trimmed].length > 100 || /\p{Cc}/u.test(trimmed)) {

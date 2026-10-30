@@ -4,7 +4,7 @@ import { useAuth, useClerk } from "@clerk/nextjs";
 import { ArrowRightIcon } from "@phosphor-icons/react";
 import { useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
-import { useEffect, useId, useRef, useState, type FormEvent } from "react";
+import { useEffect, useId, useRef, useState, type SubmitEvent } from "react";
 import { projectHref, useProject } from "@/features/projects/project-workspace";
 import { useSessionUserId } from "@/features/workspace/session";
 import {
@@ -87,7 +87,7 @@ export function PublishEventForm({
     setErrors({});
   }
 
-  async function submit(event: FormEvent<HTMLFormElement>) {
+  async function submit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     if (pending.current || blockedReason || state.status === "accepted") return;
     let publication: Publication;

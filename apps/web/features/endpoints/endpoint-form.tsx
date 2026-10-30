@@ -3,7 +3,7 @@
 import { useAuth } from "@clerk/nextjs";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { useId, useState, type FormEvent } from "react";
+import { useId, useState, type SubmitEvent } from "react";
 import { useProject, projectHref } from "@/features/projects/project-workspace";
 import { useSessionUserId } from "@/features/workspace/session";
 import { apiRequest } from "@/lib/api";
@@ -69,7 +69,7 @@ export function EndpointForm({
     },
   });
 
-  function submit(event: FormEvent<HTMLFormElement>) {
+  function submit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     if (save.isPending || !allowed) return;
     const result = validateEndpointDraft({ url, eventTypes: types });

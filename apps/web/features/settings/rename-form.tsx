@@ -2,7 +2,7 @@
 
 import { useAuth } from "@clerk/nextjs";
 import { useMutation } from "@tanstack/react-query";
-import { useId, useState, type FormEvent } from "react";
+import { useId, useState, type SubmitEvent } from "react";
 import { ApiError, apiRequest } from "@/lib/api";
 import { notify } from "@/lib/notify";
 
@@ -26,7 +26,7 @@ export function RenameForm({
     onSuccess: () => notify("Name updated.", "success"),
     onSettled: saved,
   });
-  function submit(event: FormEvent<HTMLFormElement>) {
+  function submit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     const value = String(
       new FormData(event.currentTarget).get("name") ?? "",

@@ -6,7 +6,7 @@ import { PlusIcon } from "@phosphor-icons/react";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState, type FormEvent } from "react";
+import { useState, type SubmitEvent } from "react";
 import { PageHeader } from "@/components/page-header";
 import { LoadMore, QueryState, RefreshButton } from "@/components/query-state";
 import { eventTypePattern } from "@/features/endpoints/types";
@@ -50,7 +50,7 @@ export function EventList() {
   });
   const items = list.data?.pages.flatMap((page) => page.data) ?? [];
 
-  function apply(event: FormEvent<HTMLFormElement>) {
+  function apply(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     const value = String(
       new FormData(event.currentTarget).get("event_type") ?? "",

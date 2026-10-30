@@ -11,7 +11,7 @@ import {
 import { useInfiniteQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useId, useState, type FormEvent } from "react";
+import { useId, useState, type SubmitEvent } from "react";
 import { PageHeader } from "@/components/page-header";
 import { useProject, projectHref } from "@/features/projects/project-workspace";
 import { ConnectionError } from "@/features/workspace/connection-error";
@@ -74,7 +74,7 @@ export function EndpointList() {
     }
   }
 
-  function applyFilter(event: FormEvent<HTMLFormElement>) {
+  function applyFilter(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     const value = draftType.trim();
     if (value && !eventTypePattern.test(value)) {

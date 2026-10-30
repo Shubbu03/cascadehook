@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation } from "@tanstack/react-query";
-import { useId, useState, type FormEvent } from "react";
+import { useId, useState, type SubmitEvent } from "react";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { ApiError } from "@/lib/api";
 
@@ -40,7 +40,7 @@ export function DeleteAction({
   const uncertain =
     remove.error instanceof ApiError &&
     (remove.error.status === 0 || remove.error.status >= 500);
-  function review(event: FormEvent<HTMLFormElement>) {
+  function review(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     if (typed !== confirmationText || remove.isPending) return;
     remove.reset();

@@ -19,7 +19,7 @@ import {
 } from "@tanstack/react-query";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useId, useState, type FormEvent } from "react";
+import { useId, useState, type SubmitEvent } from "react";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { CopyButton } from "@/components/copy-button";
 import { PageHeader } from "@/components/page-header";
@@ -187,7 +187,7 @@ export function DeliveryDetail({ deliveryId }: { deliveryId: string }) {
   const currentEndpoint = endpoint.isSuccess ? endpoint.data : undefined;
   const records = attempts.data?.pages.flatMap((page) => page.data) ?? [];
 
-  function filterCycle(event: FormEvent<HTMLFormElement>) {
+  function filterCycle(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     const value = String(
       new FormData(event.currentTarget).get("cycle") ?? "",
