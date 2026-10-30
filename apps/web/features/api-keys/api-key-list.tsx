@@ -15,7 +15,8 @@ import { CopyButton } from "@/components/copy-button";
 import { OneTimeSecret, useOneTimeSecret } from "@/components/one-time-secret";
 import { LoadMore, QueryState, RefreshButton } from "@/components/query-state";
 import { projectPath, stateClass } from "@/features/activity/types";
-import { useProject } from "@/features/projects/project-workspace";
+import { projectHref, useProject } from "@/features/projects/project-workspace";
+import { AccessRedirect } from "@/features/workspace/access-redirect";
 import { useSessionUserId } from "@/features/workspace/session";
 import type { Page } from "@/features/workspace/types";
 import { apiRequest } from "@/lib/api";
@@ -25,13 +26,11 @@ import { publicationExample } from "@/lib/example";
 import { validateKeyReceipt, type APIKey, type KeyReceipt } from "./types";
 
 export function APIKeyList() {
-  const { canManage } = useProject();
+  const { project, canManage } = useProject();
   return canManage ? (
     <KeyManagement />
   ) : (
-    <div className="notice">
-      API keys are available to organization owners and admins.
-    </div>
+    <AccessRedirect href={projectHref(project.id)} />
   );
 }
 

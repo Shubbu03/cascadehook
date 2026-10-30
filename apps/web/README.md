@@ -66,6 +66,12 @@ the last project shows an empty workspace without restarting onboarding. Owners
 and admins manage resources; members see permitted reads. The API checks the
 role again for every request.
 
+Members who open project API Keys or Usage URLs are redirected to that project's
+Overview. Organization Usage redirects to the organization's project dashboard.
+Redirects replace the denied URL in history and show a permission toast on
+arrival. The temporary notification marker is removed so refreshing does not
+repeat the toast. Shared settings pages retain their permitted read-only views.
+
 Event publication preserves JSON payload bytes and limits the complete envelope
 to 256 KiB. Explicit retries reuse the frozen payload and idempotency key;
 acceptance is shown separately from delivery success. Delivery details show
@@ -117,7 +123,10 @@ Verify manually:
 
 1. Landing/docs navigation, code copying, and receiver downloads.
 2. Sign-up/sign-in, interrupted onboarding, organization/project switching, and
-   access with owner/admin/member roles.
+   access with owner/admin/member roles. As a member, open project API Keys,
+   project Usage, and organization Usage URLs directly; check the destination,
+   single permission toast, refresh, and Back behavior. Owners and admins should
+   retain access to those pages.
 3. Receiver registration, signing-secret disclosure, verification, enabling,
    event publication, attempt history, and replay.
 4. Key rotation/revocation, membership changes, invitation acceptance, and

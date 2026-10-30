@@ -6,7 +6,8 @@ import { useQuery } from "@tanstack/react-query";
 import { PageHeader } from "@/components/page-header";
 import { QueryState, RefreshButton } from "@/components/query-state";
 import { projectPath } from "@/features/activity/types";
-import { useProject } from "@/features/projects/project-workspace";
+import { projectHref, useProject } from "@/features/projects/project-workspace";
+import { AccessRedirect } from "@/features/workspace/access-redirect";
 import { useSessionUserId } from "@/features/workspace/session";
 import { apiRequest } from "@/lib/api";
 import {
@@ -17,13 +18,11 @@ import {
 import type { Usage } from "./types";
 
 export function ProjectUsage() {
-  const { canManage } = useProject();
+  const { project, canManage } = useProject();
   return canManage ? (
     <UsageContent />
   ) : (
-    <p className="notice">
-      Usage is available to organization owners and admins.
-    </p>
+    <AccessRedirect href={projectHref(project.id)} />
   );
 }
 

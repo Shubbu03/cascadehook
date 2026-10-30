@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
 import { QueryState, RefreshButton } from "@/components/query-state";
+import { AccessRedirect } from "@/features/workspace/access-redirect";
 import {
   organizationQuery,
   organizationHref,
@@ -36,9 +37,7 @@ export function OrganizationUsage({
       <QueryState query={organization} loading={<PageSkeleton variant="usage" />}>
         {organization.data &&
           (organization.data.role === "member" ? (
-            <p className="notice">
-              Usage is available to organization owners and admins.
-            </p>
+            <AccessRedirect href={organizationHref(organizationId)} />
           ) : (
             <OrganizationUsageContent organizationId={organizationId} />
           ))}
