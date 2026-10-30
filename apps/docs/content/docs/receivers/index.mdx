@@ -1,0 +1,37 @@
+---
+title: Build a receiver
+description: Working Node.js and Bun receivers that verify signatures before accepting events.
+---
+
+The examples share one receiver implementation with runtime-specific adapters.
+Save `receiver-core.mjs` and one adapter in the same directory. No packages
+are required.
+
+<Cards>
+  <Card title="Node.js receiver" description="Run the reference receiver with Node.js 22 or later." href="/docs/receivers/node" />
+  <Card title="Bun receiver" description="Run the reference receiver with Bun 1.3 or later." href="/docs/receivers/bun" />
+</Cards>
+
+## What the examples do
+
+- Validate the raw request body's signature before parsing JSON.
+- Enforce a five-minute timestamp tolerance and a 256 KiB request limit.
+- Answer the signed ownership challenge with the required proof.
+- Append ordinary events to a local inbox and sync it before returning `204`.
+
+## Durable intake
+
+Ordinary events are written to `received-events.ndjson`. Set `RECEIPTS_FILE`
+to a writable path on persistent storage. Verification challenges return
+the ownership proof and are not written to the inbox.
+
+This is a single-process reference inbox. Process records idempotently using
+`webhook_id`, rotate or drain the file, and keep it out of source control.
+For multiple receiver processes, use a transactional database or durable queue
+before acknowledging the webhook.
+
+## Shared source
+
+<a href="/examples/receiver-core.mjs" download>Download receiver-core.mjs</a>
+
+<ReceiverSource file="receiver-core.mjs" />

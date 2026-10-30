@@ -1,0 +1,43 @@
+---
+title: Organizations and projects
+description: Understand the workspace that owns your endpoints, events, deliveries, and credentials.
+---
+
+## Organizations
+
+An organization groups projects, memberships, and resource quotas. Owners and
+admins can manage project resources. The API checks authorization on every request.
+
+## Projects
+
+A project contains its own endpoints, events, delivery history, and API keys.
+Use separate projects when you need separate resources or access boundaries.
+
+Active project names are unique within an organization, ignoring case and
+surrounding whitespace. Different organizations can use the same name.
+Project IDs remain stable when a project is renamed.
+
+## API key environments
+
+Development and Live are labels on project API keys. They currently grant the
+same project permissions and do not create isolated environments.
+
+## Endpoints
+
+An endpoint is an HTTPS destination with a set of exact-match event type
+subscriptions. Registration starts with delivery disabled. Configure its
+signing secret, verify ownership, and enable it before publishing an event
+you expect it to receive.
+
+Changing the destination URL clears verification and disables delivery.
+See [receiver verification](/docs/security/verification).
+
+## Paused and deleted resources
+
+A paused project cannot carry out blocked integration operations. Automated
+integrations should read `GET /v1/project-status` and check the project ID and
+suspension state before making changes.
+
+Deletion is a requested operation followed by backend cleanup. Inspect the
+current resource state after an uncertain response rather than assuming that
+an operation did or did not complete.

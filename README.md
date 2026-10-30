@@ -11,6 +11,7 @@ Requires Bun 1.3.13, Go 1.27.3, PostgreSQL, and a Clerk application.
 bun install --frozen-lockfile
 cp .env.example .env
 cp apps/web/.env.example apps/web/.env.local
+cp apps/docs/.env.example apps/docs/.env.local
 ```
 
 Configure the database, signing encryption key, and Clerk settings using the
@@ -30,9 +31,12 @@ Start each process in a separate terminal:
 bun run dev:api
 bun run dev:worker
 bun run dev:web
+bun run dev:docs
 ```
 
 Open `http://localhost:3000` to create your account and first project.
+Documentation runs separately at `http://localhost:3001/docs`. Configure the
+docs API origin using [its environment example](apps/docs/.env.example).
 
 ## Commands
 
@@ -40,6 +44,8 @@ Open `http://localhost:3000` to create your account and first project.
 | --- | --- |
 | `bun run check` | Lint, type checking, Go vet, and Go build |
 | `bun run build:web` | Production frontend build |
+| `bun run dev:docs` | Documentation development server on port 3001 |
+| `bun run build:docs` | Production documentation build |
 | `bun run db:cleanup` | Run retention and pending deletion cleanup |
 
 ## Deployment
@@ -50,6 +56,8 @@ API and schedule `db:cleanup` regularly. The API exposes `/healthz` and `/readyz
 for health checks.
 
 See [frontend documentation](apps/web/README.md) for dashboard configuration.
+The standalone [docs app](apps/docs/README.md) has its own build and deployment.
+Set `NEXT_PUBLIC_DOCS_URL` on the web app to its public root URL when deploying.
 
 ## Agent-assisted integration
 
@@ -60,7 +68,7 @@ your coding agent. The prompt contains context and documentation links without
 credentials. Keys currently grant project-wide access; Development and Live
 labels have identical permissions.
 
-The web app publishes a [Markdown agent guide](apps/web/public/docs/agents.md)
+The docs app publishes a [Markdown agent guide](apps/docs/content/docs/agents/integration.md)
 at `/docs/agents.md` and the project API schema at `/openapi.json`. The schema
 uses `NEXT_PUBLIC_API_BASE_URL` for the API server address and returns 503 if
 that configuration is missing or invalid. The human guide is at `/docs/agents`.

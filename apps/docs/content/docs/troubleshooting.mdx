@@ -1,0 +1,55 @@
+---
+title: Troubleshooting
+description: Find the next useful check when setup, publication, or delivery fails.
+---
+
+## Receiver verification fails
+
+Check that the destination is public HTTPS and does not redirect. Install the
+current signing secret, restart the receiver, verify the raw request signature,
+and return the signed challenge proof. An empty `200` response does not pass.
+Wait 30 seconds before another verification attempt and respect `Retry-After`.
+
+## No delivery appears
+
+Check the publication receipt's `delivery_count`. The endpoint must have been
+enabled, eligible, and subscribed to the exact event type when publication
+occurred. There are no wildcard subscriptions. After correcting setup, publish
+a new event with a new idempotency key.
+
+## Signatures fail
+
+Use the endpoint signing secret, not the project API key. Verify the original
+body bytes before JSON parsing or reserialization. Check the timestamp, secret
+decoding, supported signatures, and constant-time comparison against the
+[working receiver](/docs/receivers).
+
+## Publication returns a conflict
+
+An idempotency key can only be reused for the exact same event body. Retry an
+uncertain publication with its original serialized body and original key.
+Use a new key for a new business event.
+
+## The API returns `401` or the wrong project
+
+Check the configured API origin and locally stored project API key. Read
+`GET /v1/project-status` and compare `project_id` before making any changes.
+Do not substitute the documentation site's host for the API host.
+
+## Replay is unavailable
+
+Replay requires a completed successful or failed delivery and an enabled,
+verified endpoint with a signing secret. Read the current delivery cycle before
+requesting replay. A changed cycle requires reviewing fresh state.
+
+## A secret request timed out
+
+Inspect endpoint state before retrying. Secret provisioning also rotates an
+existing secret, and disclosed values cannot be retrieved later. Do not
+automatically repeat the action or rotate another secret during the grace period.
+
+## The receiver accepted an event but work ran twice
+
+Webhook delivery is at least once. Deduplicate durable business operations by
+`Webhook-Id`, including across retries and manual replay. The reference inbox
+may legitimately contain duplicate receipts.

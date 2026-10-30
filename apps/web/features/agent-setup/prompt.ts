@@ -1,3 +1,5 @@
+import { docsHref } from "@/lib/docs";
+
 type SetupContext = {
   project: { id: string; name: string };
   apiBaseURL: string;
@@ -23,9 +25,9 @@ export function buildSetupPrompt({ project, apiBaseURL, siteOrigin }: SetupConte
     project_id: project.id,
     project_name: project.name,
     api_base_url: apiBaseURL,
-    guide_url: new URL("/docs/agents.md", siteOrigin).href,
-    openapi_url: new URL("/openapi.json", siteOrigin).href,
-    receiver_examples_url: new URL("/docs/receivers", siteOrigin).href,
+    guide_url: new URL(docsHref("/docs/agents.md"), siteOrigin).href,
+    openapi_url: new URL(docsHref("/openapi.json"), siteOrigin).href,
+    receiver_examples_url: new URL(docsHref("/docs/receivers"), siteOrigin).href,
   }, null, 2);
 
   return `Help me integrate Cascadehook into this application and confirm a successful test webhook delivery.

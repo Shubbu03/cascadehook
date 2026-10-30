@@ -1,0 +1,36 @@
+---
+title: Errors, limits, and pagination
+description: Handle API problems and traverse resources without missing pages.
+---
+
+## Problem responses
+
+Errors use `application/problem+json` and a machine-readable `code`.
+Handle the code and HTTP status together rather than matching display text.
+
+| Status | Typical response |
+| --- | --- |
+| `401` | Check the configured credential |
+| `403` | Check project availability and permissions |
+| `404` / `410` | Refresh the resource's current state |
+| `409` | Resolve the documented state or idempotency conflict |
+| `422` | Correct the input described by the problem code |
+| `429` | Wait according to `Retry-After` |
+| `5xx` | Inspect current state before retrying an uncertain mutation |
+
+Operation-specific codes and responses are listed in the generated reference.
+
+## Bounded retries
+
+Respect `Retry-After`. Use bounded retries and avoid tight polling loops.
+After a mutation times out, inspect resource state before repeating it.
+For publication, preserve the exact payload and idempotency key.
+
+## Cursor pagination
+
+List responses contain `data` and `next_cursor`. Continue with the returned
+cursor until `next_cursor` is `null`. Preserve your filters when requesting
+the next page. Treat cursors as opaque values.
+
+Do not assume the first page contains every endpoint, delivery, event, or key.
+This matters when deciding whether a suitable resource already exists.

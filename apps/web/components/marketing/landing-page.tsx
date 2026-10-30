@@ -16,6 +16,7 @@ import { CopyButton } from "@/components/copy-button";
 import { MobileNav } from "@/components/marketing/mobile-nav";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import { publicationExample } from "@/lib/example";
+import { docsHref } from "@/lib/docs";
 
 function DeliveryExample() {
   return (
@@ -111,7 +112,7 @@ export function LandingPage() {
         <Brand href={null} />
         <nav className="desktop-nav" aria-label="Main navigation">
           <a href="#how-it-works">How it works</a>
-          <Link href="/docs/quickstart">Quickstart</Link>
+          <a href={docsHref("/docs/quickstart")}>Quickstart</a>
         </nav>
         <div className="header-actions">
           <ThemeSwitcher />
@@ -146,10 +147,10 @@ export function LandingPage() {
                 Get started
                 <ArrowRightIcon size={18} aria-hidden="true" />
               </Link>
-              <Link href="/docs/quickstart" className="button button-quiet">
+              <a href={docsHref("/docs/quickstart")} className="button button-quiet">
                 View quickstart
                 <ArrowDownIcon size={16} aria-hidden="true" />
-              </Link>
+              </a>
             </div>
           </div>
           <DeliveryExample />

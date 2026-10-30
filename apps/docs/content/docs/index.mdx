@@ -1,0 +1,38 @@
+---
+title: Webhooks, delivered.
+description: Everything you need to send signed webhooks, build a reliable receiver, and understand every delivery.
+---
+
+<p className="docs-eyebrow">Cascadehook / Developer documentation</p>
+
+Cascadehook delivers your application's events to HTTPS endpoints. Publish an
+event once, route it by event type, and inspect the attempts made to each receiver.
+
+<Cards>
+  <Card title="Send your first webhook" description="Connect a receiver and confirm a successful delivery." href="/docs/quickstart" />
+  <Card title="Explore the project API" description="Request formats, authentication, and endpoint reference." href="/docs/api" />
+  <Card title="Build your receiver" description="Working Node.js and Bun examples with signature verification." href="/docs/receivers" />
+  <Card title="Set up with an AI agent" description="Connect your coding agent using project context and the API." href="/docs/agents" />
+</Cards>
+
+## How the pieces fit
+
+1. **Your application publishes an event** using a project API key.
+2. **Cascadehook creates deliveries** for enabled, subscribed endpoints.
+3. **Your receiver verifies the signature** and durably accepts the event.
+4. **You inspect the result** in the dashboard or through the API.
+
+An event being accepted and a webhook being delivered are separate outcomes.
+An HTTP `202` confirms publication. A delivery marked `succeeded` confirms that
+the receiver acknowledged it.
+
+## Choose your next step
+
+New to Cascadehook? Start with the [quickstart](/docs/quickstart).
+Already integrating? Read about [events and idempotency](/docs/concepts/events),
+[receiver signatures](/docs/security/signatures), and
+[retries and replay](/docs/concepts/deliveries).
+
+For automated integrations, the [agent protocol](/docs/agents/integration),
+[Markdown guide](/docs/agents.md), [OpenAPI schema](/openapi.json), and
+[documentation index](/llms.txt) are available without signing in.

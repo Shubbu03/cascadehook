@@ -1,0 +1,75 @@
+---
+title: Send your first webhook
+description: From a new project to a confirmed delivery, one step at a time.
+---
+
+Using a coding agent? Follow the [AI setup guide](/docs/agents) after creating your project.
+
+## 1. Create a project [#project]
+
+Create your Cascadehook account, name your organization, and create a project
+in the dashboard. Its Overview tracks setup using the project's current data.
+
+## 2. Prepare a receiver [#receiver]
+
+Download the shared receiver and either the [Node.js](/docs/receivers/node) or
+[Bun](/docs/receivers/bun) adapter. They validate signatures, answer the signed
+ownership challenge, and save ordinary events before acknowledging them.
+
+Expose `/webhooks` at a public HTTPS URL you control. The examples listen over
+HTTP locally; your host or reverse proxy provides HTTPS. Private addresses,
+loopback destinations, and redirects are rejected by Cascadehook.
+
+Start the receiver after obtaining its signing secret in the next step.
+
+## 3. Connect the endpoint [#endpoint]
+
+In your project's **Endpoints** page:
+
+1. Register the receiver URL and subscribe to `invoice.paid`.
+2. Generate a signing secret and save its one-time value as
+   `CASCADEHOOK_SIGNING_SECRET` in the receiver's environment.
+3. Start or restart the receiver with that secret.
+4. Select **Verify receiver**. The receiver must return the signed ownership proof;
+   an empty `200` response does not pass verification.
+5. Explicitly enable delivery after verification succeeds.
+
+The signing secret verifies incoming webhooks. It is separate from the project
+API key your application uses to publish events.
+
+## 4. Publish an event [#publish]
+
+In Overview, select **Publish event**, choose `invoice.paid`, and provide a
+JSON payload such as `{"invoice_id":"inv_1024"}`. Dashboard publishing uses
+your signed-in account.
+
+To publish from your application or terminal, create a project API key in
+**API keys**, save its one-time value, and replace the placeholders below.
+
+<PublishExample />
+
+A `202 Accepted` response means the event is saved. Check the receipt's
+`delivery_count`: zero means no endpoint matched and no delivery was created.
+Acceptance does not confirm delivery success.
+
+Reuse the same idempotency key when retrying the exact same event body.
+Use a new key for a new event. Keys remain idempotent for 24 hours.
+
+## 5. Confirm delivery [#delivery]
+
+Open **Deliveries** in your project and find the delivery for this event.
+Wait for **Succeeded**, then inspect its attempts. The reference receiver
+writes ordinary events to `received-events.ndjson`.
+
+Delivery is at least once. Deduplicate downstream work by `Webhook-Id`;
+retries and manual replay preserve that identifier.
+
+<Callout title="Acceptance is not completion">
+A succeeded delivery confirms that your receiver acknowledged the webhook.
+It does not confirm that downstream business work has finished.
+</Callout>
+
+## If a step fails
+
+Use the [troubleshooting guide](/docs/troubleshooting) for verification errors,
+missing deliveries, signature failures, and retry behavior.

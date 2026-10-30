@@ -1,0 +1,51 @@
+---
+title: Set up with your AI agent
+description: Connect your application using your coding agent, project context, and a verifiable delivery.
+---
+
+## Prepare your project
+
+Create your account, organization, and project in the dashboard. In the
+project's Overview, select **Set up with AI** to obtain the project-specific
+setup prompt.
+
+## Configure credentials locally
+
+Create a project API key and save its one-time value as `CASCADEHOOK_API_KEY`
+in your application's local environment or secret manager. Let your agent
+load it without printing it. Keep the key out of chat and source control.
+
+```bash
+CASCADEHOOK_API_KEY=YOUR_PROJECT_API_KEY
+```
+
+The key grants broad project access. Development and Live labels have the
+same permissions. Choose an appropriate expiry and use an agent you trust.
+
+## Give the agent context
+
+Open your application repository with your coding agent and paste the setup
+prompt. It includes the project ID, API address, and documentation links,
+without credentials.
+
+The agent should verify the key's project identity, inspect your framework,
+and ask which business event and public HTTPS receiver to use. It can then
+prepare server-side publication and receiver code, register an endpoint,
+configure its secret, verify ownership, and publish an agreed event.
+
+Deployment access and a public receiver URL may require your help. Existing
+resources should be inspected and reused before creating replacements.
+
+## Confirm a delivery
+
+Ask for the event ID, delivery ID, and observed delivery state. Confirm that
+the matching delivery succeeded. A `202` receipt confirms acceptance only;
+a succeeded delivery confirms receiver acknowledgement, not downstream work.
+
+## References
+
+- [Complete integration protocol](/docs/agents/integration)
+- [Raw Markdown guide](/docs/agents.md)
+- [OpenAPI schema](/openapi.json)
+- [Documentation index for agents](/llms.txt)
+- [Complete documentation as text](/llms-full.txt)

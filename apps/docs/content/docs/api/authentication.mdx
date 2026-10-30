@@ -1,0 +1,40 @@
+---
+title: Authentication and project identity
+description: Use a project API key and verify which project it authorizes.
+---
+
+## Bearer authentication
+
+Create a project API key in the dashboard and store its one-time value in a
+server environment or secret manager as `CASCADEHOOK_API_KEY`.
+
+```http
+Authorization: Bearer YOUR_PROJECT_API_KEY
+```
+
+Project keys grant broad project access, including endpoint and API key
+management. Development and Live labels currently have the same permissions.
+Choose a suitable expiry and share keys only with trusted integrations.
+
+## Check the project first
+
+Call `GET /v1/project-status` before making changes. Compare the returned
+`project_id` to the intended project and inspect suspension state.
+Stop if the identity differs or authentication fails.
+
+## JSON requests
+
+Use `Content-Type: application/json` when a JSON body is required. Management
+bodies are limited to 64 KiB; event envelopes are limited to 256 KiB.
+
+Actions documented as accepting an empty body must receive an empty body,
+not an empty JSON object. Consult the operation reference before sending a request.
+
+## Credential handling
+
+Keep API keys out of frontend bundles, source control, logs, documentation URLs,
+and chat. A receiver signing secret is a separate credential used to authenticate
+incoming webhook requests.
+
+API key rotation retains the previous credential for five minutes. Save the new
+key, update its consumers, and observe the overlap before revoking old access.

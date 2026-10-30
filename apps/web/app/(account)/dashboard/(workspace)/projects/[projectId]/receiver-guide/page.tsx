@@ -1,10 +1,8 @@
 import type { Metadata } from "next";
-import { ReceiverGuide } from "@/features/endpoints/receiver-guide";
-
-// The authenticated client workspace intentionally gates this page during SSR.
-export const instant = false;
+import { redirect } from "next/navigation";
+import { docsHref } from "@/lib/docs";
 
 export const metadata: Metadata = { title: "Receiver guide" };
 export default function ReceiverGuidePage() {
-  return <ReceiverGuide />;
+  redirect(docsHref("/docs/security/verification"));
 }

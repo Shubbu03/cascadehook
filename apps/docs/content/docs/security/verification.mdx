@@ -1,0 +1,50 @@
+---
+title: Verify receiver ownership
+description: Complete the signed challenge before enabling an endpoint.
+---
+
+## Registration starts disabled
+
+Register an HTTPS URL and its exact-match event subscriptions. Configure the
+endpoint's signing secret on your receiver, then start the receiver.
+
+## The ownership challenge
+
+Verification sends a signed challenge to the destination. The receiver must
+validate the signature and return the required ownership proof. An empty
+`200` response is insufficient.
+
+Both [reference receivers](/docs/receivers) implement this protocol. Verification
+challenges are handled separately from ordinary events and are not added to
+their inbox.
+
+The challenge is an `endpoint.verification` event with `data.endpoint_id` and
+`data.challenge`. After verifying the incoming signature, calculate the proof:
+
+```javascript
+import { createHmac } from "node:crypto";
+
+const key = Buffer.from(signingSecret.slice("whsec_".length), "base64");
+const proof = createHmac("sha256", key)
+  .update("cascadehook.verify.v1." + webhookId + "." + event.data.challenge)
+  .digest("base64");
+
+return Response.json({ proof });
+```
+
+## Verify, then enable
+
+1. Request verification from endpoint settings or the project API.
+2. Confirm that the endpoint reports a verified state.
+3. Explicitly enable delivery.
+
+Successful verification does not automatically enable delivery. Verification
+attempts have a 30-second cooldown; respect `Retry-After` before retrying.
+
+## Destination changes
+
+Changing an endpoint's URL clears verification and disables it. Configure the
+new receiver, complete verification again, and explicitly enable delivery.
+
+Use a public HTTPS endpoint without embedded credentials or fragments. The
+URL must fit within 2,048 bytes. Private destinations and redirects are rejected.

@@ -4,6 +4,8 @@ node_modules/
 dist/
 *.tsbuildinfo
 /apps/web/next-env.d.ts
+/apps/docs/next-env.d.ts
+/apps/docs/.source/
 /apps/web/out/
 /apps/web/build/
 .vercel/

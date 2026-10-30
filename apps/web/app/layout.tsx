@@ -15,7 +15,6 @@ import "./dashboard.css";
 import "./controls.css";
 import "./overview.css";
 import "./agent-setup.css";
-import "./docs.css";
 import "./skeleton.css";
 
 const sans = localFont({

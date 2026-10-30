@@ -1,0 +1,46 @@
+---
+title: Deliveries, retries, and replay
+description: Follow a webhook from queueing through its attempts and final outcome.
+---
+
+## Events and deliveries
+
+An event records what happened. A delivery tracks sending that event to one
+endpoint. Each delivery can have multiple HTTP attempts and replay cycles.
+
+## Delivery states
+
+| State | Meaning |
+| --- | --- |
+| `pending` | Waiting for an eligible attempt |
+| `leased` | A worker has claimed the delivery |
+| `succeeded` | The receiver returned a successful response |
+| `failed` | The delivery reached a terminal failure |
+| `canceled` | Delivery was canceled |
+
+Inspect the attempt history and `terminal_reason` when investigating a failure.
+Attempts expose bounded metadata such as response status and duration; response
+bodies and sensitive response headers are not included.
+
+## Retries
+
+Cascadehook retries eligible failures within the delivery's retry horizon.
+The current limits are eight attempts per cycle and a 72-hour retry horizon.
+Use `next_attempt_at` and `retry_deadline` from the delivery rather than
+predicting the next attempt in your integration.
+
+## Duplicate handling
+
+Delivery is at least once. Your receiver may see a webhook again after a
+timeout, an acknowledgement lost in transit, a retry, or manual replay.
+Persist an idempotency record keyed by `Webhook-Id` with your business work.
+
+## Manual replay
+
+Completed successful or failed deliveries can be replayed when the endpoint
+is enabled, verified, and has a signing secret. Replay creates a new cycle;
+it keeps the same webhook identifier.
+
+Supply the delivery's current cycle when requesting replay. If it changed
+while you were reviewing the delivery, refresh before deciding to replay.
+Replay can repeat downstream business work, so make that decision explicitly.

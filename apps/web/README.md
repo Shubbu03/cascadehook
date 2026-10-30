@@ -1,6 +1,6 @@
 # Cascadehook web
 
-Next.js App Router dashboard and public documentation, managed by the root Bun
+Next.js App Router dashboard and marketing site, managed by the root Bun
 workspace. The frontend uses Clerk sessions and calls the Go API; Go owns
 organization membership, roles, quotas, and resource authorization.
 
@@ -20,6 +20,7 @@ Configure these variables before starting the frontend:
 | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Publishable key for the Clerk application used by Go |
 | `CLERK_SECRET_KEY` | Server-only secret for that application |
 | `NEXT_PUBLIC_API_BASE_URL` | Public Go API origin, without `/v1` or credentials |
+| `NEXT_PUBLIC_DOCS_URL` | Public root URL of `apps/docs`; defaults to port 3001 in development |
 
 The example also configures local sign-in/sign-up routes. Sign-in returns to
 `/dashboard`; sign-up starts at `/onboarding`. Keep secrets out of `NEXT_PUBLIC_`
@@ -29,7 +30,7 @@ changing environment files.
 Configure the API's Clerk issuer/public key and add the exact frontend origin to
 `CLERK_AUTHORIZED_PARTIES`. Local development uses `http://localhost:3000`; update
 the origin if the port changes. Public hosts require HTTPS. Apply migrations
-through `00019` before using the dashboard.
+through `00020` before using the dashboard.
 
 ```sh
 bun run dev:web
@@ -44,8 +45,7 @@ produces a connection error in the authenticated workspace.
 | Route | Purpose |
 | --- | --- |
 | `/` | Landing page with illustrative delivery examples |
-| `/docs/quickstart` | Setup, publication, and troubleshooting |
-| `/docs/receivers` | Copy/download Node.js and Bun receiver examples |
+| `/docs/*`, `/openapi.json` | Compatibility redirects to the standalone docs app |
 | `/sign-in`, `/sign-up` | Clerk account access |
 | `/onboarding/organization`, `/onboarding/project` | First workspace setup |
 | `/dashboard` | Organization and project selection |
@@ -81,11 +81,11 @@ Invitations are shared manually; the UI sends no email. The API uses its Clerk
 secret key to verify the recipient's email. Deletion requests block access and
 queue cleanup; the backend janitor completes local/provider deletion.
 
-Receiver examples share `public/examples/receiver-core.mjs`. They validate
-raw-body signatures, enforce a bounded timestamp, answer ownership challenges,
-and sync ordinary events to a local inbox before acknowledging. These are
-single-process references: deploy behind public HTTPS and adapt persistence to
-your durable queue or database.
+Guides, the OpenAPI contract, and receiver downloads belong to `apps/docs`.
+Help links and AI setup prompts use `NEXT_PUBLIC_DOCS_URL`; old documentation
+URLs redirect there. Set it to the deployed docs root in production. Without
+that configuration, legacy guide/schema requests return an unavailable response
+instead of sending users to a development address.
 
 ## UI conventions
 

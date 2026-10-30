@@ -250,61 +250,6 @@
   .confirmation-dialog .form-actions {
     margin-top: 24px;
   }
-  .receiver-guide .endpoint-section > p {
-    margin-top: 16px;
-    color: var(--muted);
-    font-size: 14px;
-    line-height: 1.85;
-  }
-  .receiver-guide p code,
-  .protocol-fields code {
-    font-size: 0.9em;
-    overflow-wrap: anywhere;
-    color: var(--foreground);
-  }
-  .receiver-guide .code-example {
-    margin-top: 20px;
-  }
-  .receiver-guide .code-example-header {
-    flex-wrap: wrap;
-  }
-  .protocol-fields {
-    margin-block: 24px;
-    display: grid;
-    gap: 18px;
-  }
-  .protocol-fields dt {
-    font:
-      500 12px/1.6 var(--font-plex-mono),
-      monospace;
-    overflow-wrap: anywhere;
-  }
-  .protocol-fields dd {
-    margin: 5px 0 0;
-    color: var(--muted);
-    font-size: 13px;
-    line-height: 1.7;
-  }
-  .protocol-recipe {
-    padding: 16px;
-    border: 1px solid var(--border);
-    border-radius: 7px;
-    background: var(--surface);
-  }
-  .protocol-recipe code {
-    font-size: 12px;
-    overflow-wrap: anywhere;
-  }
-  .guide-code {
-    padding: 18px;
-    margin-block: 20px;
-    overflow-x: auto;
-    font-size: 12px;
-    line-height: 1.9;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    background: var(--surface);
-  }
 }
 @media (max-width: 1050px) {
   .endpoint-row {

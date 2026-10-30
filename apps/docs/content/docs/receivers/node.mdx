@@ -1,0 +1,30 @@
+---
+title: Node.js receiver
+description: Start a signed webhook receiver with Node.js 22 or later.
+---
+
+Save <a href="/examples/receiver-core.mjs" download>receiver-core.mjs</a> and
+<a href="/examples/node-receiver.mjs" download>node-receiver.mjs</a> in the same directory.
+
+```bash
+export CASCADEHOOK_SIGNING_SECRET='YOUR_ENDPOINT_SIGNING_SECRET'
+node node-receiver.mjs
+```
+
+## Configuration
+
+The receiver listens on `http://127.0.0.1:9000/webhooks`. Set `HOST` and `PORT`
+if another listener is needed. Put it behind a public HTTPS host or reverse
+proxy and register that HTTPS URL in Cascadehook.
+
+Set `RECEIPTS_FILE` to choose the persistent inbox path. Restart the receiver
+after installing or changing `CASCADEHOOK_SIGNING_SECRET`.
+
+## Connect the endpoint
+
+Once the receiver is running, [verify ownership and enable delivery](/docs/security/verification).
+Then publish a new event matching its subscriptions and confirm a successful delivery.
+
+## Adapter source
+
+<ReceiverSource file="node-receiver.mjs" />

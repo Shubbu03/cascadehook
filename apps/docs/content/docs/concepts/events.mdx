@@ -1,0 +1,48 @@
+---
+title: Events and idempotency
+description: Publish business events safely and understand how they become deliveries.
+---
+
+## Event format
+
+Publish a JSON object with an event `type` and your business `data`:
+
+```json
+{
+  "type": "invoice.paid",
+  "data": { "invoice_id": "inv_1024" }
+}
+```
+
+Event types use 3–128 lowercase letters, numbers, dots, underscores, or hyphens,
+starting with a letter. The complete JSON envelope must fit within 256 KiB.
+
+## Routing
+
+Cascadehook creates deliveries for eligible endpoints whose subscriptions
+exactly match the event type at publication time. There are no wildcard
+subscriptions. A receipt with `delivery_count: 0` is an accepted event with
+no matching deliveries.
+
+Enabling an endpoint later does not add deliveries to an already accepted
+event. Publish a new event after fixing setup.
+
+## Idempotency
+
+Send an `Idempotency-Key` with each publication. The key must use 1–255 visible
+ASCII characters and is scoped to the project.
+
+- Retry the exact same serialized event body with the same key.
+- Use a new key for a new business event.
+- Reusing a key with a different body returns a conflict.
+- The idempotency window is 24 hours.
+
+Keep the payload and key together while retrying an uncertain publication.
+An acknowledged request must not be resent with a new key simply because
+delivery is still pending.
+
+## Publishing from business operations
+
+Publish server-side after the business data is committed. Keep the project API
+key in a server environment or secret manager. For stronger coordination
+between business writes and publishing, use a durable outbox in your application.

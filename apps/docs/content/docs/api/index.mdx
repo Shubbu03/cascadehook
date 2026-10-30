@@ -1,0 +1,43 @@
+---
+title: Project API reference
+description: Integrate your application using project-scoped endpoints, events, deliveries, and credentials.
+---
+
+The project API operates on an existing project. Create your account,
+organization, and project in the dashboard before using these endpoints.
+
+## Before your first request
+
+Read [authentication and project identity](/docs/api/authentication), then
+[errors and pagination](/docs/api/errors-pagination). Every request goes to
+the Go API origin, which may differ from this documentation site's address.
+
+## Resources
+
+<Cards>
+  <Card title="Publish an event" description="Accept an event and fan out to matching endpoints." href="/docs/api/events/publish-event" />
+  <Card title="Register an endpoint" description="Connect an HTTPS receiver and its event subscriptions." href="/docs/api/endpoints/create-endpoint" />
+  <Card title="Inspect deliveries" description="Follow delivery state and retry scheduling." href="/docs/api/deliveries/list-deliveries" />
+  <Card title="Check project identity" description="Confirm the project authorized by your API key." href="/docs/api/project/get-project-status" />
+</Cards>
+
+| Resource | Purpose |
+| --- | --- |
+| Project | Inspect credential project identity and suspension state |
+| Endpoints | Register receivers, manage subscriptions, configure secrets, verify ownership |
+| Events | Publish and inspect accepted events |
+| Deliveries | Inspect states, attempts, and replay cycles |
+| API keys | Create, inspect, rotate, and revoke project credentials |
+
+Expand the resource groups in the sidebar for generated request and response
+documentation. GET operations also support HEAD as described by the schema.
+
+## OpenAPI
+
+The reference is generated from the same contract served at
+[/openapi.json](/openapi.json). Its API server address comes from the docs
+deployment configuration. If that address is unavailable, the downloadable
+schema returns `503` rather than substituting the documentation host.
+
+Code samples with `YOUR_API_HOST` or `YOUR_PROJECT_API_KEY` contain placeholders.
+Replace them with your configured API origin and a locally stored project key.

@@ -6,6 +6,7 @@ import { useId } from "react";
 import { CopyButton } from "@/components/copy-button";
 import { Modal } from "@/components/modal";
 import { projectHref, useProject } from "@/features/projects/project-workspace";
+import { docsHref } from "@/lib/docs";
 import { buildSetupPrompt, integrationAPIBaseURL } from "./prompt";
 
 export function AgentSetupDialog({ siteOrigin, onClose }: {
@@ -89,9 +90,9 @@ export function AgentSetupDialog({ siteOrigin, onClose }: {
         </p>
       )}
       <div className="agent-setup-links">
-        <Link href="/docs/agents" className="text-link">Agent setup guide →</Link>
-        <a href="/docs/agents.md" className="text-link">Markdown guide</a>
-        <a href="/openapi.json" className="text-link">API schema</a>
+        <a href={docsHref("/docs/agents")} className="text-link">Agent setup guide →</a>
+        <a href={docsHref("/docs/agents.md")} className="text-link">Markdown guide</a>
+        <a href={docsHref("/openapi.json")} className="text-link">API schema</a>
       </div>
     </Modal>
   );

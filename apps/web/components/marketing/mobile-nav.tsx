@@ -3,6 +3,7 @@
 import { ListIcon } from "@phosphor-icons/react";
 import Link from "next/link";
 import { useRef } from "react";
+import { docsHref } from "@/lib/docs";
 
 export function MobileNav() {
   const details = useRef<HTMLDetailsElement>(null);
@@ -27,9 +28,9 @@ export function MobileNav() {
         <a href="#how-it-works" onClick={close}>
           How it works
         </a>
-        <Link href="/docs/quickstart" onClick={close}>
+        <a href={docsHref("/docs/quickstart")} onClick={close}>
           Quickstart
-        </Link>
+        </a>
         <Link href="/sign-in" onClick={close}>
           Sign in
         </Link>

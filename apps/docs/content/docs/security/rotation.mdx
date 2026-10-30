@@ -1,0 +1,31 @@
+---
+title: Rotate signing secrets
+description: Replace a receiver credential while accounting for the overlap period.
+---
+
+## One-time disclosure
+
+Generating or rotating an endpoint signing secret reveals its new value once.
+Save it directly in your receiver environment or secret manager. Existing
+secrets cannot be retrieved from Cascadehook.
+
+## Rotation overlap
+
+The previous signing secret remains valid for five minutes. During that window,
+the reference receiver accepts a supported signature matching its configured
+secret. Install the new secret and restart or reload the receiver before the
+overlap ends.
+
+Another rotation during the existing grace period returns a conflict.
+
+## Verification state
+
+Secret rotation does not automatically disable traffic or clear verification.
+Changing the destination URL does clear verification and disable delivery.
+Inspect endpoint state after a change rather than treating those operations as equivalent.
+
+## Uncertain responses
+
+The secret provisioning action is also the rotation action. If a request times
+out, inspect the endpoint before retrying. Blindly repeating it can rotate a
+secret you did not successfully save.

@@ -1,0 +1,51 @@
+---
+title: Verify webhook signatures
+description: Authenticate the raw request body before accepting a webhook.
+---
+
+## Separate your credentials
+
+The project API key authorizes outbound calls to Cascadehook. An endpoint's
+signing secret verifies incoming requests to your receiver. They serve different
+purposes and must not be substituted for one another.
+
+## Request headers
+
+Cascadehook sends `Webhook-Id`, `Webhook-Timestamp`, and `Webhook-Signature`.
+The signature header contains one or more space-separated `v1,` signatures,
+encoded as standard Base64. The signed message is:
+
+```text
+Webhook-Id + "." + Webhook-Timestamp + "." + raw body bytes
+```
+
+The signing secret has a `whsec_` prefix. Remove the prefix and decode the
+remaining Base64 value to obtain the 32-byte HMAC key. Verify using HMAC-SHA256.
+
+Verify the signature over the exact raw request bytes before parsing the body.
+Do not reserialize JSON before verification.
+
+## Verification steps
+
+1. Read the webhook identifier, timestamp, signature header, and bounded raw body.
+2. Reject timestamps outside the accepted tolerance.
+3. Calculate the HMAC using the endpoint's signing secret and the signed message.
+4. Compare supported signatures using a constant-time comparison.
+5. Only then parse and process the JSON payload.
+
+Use the [shared receiver implementation](/docs/receivers#shared-source) as
+the executable reference for secret decoding, signed-message construction,
+signature parsing, and ownership challenges.
+
+## Replay protection and deduplication
+
+The reference receiver uses a five-minute timestamp tolerance. Timestamp
+validation does not replace business deduplication: legitimate retries and
+manual replays preserve `Webhook-Id`. Persist that identifier with your
+business operation so duplicate deliveries do not repeat side effects.
+
+## Acknowledgement
+
+Return a success response after durable intake. A process accepting bytes into
+memory alone can lose them after acknowledging. The reference receiver syncs
+its inbox before returning `204`.

@@ -459,12 +459,6 @@
   .dashboard-main .danger-zone-action > .button {
     min-height: 40px;
   }
-  .dashboard-main .receiver-guide {
-    max-width: 920px;
-  }
-  .dashboard-main .receiver-guide .page-heading {
-    margin-bottom: 20px;
-  }
   .dashboard-navigation-dialog {
     position: fixed;
     inset: 0 auto 0 0;

@@ -1,0 +1,177 @@
+@import "tailwindcss";
+@import "fumadocs-ui/css/neutral.css";
+@import "fumadocs-ui/css/preset.css";
+@import "fumadocs-openapi/css/preset.css";
+
+/* The equivalent native highlight rule is served by the root layout. */
+@source not inline("[&_::highlight(fd-search)]:text-fd-primary");
+@source not inline("[&_::highlight(fd-search)]:underline");
+
+@theme inline {
+  --font-sans: var(--font-plex-sans);
+  --font-mono: var(--font-plex-mono);
+}
+
+:root {
+  --brand-accent: #b45332;
+  --color-fd-background: #fbfaf8;
+  --color-fd-foreground: #24211e;
+  --color-fd-muted: #f0eeea;
+  --color-fd-muted-foreground: #726b63;
+  --color-fd-popover: #ffffff;
+  --color-fd-popover-foreground: #24211e;
+  --color-fd-card: #ffffff;
+  --color-fd-card-foreground: #24211e;
+  --color-fd-border: #e5dfd7;
+  --color-fd-primary: #b44f27;
+  --color-fd-primary-foreground: #ffffff;
+  --color-fd-accent: #f3e9df;
+  --color-fd-accent-foreground: #a04421;
+  --fd-layout-width: 1440px;
+}
+
+.dark {
+  --brand-accent: #ed9c72;
+  --color-fd-background: #101112;
+  --color-fd-foreground: #e9e6e1;
+  --color-fd-muted: #1a1b1d;
+  --color-fd-muted-foreground: #a5a19a;
+  --color-fd-popover: #191a1c;
+  --color-fd-popover-foreground: #e9e6e1;
+  --color-fd-card: #18191b;
+  --color-fd-card-foreground: #e9e6e1;
+  --color-fd-border: #2a2c2e;
+  --color-fd-primary: #efa477;
+  --color-fd-primary-foreground: #22170f;
+  --color-fd-accent: #2a211c;
+  --color-fd-accent-foreground: #efa477;
+}
+
+body {
+  font-family: var(--font-plex-sans), sans-serif;
+}
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  width: fit-content;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -1px;
+  line-height: 1;
+}
+.brand-period {
+  color: var(--brand-accent);
+}
+.docs-brand-label {
+  margin-left: 3px;
+  padding-left: 12px;
+  border-left: 1px solid var(--color-fd-border);
+  color: var(--color-fd-muted-foreground);
+  font: 400 11px var(--font-plex-mono), monospace;
+  letter-spacing: .02em;
+}
+.brand-mark {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 29px;
+  transform: scale(.85);
+  transform-origin: left center;
+  margin-right: -4px;
+}
+.brand-mark span {
+  display: block;
+  width: 19px;
+  height: 5px;
+  border-radius: 1px;
+  background: var(--brand-accent);
+}
+.brand-mark span:nth-child(2) {
+  margin-left: 5px;
+}
+.brand-mark span:nth-child(3) {
+  margin-left: 10px;
+}
+#nd-sidebar {
+  background: var(--color-fd-background);
+}
+#nd-page {
+  padding-top: 40px;
+}
+#nd-page h1 {
+  font-size: clamp(1.9rem, 3vw, 2.5rem);
+  font-weight: 600;
+  letter-spacing: -.045em;
+}
+.prose {
+  font-size: 14px;
+  line-height: 1.85;
+}
+.prose h2 {
+  letter-spacing: -.025em;
+  font-weight: 550;
+}
+.prose code, .prose pre {
+  font-family: var(--font-plex-mono), monospace;
+}
+.prose pre {
+  font-size: 12px;
+  line-height: 1.8;
+}
+.shiki pre {
+  text-align: left;
+  tab-size: 2;
+}
+/* Highlighted code gets its inset from .line; plain-text blocks need the same inset. */
+.shiki pre > code:not(:has(> .line)) {
+  display: block;
+  padding-inline: var(--padding-left, 1rem) var(--padding-right, 1rem);
+}
+.prose a:not([data-card]) {
+  text-underline-offset: 4px;
+}
+.docs-eyebrow {
+  margin-bottom: 18px;
+  color: var(--color-fd-primary);
+  font: 500 11px var(--font-plex-mono), monospace;
+  letter-spacing: .02em;
+}
+.docs-not-found {
+  width: min(100% - 48px, 620px);
+  margin: auto;
+  padding-block: 80px;
+}
+.docs-not-found h1 {
+  font-size: 32px;
+  letter-spacing: -.04em;
+}
+.docs-not-found > p:not(.docs-eyebrow) {
+  margin-block: 18px 28px;
+  color: var(--color-fd-muted-foreground);
+  line-height: 1.8;
+}
+.docs-not-found a {
+  color: var(--color-fd-primary);
+}
+
+.docs-skip-link {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 100;
+  padding: 10px 16px;
+  border-radius: 6px;
+  background: var(--color-fd-primary);
+  color: var(--color-fd-primary-foreground);
+  transform: translateY(calc(-100% - 16px));
+}
+.docs-skip-link:focus {
+  transform: translateY(0);
+}
+
+@media (max-width: 767px) {
+  #nd-page {
+    padding-top: 28px;
+  }
+}

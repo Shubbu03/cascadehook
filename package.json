@@ -2,12 +2,16 @@
   "name": "cascadehook",
   "private": true,
   "packageManager": "bun@1.3.13",
-  "workspaces": ["apps/web"],
+  "workspaces": ["apps/web", "apps/docs"],
   "scripts": {
     "dev:web": "bun run --cwd apps/web dev",
     "build:web": "bun run --cwd apps/web build",
     "lint:web": "bun run --cwd apps/web lint",
     "typecheck:web": "bun run --cwd apps/web typecheck",
+    "dev:docs": "bun run --cwd apps/docs dev",
+    "build:docs": "bun run --cwd apps/docs build",
+    "lint:docs": "bun run --cwd apps/docs lint",
+    "typecheck:docs": "bun run --cwd apps/docs typecheck",
     "dev:api": "cd apps/server && bun --env-file=../../.env run go run ./cmd/api",
     "dev:worker": "cd apps/server && bun --env-file=../../.env run go run ./cmd/worker",
     "db:migrate": "cd apps/server && bun --env-file=../../.env run go run ./cmd/migrate",
@@ -19,6 +23,6 @@
     "build:go": "cd apps/server && go build ./...",
     "fmt:go": "cd apps/server && go fmt ./...",
     "vet:go": "cd apps/server && go vet ./...",
-    "check": "bun run lint:web && bun run typecheck:web && bun run vet:go && bun run build:go"
+    "check": "bun run lint:web && bun run typecheck:web && bun run lint:docs && bun run typecheck:docs && bun run vet:go && bun run build:go"
   }
 }

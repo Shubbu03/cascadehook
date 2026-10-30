@@ -1,0 +1,8 @@
+{
+  "pages": [
+    "---Getting started---", "index", "quickstart",
+    "---Build your integration---", "concepts", "receivers", "security",
+    "---Project API---", "api",
+    "---Resources---", "agents", "troubleshooting"
+  ]
+}
