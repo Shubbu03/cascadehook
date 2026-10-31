@@ -3,13 +3,13 @@ import { Suspense } from "react";
 import { AuthForm } from "@/components/auth/auth-form";
 import { AuthLoading, AuthShell } from "@/components/auth/auth-shell";
 
-export const metadata: Metadata = { title: "Sign in" };
+export const metadata: Metadata = { title: "Sign in or create an account" };
 
-export default function SignInPage() {
+export default function LoginPage() {
   return (
-    <AuthShell mode="sign-in">
+    <AuthShell>
       <Suspense fallback={<AuthLoading />}>
-        <AuthForm mode="sign-in" />
+        <AuthForm />
       </Suspense>
     </AuthShell>
   );

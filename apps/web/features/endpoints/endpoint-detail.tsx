@@ -12,10 +12,10 @@ import {
 } from "@phosphor-icons/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
-import { docsHref } from "@/lib/docs";
 import { useEffect, useId, useState, type SubmitEvent } from "react";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { CopyButton } from "@/components/copy-button";
+import { DocsLink } from "@/components/docs-link";
 import { PageHeader } from "@/components/page-header";
 import { useProject, projectHref } from "@/features/projects/project-workspace";
 import { ConnectionError } from "@/features/workspace/connection-error";
@@ -502,13 +502,13 @@ export function EndpointDetail({ endpointId }: { endpointId: string }) {
                 ? "This destination has passed the signed ownership challenge."
                 : "Your receiver must validate our signature and return the challenge proof. A plain 200 response is not enough."}
             </p>
-            <a
-              href={docsHref("/docs/security/verification")}
+            <DocsLink
+              path="/docs/security/verification"
               className="text-link text-accent"
             >
               Receiver setup guide
               <ArrowRightIcon size={14} aria-hidden="true" />
-            </a>
+            </DocsLink>
             {canManage && !current.verified_at && (
               <div className="verification-action">
                 {!current.has_signing_secret && (

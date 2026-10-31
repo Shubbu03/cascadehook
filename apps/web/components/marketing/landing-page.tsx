@@ -1,228 +1,146 @@
-import {
-  ArrowDownIcon,
-  ArrowRightIcon,
-  ArrowUpRightIcon,
-  ArrowsClockwiseIcon,
-  CheckCircleIcon,
-  CodeIcon,
-  GitBranchIcon,
-  LightningIcon,
-  ShieldCheckIcon,
-  TerminalWindowIcon,
-} from "@phosphor-icons/react/dist/ssr";
+import { ArrowRightIcon, ArrowUpRightIcon } from "@phosphor-icons/react/dist/ssr";
 import Link from "next/link";
 import { Brand } from "@/components/brand";
-import { CopyButton } from "@/components/copy-button";
+import { DocsLink } from "@/components/docs-link";
+import { DeliveryExample } from "@/components/marketing/delivery-example";
+import { FooterWordmark } from "@/components/marketing/footer-wordmark";
+import { IntegrationCode } from "@/components/marketing/integration-code";
+import { LandingMotion } from "@/components/marketing/landing-motion";
 import { MobileNav } from "@/components/marketing/mobile-nav";
 import { ThemeSwitcher } from "@/components/theme-switcher";
-import { publicationExample } from "@/lib/example";
-import { docsHref } from "@/lib/docs";
 
-function DeliveryExample() {
-  return (
-    <figure className="delivery-example">
-      <figcaption className="example-caption">
-        <span>
-          <span className="small-square" />
-          Event → endpoint
-        </span>
-        <span>Example</span>
-      </figcaption>
-      <div className="example-event">
-        <div className="example-event-icon">
-          <LightningIcon size={24} aria-hidden="true" />
-        </div>
-        <div>
-          <span className="field-label">Event</span>
-          <p className="mono">invoice.paid</p>
-        </div>
-        <span className="status status-neutral">202 accepted</span>
-      </div>
-      <div className="example-connector" aria-hidden="true">
-        <span />
-        <ArrowDownIcon size={16} />
-        <span />
-      </div>
-      <div className="example-delivery">
-        <div className="example-delivery-heading">
-          <div>
-            <span className="field-label">Endpoint</span>
-            <p className="mono">/webhooks/billing</p>
-          </div>
-          <span className="status status-success">
-            <CheckCircleIcon size={14} aria-hidden="true" />
-            Delivered
-          </span>
-        </div>
-        <ol className="attempt-list">
-          <li>
-            <span className="attempt-dot attempt-warning" />
-            <span className="attempt-number">01</span>
-            <span>Service unavailable</span>
-            <code className="text-warning">503</code>
-          </li>
-          <li className="attempt-retry">
-            <span aria-hidden="true" />
-            <span className="attempt-retry-copy">
-              <ArrowsClockwiseIcon size={13} aria-hidden="true" />
-              Automatic retry
-            </span>
-          </li>
-          <li>
-            <span className="attempt-dot attempt-success" />
-            <span className="attempt-number">02</span>
-            <span>Delivered</span>
-            <code className="text-success">200</code>
-          </li>
-        </ol>
-        <div className="example-delivery-footer">
-          <ShieldCheckIcon size={16} aria-hidden="true" />
-          <span>HMAC-signed requests</span>
-        </div>
-      </div>
-    </figure>
-  );
-}
-
-const steps = [
-  {
-    number: "01",
-    title: "Connect an endpoint",
-    text: "Add an HTTPS URL, choose event types, and verify ownership.",
-    Icon: GitBranchIcon,
-  },
-  {
-    number: "02",
-    title: "Publish an event",
-    text: "Send a payload. We sign and deliver it to subscribed endpoints.",
-    Icon: CodeIcon,
-  },
-  {
-    number: "03",
-    title: "Track delivery",
-    text: "Inspect every attempt, with automatic retries when delivery fails.",
-    Icon: CheckCircleIcon,
-  },
-];
+const signatureExample = [
+  'const key = decodeSecret(signingSecret);',
+  'const id = verifyWebhook(rawBody, req.headers, key);',
+  '// Verify before parsing the request body.',
+].join("\n");
 
 export function LandingPage() {
   return (
-    <div className="marketing-page">
-      <header className="site-header page-width">
+    <LandingMotion>
+      <header className="landing-header landing-container">
         <Brand href={null} />
-        <nav className="desktop-nav" aria-label="Main navigation">
+        <nav className="landing-desktop-nav" aria-label="Main navigation">
           <a href="#how-it-works">How it works</a>
-          <a href={docsHref("/docs/quickstart")}>Quickstart</a>
+          <DocsLink path="/docs">Docs</DocsLink>
         </nav>
-        <div className="header-actions">
+        <div className="landing-header-actions">
           <ThemeSwitcher />
-          <Link href="/sign-in" className="header-sign-in">
-            Sign in
-          </Link>
-          <Link href="/sign-up" className="button button-small button-primary">
-            Get started
-            <ArrowUpRightIcon size={16} aria-hidden="true" />
+          <Link href="/login" className="landing-header-cta">
+            Get started <ArrowUpRightIcon size={16} aria-hidden="true" />
           </Link>
           <MobileNav />
         </div>
       </header>
-
-      <main id="main-content">
-        <section className="hero page-width">
-          <div className="hero-copy">
-            <div className="eyebrow hero-eyebrow">
-              <span className="small-square" />
-              Outbound webhooks
-            </div>
-            <h1>
-              Webhooks,
-              <br />
-              <span>delivered.</span>
-            </h1>
-            <p className="hero-description">
-              Send signed webhooks, retry failures, and track every delivery.
+      <main id="main-content" className="landing-container">
+        <section className="landing-hero" aria-labelledby="hero-heading">
+          <div className="landing-hero-copy">
+            <p className="landing-eyebrow">Outbound webhooks, without the upkeep.</p>
+            <h1 id="hero-heading">Webhooks,<span>taken care of.</span></h1>
+            <p className="landing-hero-description">
+              Send events to your customers without building the delivery infrastructure.
+              Signed requests, automatic retries and a record of every attempt are built in.
             </p>
-            <div className="hero-actions">
-              <Link href="/sign-up" className="button button-primary">
-                Get started
-                <ArrowRightIcon size={18} aria-hidden="true" />
+            <div className="landing-hero-actions">
+              <Link href="/login" className="landing-primary-cta">
+                Get started <ArrowRightIcon size={18} aria-hidden="true" />
               </Link>
-              <a href={docsHref("/docs/quickstart")} className="button button-quiet">
-                View quickstart
-                <ArrowDownIcon size={16} aria-hidden="true" />
-              </a>
+              <DocsLink path="/docs/quickstart" className="landing-text-link">Read the quickstart</DocsLink>
             </div>
           </div>
           <DeliveryExample />
         </section>
-
-        <section
-          id="how-it-works"
-          className="how-section page-width"
-          aria-labelledby="how-heading"
-        >
-          <h2 id="how-heading">How it works</h2>
-          <ol className="steps-grid">
-            {steps.map(({ number, title, text, Icon }) => (
-              <li className="step" key={number}>
-                <div className="step-top">
-                  <span className="mono">{number}</span>
-                  <Icon size={22} aria-hidden="true" />
+        <section id="how-it-works" className="landing-story" aria-labelledby="story-heading">
+          <div className="landing-story-copy" data-motion="reveal">
+            <p className="landing-eyebrow">Behind every delivery</p>
+            <h2 id="story-heading">A clear path from event to <span>endpoint.</span></h2>
+            <p className="landing-story-description">
+              Queues, retries, signing and delivery logs add up. Cascadehook handles them together,
+              so they stay off your team&apos;s to-do list.
+            </p>
+          </div>
+          <ol className="landing-feature-list" data-motion="stagger">
+            <li>
+              <span className="landing-feature-number" aria-hidden="true">01</span>
+              <div>
+                <h3>Temporary failures get another try.</h3>
+                <p>Timeouts and retryable errors are rescheduled automatically, and every outcome is recorded.</p>
+                <div className="landing-retry-timeline" aria-label="Retry intervals start around 15 seconds and one minute, with up to eight attempts">
+                  <span>1 · now</span><span>2 · ~15s</span><span>3 · ~1m later</span><span>… up to 8</span>
                 </div>
-                <h3>{title}</h3>
-                <p>{text}</p>
-              </li>
-            ))}
+                <p className="landing-feature-note">Backoff includes jitter. Retry-After can extend the wait.</p>
+              </div>
+            </li>
+            <li>
+              <span className="landing-feature-number" aria-hidden="true">02</span>
+              <div>
+                <h3>A signature with every request.</h3>
+                <p>Each webhook is HMAC-signed, so receivers can verify it came from you.</p>
+                <pre className="landing-signature-example"><code>{signatureExample}</code></pre>
+                <DocsLink className="landing-feature-link" path="/docs/security/signatures">
+                  Verify with the receiver guide <ArrowUpRightIcon size={13} aria-hidden="true" />
+                </DocsLink>
+              </div>
+            </li>
+            <li>
+              <span className="landing-feature-number" aria-hidden="true">03</span>
+              <div>
+                <h3>Know what happened. Choose what comes next.</h3>
+                <p>Inspect each attempt&apos;s status and duration, then replay a delivery when the endpoint is ready.</p>
+                <DocsLink className="landing-feature-link" path="/docs/concepts/deliveries">
+                  Explore delivery logs and replay <ArrowUpRightIcon size={13} aria-hidden="true" />
+                </DocsLink>
+              </div>
+            </li>
           </ol>
         </section>
-
-        <section
-          id="quickstart"
-          className="integration-section"
-          aria-labelledby="quickstart-heading"
-        >
-          <div className="page-width integration-grid">
-            <div className="integration-copy">
-              <h2 id="quickstart-heading">Your first event.</h2>
-              <p>Publish JSON with your project API key. We handle delivery.</p>
-              <Link href="/sign-up" className="text-link text-accent">
-                Create an account
-                <ArrowUpRightIcon size={17} aria-hidden="true" />
-              </Link>
-            </div>
-            <div className="code-example">
-              <div className="code-example-header">
-                <span>
-                  <TerminalWindowIcon size={17} aria-hidden="true" />
-                  Example request
-                </span>
-                <CopyButton
-                  value={publicationExample}
-                  label="Copy cURL"
-                  successMessage="Example copied."
-                />
-              </div>
-              <pre>
-                <code>{publicationExample}</code>
-              </pre>
-              <div className="code-example-footer">
-                <span className="status status-success">202 Accepted</span>
-                <span>Queued for delivery</span>
-              </div>
-              <p className="code-example-note">
-                Replace the API host and project key.
+        <section id="quickstart" className="landing-integration" aria-labelledby="quickstart-heading">
+          <div className="landing-integration-content">
+            <div className="landing-integration-copy" data-motion="reveal">
+              <p className="landing-eyebrow">Your first event is one API call away.</p>
+              <h2 id="quickstart-heading">Connect an endpoint.<br />Publish an event.</h2>
+              <p>
+                Once your endpoint is verified, send an event with your project API key.
+                Cascadehook delivers it to every endpoint subscribed to that event type.
               </p>
+              <DocsLink path="/docs/quickstart" className="landing-text-link">
+                Follow the quickstart <ArrowRightIcon size={16} aria-hidden="true" />
+              </DocsLink>
             </div>
+            <IntegrationCode />
           </div>
         </section>
+        <section className="landing-closing" aria-labelledby="closing-heading" data-motion="reveal">
+          <div>
+            <h2 id="closing-heading">Make room for your next feature.</h2>
+            <p>Create a project, connect an endpoint and send your first event.</p>
+          </div>
+          <Link href="/login" className="landing-primary-cta">
+            Get started <ArrowRightIcon size={18} aria-hidden="true" />
+          </Link>
+        </section>
       </main>
-
-      <footer className="site-footer page-width">
-        <div className="footer-brand">
-          <Brand href={null} />
-          <p>Webhooks, delivered.</p>
+      <footer className="landing-footer">
+        <div className="landing-container">
+          <div className="landing-footer-main">
+            <div className="landing-footer-identity">
+              <Brand href={null} />
+              <p>Signed webhooks, automatic retries and delivery logs.</p>
+            </div>
+            <nav className="landing-footer-links" aria-label="Footer navigation">
+              <DocsLink path="/docs">Docs</DocsLink>
+              <DocsLink path="/docs/api">API reference</DocsLink>
+              <a href="https://github.com/Shubbu03/cascadehook" target="_blank" rel="noopener noreferrer">
+                GitHub <ArrowUpRightIcon size={13} aria-hidden="true" />
+              </a>
+            </nav>
+          </div>
+          <div className="landing-footer-bottom">
+            <span>© 2026 Cascadehook. All rights reserved.</span>
+          </div>
         </div>
+        <FooterWordmark />
       </footer>
-    </div>
+    </LandingMotion>
   );
 }

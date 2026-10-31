@@ -77,6 +77,14 @@
     background: transparent;
     color: var(--foreground);
   }
+  .copy-button[data-copy-state="copied"] {
+    background: var(--success-subtle);
+    color: var(--success);
+  }
+  .copy-button[data-copy-state="error"] {
+    background: var(--danger-subtle);
+    color: var(--danger);
+  }
   .button-small {
     min-height: 38px;
     padding: 8px 12px;
@@ -150,32 +158,6 @@
   .theme-switcher .theme-icon-dark {
     display: var(--theme-dark-icon);
   }
-  .site-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 24px;
-    min-height: 84px;
-    border-bottom: 1px solid var(--border);
-  }
-  .desktop-nav,
-  .header-actions {
-    display: flex;
-    align-items: center;
-    gap: 29px;
-  }
-  .desktop-nav,
-  .header-sign-in {
-    font-size: 13px;
-    color: var(--muted);
-  }
-  .desktop-nav a:hover,
-  .header-sign-in:hover {
-    color: var(--foreground);
-  }
-  .header-actions {
-    gap: 22px;
-  }
   .mobile-nav {
     display: none;
     position: relative;
@@ -217,108 +199,6 @@
   .mobile-nav nav a:hover {
     background: var(--surface-hover);
   }
-  .hero {
-    display: grid;
-    grid-template-columns: 1.03fr 1fr;
-    align-items: center;
-    gap: 56px;
-    padding-block: 64px 48px;
-  }
-  .hero-eyebrow {
-    display: flex;
-    align-items: center;
-    gap: 9px;
-    margin-bottom: 20px;
-  }
-  .small-square {
-    width: 6px;
-    height: 6px;
-    display: inline-block;
-    flex-shrink: 0;
-    background: var(--accent);
-  }
-  .hero h1 {
-    font-size: clamp(52px, 6.3vw, 83px);
-    font-weight: 500;
-    line-height: 1.04;
-    letter-spacing: -0.065em;
-  }
-  .hero h1 > span {
-    color: var(--accent);
-  }
-  .hero-description {
-    margin-top: 24px;
-    max-width: 395px;
-    font-size: 17px;
-    line-height: 1.6;
-    color: var(--muted);
-  }
-  .hero-actions {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 12px;
-    margin-top: 30px;
-  }
-  .delivery-example {
-    position: relative;
-    min-width: 0;
-    padding: 26px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    box-shadow: 0 14px 46px
-      color-mix(in srgb, var(--foreground) 4%, transparent);
-  }
-  .example-caption {
-    display: flex;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-bottom: 28px;
-    font:
-      10px/1.5 var(--font-plex-mono),
-      monospace;
-    color: var(--muted);
-    letter-spacing: 0.035em;
-  }
-  .example-caption > span:first-child {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .example-caption > span:last-child {
-    font-size: 9px;
-  }
-  .example-event {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 18px 14px;
-    background: var(--background);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-  }
-  .example-event-icon {
-    display: grid;
-    place-items: center;
-    width: 42px;
-    height: 42px;
-    flex-shrink: 0;
-    color: var(--accent);
-    background: var(--accent-subtle);
-    border-radius: 7px;
-  }
-  .field-label {
-    display: block;
-    margin-bottom: 4px;
-    font-size: 11px;
-    color: var(--muted);
-  }
-  .example-event p,
-  .example-delivery-heading p {
-    font-size: 13px;
-  }
   .status {
     display: inline-flex;
     align-items: center;
@@ -338,222 +218,6 @@
   .status-success {
     color: var(--success);
     background: var(--success-subtle);
-  }
-  .example-event .status {
-    margin-left: auto;
-  }
-  .example-connector {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 42px;
-    margin-left: 15px;
-    height: 50px;
-    color: var(--muted);
-  }
-  .example-connector > span {
-    width: 1px;
-    flex: 1;
-    background: var(--border);
-  }
-  .example-delivery {
-    border: 1px solid var(--border);
-    border-radius: 8px;
-  }
-  .example-delivery-heading {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    padding: 16px;
-    border-bottom: 1px solid var(--border);
-  }
-  .attempt-list {
-    list-style: none;
-    margin: 0;
-    padding: 20px 16px;
-  }
-  .attempt-list li {
-    display: grid;
-    grid-template-columns: 10px 22px 1fr auto;
-    align-items: center;
-    gap: 10px;
-    font-size: 12px;
-  }
-  .attempt-list code {
-    font-size: 11px;
-  }
-  .attempt-number {
-    color: var(--muted);
-    font:
-      10px/1.5 var(--font-plex-mono),
-      monospace;
-  }
-  .attempt-dot {
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-  }
-  .attempt-warning {
-    background: var(--warning);
-  }
-  .attempt-success {
-    background: var(--success);
-  }
-  .attempt-list .attempt-retry {
-    margin-block: 4px;
-    min-height: 39px;
-  }
-  .attempt-retry > span:first-child {
-    width: 1px;
-    height: 29px;
-    background: var(--border);
-    margin-left: 3px;
-  }
-  .attempt-retry-copy {
-    grid-column: 2 / -1;
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    color: var(--muted);
-    font-size: 10px;
-  }
-  .example-delivery-footer {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    padding: 12px 16px;
-    border-top: 1px solid var(--border);
-    font-size: 11px;
-    color: var(--muted);
-  }
-  .how-section {
-    padding-block: 16px 56px;
-  }
-  .how-section h2,
-  .integration-copy h2 {
-    font-size: clamp(28px, 3vw, 36px);
-    letter-spacing: -0.045em;
-    line-height: 1.15;
-  }
-  .steps-grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 32px;
-    list-style: none;
-    padding: 0;
-    margin: 28px 0 0;
-  }
-  .step {
-    padding-top: 20px;
-    border-top: 1px solid var(--border);
-  }
-  .step-top {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    color: var(--accent);
-    margin-bottom: 20px;
-  }
-  .step-top .mono {
-    font-size: 12px;
-    color: var(--muted);
-  }
-  .step h3 {
-    max-width: 250px;
-    font-size: 20px;
-    line-height: 1.35;
-    letter-spacing: -0.02em;
-  }
-  .step p {
-    margin-top: 10px;
-    color: var(--muted);
-    font-size: 14px;
-    line-height: 1.6;
-    max-width: 320px;
-  }
-  .integration-section {
-    background: var(--surface);
-    border-block: 1px solid var(--border);
-    padding-block: 56px;
-  }
-  .integration-grid {
-    display: grid;
-    grid-template-columns: 0.85fr 1.15fr;
-    align-items: center;
-    gap: 64px;
-  }
-  .integration-copy > p {
-    margin-top: 16px;
-    max-width: 340px;
-    color: var(--muted);
-    font-size: 15px;
-    line-height: 1.7;
-  }
-  .integration-copy .text-link {
-    margin-top: 24px;
-  }
-  .code-example {
-    min-width: 0;
-    background: var(--background);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    overflow: hidden;
-  }
-  .code-example-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    border-bottom: 1px solid var(--border);
-    padding: 10px 14px 10px 19px;
-  }
-  .code-example-header > span {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 12px;
-    color: var(--muted);
-  }
-  .code-example pre {
-    padding: 25px 22px;
-    margin: 0;
-    overflow-x: auto;
-    font-size: 11px;
-    line-height: 2;
-    color: var(--foreground);
-    tab-size: 2;
-  }
-  .code-example-footer {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 15px 20px 10px;
-    border-top: 1px solid var(--border);
-    font-size: 11px;
-    color: var(--muted);
-  }
-  .code-example-note {
-    padding: 0 20px 16px;
-    font-size: 11px;
-    color: var(--muted);
-  }
-  .site-footer {
-    padding-block: 28px;
-  }
-  .footer-brand {
-    display: grid;
-    grid-template-columns: 29px 1fr;
-    gap: 8px 11px;
-  }
-  .site-footer .brand {
-    grid-column: 1 / -1;
-    font-size: 19px;
-  }
-  .site-footer p {
-    grid-column: 2;
-    color: var(--muted);
-    font-size: 12px;
   }
   .auth-page {
     display: grid;
@@ -647,6 +311,28 @@
   }
   .auth-social-button {
     min-height: 42px;
+  }
+  .auth-login {
+    min-width: 0;
+  }
+  .auth-mode-switch {
+    margin-top: 20px;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.6;
+    text-align: center;
+  }
+  .auth-mode-switch a {
+    color: var(--accent);
+    font-weight: 500;
+    text-decoration: underline;
+    text-decoration-color: transparent;
+    text-underline-offset: 4px;
+    transition: text-decoration-color 160ms ease;
+  }
+  .auth-mode-switch a:hover,
+  .auth-mode-switch a:focus-visible {
+    text-decoration-color: currentColor;
   }
   .auth-loading {
     display: flex;
@@ -816,76 +502,13 @@
   .page-width {
     width: calc(100% - 56px);
   }
-  .hero {
-    gap: 32px;
-    padding-block: 48px;
-  }
-  .hero h1 {
-    font-size: 65px;
-  }
-  .delivery-example {
-    padding: 20px;
-  }
-  .example-event {
-    flex-wrap: wrap;
-  }
-  .example-event .status {
-    margin-left: 54px;
-  }
-  .integration-grid {
-    gap: 35px;
-  }
-  .desktop-nav {
-    gap: 20px;
-  }
   .auth-story {
     padding-inline: 32px;
   }
 }
 @media (max-width: 850px) {
-  .desktop-nav {
-    display: none;
-  }
   .mobile-nav {
     display: block;
-  }
-  .header-sign-in {
-    display: none;
-  }
-  .hero {
-    grid-template-columns: 1fr;
-    gap: 48px;
-  }
-  .hero-copy {
-    max-width: 600px;
-  }
-  .hero h1 {
-    font-size: clamp(58px, 9vw, 78px);
-  }
-  .hero-description {
-    max-width: 430px;
-  }
-  .delivery-example {
-    width: 100%;
-    max-width: 560px;
-    justify-self: center;
-    padding: 28px;
-  }
-  .example-event {
-    flex-wrap: nowrap;
-  }
-  .example-event .status {
-    margin-left: auto;
-  }
-  .steps-grid {
-    gap: 22px;
-  }
-  .integration-grid {
-    grid-template-columns: 1fr;
-    gap: 36px;
-  }
-  .integration-copy > p {
-    max-width: 460px;
   }
   .auth-page {
     grid-template-columns: 1fr;
@@ -913,122 +536,8 @@
   .page-width {
     width: calc(100% - 40px);
   }
-  .site-header {
-    min-height: 80px;
-    gap: 12px;
-  }
-  .site-header .brand {
-    font-size: 20px;
-  }
-  .header-actions {
-    gap: 4px;
-  }
-  .header-actions > .button {
-    display: none;
-  }
-  .hero {
-    padding-block: 36px;
-    gap: 32px;
-  }
-  .hero-eyebrow {
-    font-size: 11px;
-    margin-bottom: 16px;
-  }
-  .hero h1 {
-    font-size: clamp(45px, 11.5vw, 66px);
-  }
-  .hero-description {
-    font-size: 16px;
-    margin-top: 24px;
-  }
-  .hero-actions {
-    gap: 7px;
-  }
-  .hero-actions .button {
-    padding-inline: 14px;
-    font-size: 13px;
-  }
-  .delivery-example {
-    padding: 17px;
-  }
-  .example-caption {
-    margin-bottom: 20px;
-  }
-  .example-event {
-    padding: 12px;
-    gap: 9px;
-    flex-wrap: wrap;
-  }
-  .example-event-icon {
-    width: 34px;
-    height: 34px;
-  }
-  .example-event .status {
-    margin-left: 43px;
-  }
-  .example-delivery-heading {
-    padding: 13px 11px;
-  }
-  .example-delivery-heading p {
-    font-size: 11px;
-  }
   .status {
     font-size: 9px;
-  }
-  .attempt-list {
-    padding: 18px 11px;
-  }
-  .attempt-list li {
-    gap: 7px;
-    grid-template-columns: 8px 18px minmax(0, 1fr) auto;
-    font-size: 11px;
-  }
-  .how-section {
-    padding-block: 12px 40px;
-  }
-  .how-section h2,
-  .integration-copy h2 {
-    font-size: 28px;
-  }
-  .steps-grid {
-    grid-template-columns: 1fr;
-    margin-top: 24px;
-    gap: 24px;
-  }
-  .step-top {
-    margin-bottom: 17px;
-  }
-  .step h3 {
-    max-width: none;
-  }
-  .step p {
-    max-width: none;
-  }
-  .integration-section {
-    padding-block: 40px;
-  }
-  .code-example-header {
-    padding-inline: 12px;
-  }
-  .code-example-header > span {
-    font-size: 11px;
-  }
-  .code-example-header .button {
-    font-size: 11px;
-    padding-inline: 7px;
-  }
-  .code-example pre {
-    padding: 20px 15px;
-  }
-  .code-example-footer {
-    padding-inline: 13px;
-    gap: 8px;
-    font-size: 10px;
-    flex-wrap: wrap;
-  }
-  .code-example-note {
-    padding-inline: 13px;
-    font-size: 10px;
   }
   .auth-topbar {
     min-height: 80px;

@@ -1,5 +1,5 @@
 import { DocsLayout } from "fumadocs-ui/layouts/docs";
-import { ThemeSwitch } from "fumadocs-ui/layouts/shared/slots/theme-switch";
+import { DocsThemeSwitch } from "@/components/theme-transition-provider";
 import { source } from "@/lib/source";
 
 export default function DocumentationLayout({ children }: { children: React.ReactNode }) {
@@ -21,7 +21,7 @@ export default function DocumentationLayout({ children }: { children: React.Reac
       themeSwitch={{ enabled: false }}
       sidebar={{
         defaultOpenLevel: 1,
-        footer: <ThemeSwitch className="w-fit self-end" />,
+        footer: <DocsThemeSwitch />,
       }}
     >
       {children}

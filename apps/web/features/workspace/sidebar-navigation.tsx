@@ -14,7 +14,7 @@ import {
   UsersIcon,
 } from "@phosphor-icons/react";
 import Link from "next/link";
-import { docsHref } from "@/lib/docs";
+import { DocsLink } from "@/components/docs-link";
 import type { OrganizationRole } from "./types";
 import { organizationHref } from "./queries";
 
@@ -190,8 +190,8 @@ export function SidebarNavigation({
         </div>
       )}
       <div className="sidebar-guide">
-        <a
-          href={docsHref("/docs/quickstart")}
+        <DocsLink
+          path="/docs/quickstart"
           className="sidebar-link"
           aria-label="Quickstart"
           title="Quickstart"
@@ -199,10 +199,10 @@ export function SidebarNavigation({
         >
           <RocketLaunchIcon size={18} aria-hidden="true" />
           <span>Quickstart</span>
-        </a>
+        </DocsLink>
         {projectId && (
-          <a
-            href={docsHref("/docs/receivers")}
+          <DocsLink
+            path="/docs/receivers"
             className="sidebar-link"
             aria-label="Receiver guide"
             title="Receiver guide"
@@ -210,7 +210,7 @@ export function SidebarNavigation({
           >
             <BookOpenIcon size={18} aria-hidden="true" />
             <span>Receiver guide</span>
-          </a>
+          </DocsLink>
         )}
       </div>
     </nav>
