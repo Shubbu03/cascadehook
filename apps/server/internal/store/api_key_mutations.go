@@ -12,6 +12,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 
 	"cascadehook/internal/auth"
+	"cascadehook/internal/notifications"
 )
 
 type CreateAPIKeyParams struct {
@@ -64,6 +65,14 @@ func (s *Store) CreateAPIKey(ctx context.Context, actor auth.Principal, params C
 	if err != nil {
 		return auth.APIKey{}, err
 	}
+	if _, err := emitNotification(ctx, tx, notificationEvent{
+		ProjectID: actor.ProjectID, ActorID: actor.UserID, Type: "api_key_created",
+		Category: notifications.Credentials, Severity: "info", Audience: "manager",
+		Title: "A project API key was created", Body: "A new integration credential was issued for this project.",
+		ResourceType: "api_key", ResourceID: key.ID, SourceKey: "key:" + key.ID.String() + ":created",
+	}); err != nil {
+		return auth.APIKey{}, err
+	}
 	if err := tx.Commit(ctx); err != nil {
 		return auth.APIKey{}, fmt.Errorf("commit API key creation: %w", err)
 	}
@@ -105,6 +114,14 @@ func (s *Store) RevokeAPIKey(ctx context.Context, actor auth.Principal, targetID
 		actor.ProjectID, targetID, databaseNow, nullableUUID(actor.APIKeyID), nullableUUID(actor.UserID))
 	if err != nil {
 		return fmt.Errorf("revoke API key: %w", err)
+	}
+	if _, err := emitNotification(ctx, tx, notificationEvent{
+		ProjectID: actor.ProjectID, ActorID: actor.UserID, Type: "api_key_revoked",
+		Category: notifications.Credentials, Severity: "warning", Audience: "manager",
+		Title: "An API key was revoked", Body: "A project API key was revoked. Applications using it will need an active replacement.",
+		ResourceType: "api_key", ResourceID: targetID, SourceKey: "key:" + targetID.String() + ":revoked",
+	}); err != nil {
+		return err
 	}
 	if err := tx.Commit(ctx); err != nil {
 		return fmt.Errorf("commit API key revocation: %w", err)
@@ -162,6 +179,14 @@ func (s *Store) RotateAPIKey(ctx context.Context, actor auth.Principal, targetID
 		actor.ProjectID, targetID, replacement.ID, deadline, nullableUUID(actor.APIKeyID), nullableUUID(actor.UserID))
 	if err != nil {
 		return APIKeyRotation{}, fmt.Errorf("schedule previous API key revocation: %w", err)
+	}
+	if _, err := emitNotification(ctx, tx, notificationEvent{
+		ProjectID: actor.ProjectID, ActorID: actor.UserID, Type: "api_key_rotated",
+		Category: notifications.Credentials, Severity: "info", Audience: "manager",
+		Title: "An API key was rotated", Body: "A replacement project API key was created. The previous key retires after its overlap period.",
+		ResourceType: "api_key", ResourceID: replacement.ID, SourceKey: "key:" + targetID.String() + ":rotated",
+	}); err != nil {
+		return APIKeyRotation{}, err
 	}
 	if err := tx.Commit(ctx); err != nil {
 		return APIKeyRotation{}, fmt.Errorf("commit API key rotation: %w", err)

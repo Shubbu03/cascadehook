@@ -2,6 +2,7 @@
 
 import {
   BookOpenIcon,
+  BellSimpleIcon,
   ChartBarIcon,
   FolderSimpleIcon,
   GearSixIcon,
@@ -17,6 +18,7 @@ import Link from "next/link";
 import { DocsLink } from "@/components/docs-link";
 import type { OrganizationRole } from "./types";
 import { organizationHref } from "./queries";
+import { notificationInboxHref } from "@/features/notifications/types";
 
 const groups = [
   {
@@ -80,6 +82,21 @@ export function SidebarNavigation({
     ? "/dashboard/projects/" + encodeURIComponent(projectId)
     : "";
   const canManage = role === "owner" || role === "admin";
+  const notificationsLink = organizationId && (
+    <Link
+      href={notificationInboxHref(organizationId)}
+      className="sidebar-link"
+      aria-label="Notifications"
+      title="Notifications"
+      aria-current={
+        pathname === notificationInboxHref(organizationId) ? "page" : undefined
+      }
+      onNavigate={onNavigate}
+    >
+      <BellSimpleIcon size={18} aria-hidden="true" />
+      <span>Notifications</span>
+    </Link>
+  );
   return (
     <nav className="sidebar-navigation" aria-label="Main navigation">
       {projectId ? (
@@ -134,6 +151,7 @@ export function SidebarNavigation({
                 <span>Projects</span>
               </Link>
             </li>
+            {notificationsLink && <li>{notificationsLink}</li>}
             {organizationId && (
               <li>
                 <Link
@@ -187,6 +205,12 @@ export function SidebarNavigation({
               </li>
             )}
           </ul>
+        </div>
+      )}
+      {projectId && notificationsLink && (
+        <div className="sidebar-group">
+          <p className="sidebar-group-label">Organization</p>
+          {notificationsLink}
         </div>
       )}
       <div className="sidebar-guide">

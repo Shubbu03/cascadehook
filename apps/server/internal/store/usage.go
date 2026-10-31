@@ -86,6 +86,9 @@ func recordUsage(ctx context.Context, tx pgx.Tx, projectID uuid.UUID, delta usag
 	if err != nil {
 		return fmt.Errorf("record project usage: %w", err)
 	}
+	if delta.events > 0 || delta.jobs > 0 || delta.bytes > 0 {
+		return notifyUsageThresholds(ctx, tx, projectID, period)
+	}
 	return nil
 }
 

@@ -137,6 +137,10 @@ function problemMessage(status: number, code?: string) {
       "The request timed out. Refresh to check the current state before trying again.",
     authentication_unavailable:
       "Session verification is temporarily unavailable. Please try again.",
+    notification_not_found:
+      "This notification is no longer available. Refresh your inbox to see the latest updates.",
+    invalid_notification_update:
+      "This notification couldn't be updated. Refresh your inbox and try again.",
   };
   if (code && endpointMessages[code]) return endpointMessages[code];
   if (status === 401)

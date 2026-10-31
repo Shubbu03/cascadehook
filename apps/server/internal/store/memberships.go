@@ -9,6 +9,7 @@ import (
 	"github.com/jackc/pgx/v5"
 
 	"cascadehook/internal/accounts"
+	"cascadehook/internal/notifications"
 	"cascadehook/internal/pagination"
 )
 
@@ -130,6 +131,14 @@ func (s *Store) AddMembership(
 	if err := completeOnboarding(ctx, tx, params.UserID); err != nil {
 		return accounts.Membership{}, err
 	}
+	if _, err := emitNotification(ctx, tx, notificationEvent{
+		OrganizationID: params.OrganizationID, ActorID: actorID,
+		Type: "member_joined", Category: notifications.Team, Severity: "info", Audience: "owner",
+		Title: "A member joined your organization", Body: "A new member was added to the organization.",
+		ResourceType: "members", ResourceID: params.UserID,
+	}); err != nil {
+		return accounts.Membership{}, err
+	}
 	if err := tx.Commit(ctx); err != nil {
 		return accounts.Membership{}, fmt.Errorf("commit membership creation: %w", err)
 	}
@@ -175,6 +184,15 @@ func (s *Store) ChangeMembershipRole(
 	if targetErr != nil {
 		return accounts.Membership{}, targetErr
 	}
+	var previous accounts.Role
+	err = tx.QueryRow(ctx, `SELECT role FROM memberships WHERE organization_id = $1 AND user_id = $2`,
+		params.OrganizationID, params.UserID).Scan(&previous)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return accounts.Membership{}, accounts.ErrMemberNotFound
+	}
+	if err != nil {
+		return accounts.Membership{}, fmt.Errorf("read previous membership role: %w", err)
+	}
 	if params.Role != accounts.Owner {
 		if err := retainOrganizationOwner(ctx, tx, params.OrganizationID, params.UserID); err != nil {
 			return accounts.Membership{}, err
@@ -190,6 +208,16 @@ func (s *Store) ChangeMembershipRole(
 	}
 	if err != nil {
 		return accounts.Membership{}, fmt.Errorf("update organization member: %w", err)
+	}
+	if previous != params.Role {
+		if _, err := emitNotification(ctx, tx, notificationEvent{
+			OrganizationID: params.OrganizationID, ActorID: actorID, SubjectID: params.UserID,
+			Type: "member_role_changed", Category: notifications.Access, Severity: "info", Audience: "owner",
+			Title: "Organization role changed", Body: "A member's organization role was changed to " + string(params.Role) + ".",
+			ResourceType: "members", ResourceID: params.UserID,
+		}); err != nil {
+			return accounts.Membership{}, err
+		}
 	}
 	if err := tx.Commit(ctx); err != nil {
 		return accounts.Membership{}, fmt.Errorf("commit membership update: %w", err)
@@ -239,6 +267,14 @@ func (s *Store) RemoveMembership(ctx context.Context, actorID, organizationID, u
 	}
 	if result.RowsAffected() == 0 {
 		return accounts.ErrMemberNotFound
+	}
+	if _, err := emitNotification(ctx, tx, notificationEvent{
+		OrganizationID: organizationID, ActorID: actorID,
+		Type: "member_removed", Category: notifications.Team, Severity: "info", Audience: "owner",
+		Title: "A member left your organization", Body: "An organization membership ended. Review team access if needed.",
+		ResourceType: "members",
+	}); err != nil {
+		return err
 	}
 	if err := tx.Commit(ctx); err != nil {
 		return fmt.Errorf("commit membership removal: %w", err)

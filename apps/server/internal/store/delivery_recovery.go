@@ -114,6 +114,9 @@ func (s *Store) releaseDeliveryBatch(ctx context.Context, ownerID uuid.UUID, lim
 	}
 	parents.Close()
 	sort.SliceStable(jobs, func(i, j int) bool {
+		if organizations[jobs[i].ProjectID] == organizations[jobs[j].ProjectID] {
+			return jobs[i].EndpointID.String() < jobs[j].EndpointID.String()
+		}
 		return organizations[jobs[i].ProjectID] < organizations[jobs[j].ProjectID]
 	})
 	var databaseNow time.Time
@@ -149,8 +152,13 @@ func (s *Store) ExpirePendingDeliveries(ctx context.Context, limit int) (int64, 
 	if err := validateDeliveryBatch(limit); err != nil {
 		return 0, err
 	}
-	result, err := s.pool.Exec(ctx, `WITH expired AS (
-		SELECT d.id, e.deleted_at, d.attempt_count FROM deliveries d
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return 0, fmt.Errorf("begin pending delivery expiry: %w", err)
+	}
+	defer rollbackTransaction(tx)
+	rows, err := tx.Query(ctx, `WITH expired AS (
+		SELECT d.id, e.deleted_at, d.attempt_count,o.id AS organization_id FROM deliveries d
 		JOIN endpoints e ON e.project_id = d.project_id AND e.id = d.endpoint_id
 		JOIN projects p ON p.id = d.project_id JOIN organizations o ON o.id = p.organization_id
 		WHERE d.state = 'pending' AND p.deletion_requested_at IS NULL AND o.deletion_requested_at IS NULL
@@ -160,10 +168,39 @@ func (s *Store) ExpirePendingDeliveries(ctx context.Context, limit int) (int64, 
 	) UPDATE deliveries d SET state = CASE WHEN expired.deleted_at IS NOT NULL THEN 'canceled' ELSE 'failed' END,
 		terminal_reason = CASE WHEN expired.deleted_at IS NOT NULL THEN NULL
 			WHEN expired.attempt_count >= $2 THEN 'max_attempts' ELSE 'retry_horizon' END,
-		updated_at = now() FROM expired WHERE d.id = expired.id AND d.state = 'pending'`,
+		updated_at = clock_timestamp() FROM expired WHERE d.id = expired.id AND d.state = 'pending'
+		RETURNING d.project_id,d.endpoint_id,d.updated_at,d.state,expired.organization_id`,
 		limit, deliveries.MaxAttempts)
 	if err != nil {
 		return 0, fmt.Errorf("expire pending deliveries: %w", err)
 	}
-	return result.RowsAffected(), nil
+	type expiredDelivery struct {
+		held           lockedDelivery
+		state          deliveries.State
+		organizationID uuid.UUID
+	}
+	items, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (expiredDelivery, error) {
+		var item expiredDelivery
+		err := row.Scan(&item.held.ProjectID, &item.held.EndpointID, &item.held.Now, &item.state, &item.organizationID)
+		return item, err
+	})
+	if err != nil {
+		return 0, fmt.Errorf("read expired notification deliveries: %w", err)
+	}
+	// Match recovery's tenant/endpoint order when locking grouped incident rows.
+	sort.Slice(items, func(i, j int) bool {
+		if items[i].organizationID == items[j].organizationID {
+			return items[i].held.EndpointID.String() < items[j].held.EndpointID.String()
+		}
+		return items[i].organizationID.String() < items[j].organizationID.String()
+	})
+	for _, item := range items {
+		if err := notifyDeliveryCompletion(ctx, tx, item.held, deliveries.Completion{State: item.state}); err != nil {
+			return 0, err
+		}
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return 0, fmt.Errorf("commit pending delivery expiry: %w", err)
+	}
+	return int64(len(items)), nil
 }

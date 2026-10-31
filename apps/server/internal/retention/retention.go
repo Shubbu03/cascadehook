@@ -7,26 +7,28 @@ import (
 )
 
 const (
-	DefaultDays       = 30
-	DefaultBatchSize  = 100
-	DefaultMaxBatches = 100
-	DefaultRunTimeout = 5 * time.Minute
-	OperationTimeout  = 10 * time.Second
-	MaxDays           = 3650
-	MaxBatchSize      = 1000
-	MaxBatches        = 1000
+	DefaultDays             = 30
+	DefaultNotificationDays = 90
+	DefaultBatchSize        = 100
+	DefaultMaxBatches       = 100
+	DefaultRunTimeout       = 5 * time.Minute
+	OperationTimeout        = 10 * time.Second
+	MaxDays                 = 3650
+	MaxBatchSize            = 1000
+	MaxBatches              = 1000
 )
 
 type Config struct {
-	Days       int
-	BatchSize  int
-	MaxBatches int
-	RunTimeout time.Duration
+	Days             int
+	NotificationDays int
+	BatchSize        int
+	MaxBatches       int
+	RunTimeout       time.Duration
 }
 
 func Defaults() Config {
 	return Config{
-		Days: DefaultDays, BatchSize: DefaultBatchSize,
+		Days: DefaultDays, NotificationDays: DefaultNotificationDays, BatchSize: DefaultBatchSize,
 		MaxBatches: DefaultMaxBatches, RunTimeout: DefaultRunTimeout,
 	}
 }
@@ -34,6 +36,9 @@ func Defaults() Config {
 func (cfg Config) Validate() error {
 	if cfg.Days < 1 || cfg.Days > MaxDays {
 		return fmt.Errorf("RETENTION_DAYS must be between 1 and %d", MaxDays)
+	}
+	if cfg.NotificationDays < 1 || cfg.NotificationDays > MaxDays {
+		return fmt.Errorf("NOTIFICATION_RETENTION_DAYS must be between 1 and %d", MaxDays)
 	}
 	if cfg.BatchSize < 1 || cfg.BatchSize > MaxBatchSize {
 		return fmt.Errorf("JANITOR_BATCH_SIZE must be between 1 and %d", MaxBatchSize)
@@ -61,21 +66,23 @@ const (
 	DeleteAccounts         Phase = "account_deletion_rows"
 	DeleteProviderAccounts Phase = "account_provider_requests"
 	DeleteMetadata         Phase = "expired_metadata_rows"
+	DeleteNotifications    Phase = "notification_rows"
 )
 
 func Phases() []Phase {
 	return []Phase{
 		ExpireKeys, MarkEvents, DeleteAttempts, DeleteReplays, DeleteDeliveries, DeleteEvents,
 		DeleteOrganizations, DeleteProjects, DeleteProviderAccounts, DeleteAccounts,
-		DeleteMetadata,
+		DeleteMetadata, DeleteNotifications,
 	}
 }
 
 type Batch struct {
-	Phase     Phase
-	Limit     int
-	Reference time.Time
-	Cutoff    time.Time
+	Phase              Phase
+	Limit              int
+	Reference          time.Time
+	Cutoff             time.Time
+	NotificationCutoff time.Time
 }
 
 func (batch Batch) Validate() error {
@@ -85,6 +92,10 @@ func (batch Batch) Validate() error {
 	missingBoundary := batch.Reference.IsZero() || batch.Cutoff.IsZero()
 	if missingBoundary || !batch.Cutoff.Before(batch.Reference) {
 		return fmt.Errorf("invalid retention time boundaries")
+	}
+	invalidNotificationCutoff := batch.NotificationCutoff.IsZero() || !batch.NotificationCutoff.Before(batch.Reference)
+	if batch.Phase == DeleteNotifications && invalidNotificationCutoff {
+		return fmt.Errorf("invalid notification retention boundary")
 	}
 	for _, phase := range Phases() {
 		if batch.Phase == phase {
@@ -106,6 +117,7 @@ type Report struct {
 	DryRun              bool            `json:"dry_run"`
 	Reference           time.Time       `json:"reference_time"`
 	Cutoff              time.Time       `json:"retention_cutoff"`
+	NotificationCutoff  time.Time       `json:"notification_retention_cutoff"`
 	BatchSize           int             `json:"batch_size"`
 	Batches             int             `json:"batches"`
 	Status              string          `json:"status"`

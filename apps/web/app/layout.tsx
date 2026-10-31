@@ -18,6 +18,7 @@ import "./controls.css";
 import "./overview.css";
 import "./agent-setup.css";
 import "./skeleton.css";
+import "./notification-center.css";
 
 const sans = localFont({
   src: "./fonts/ibm-plex-sans-latin.woff2",
