@@ -11,6 +11,7 @@ import (
 	"github.com/jackc/pgx/v5"
 
 	"cascadehook/internal/controls"
+	"cascadehook/internal/notifications"
 	"cascadehook/internal/pagination"
 )
 
@@ -124,6 +125,18 @@ func (s *Store) ChangeProjectControl(
 	)
 	if err != nil {
 		return ProjectControlResult{}, fmt.Errorf("record project control audit: %w", err)
+	}
+	title, body, severity := "Project resumed", "Event publishing and delivery are available again.", "success"
+	if change.Suspended {
+		title, body, severity = "Project paused", "Event publishing and delivery have been paused for this project.", "warning"
+	}
+	if _, err := emitNotification(ctx, tx, notificationEvent{
+		ProjectID: change.ProjectID, Type: "project_" + action, Category: notifications.Project,
+		Severity: severity, Audience: "manager", Title: title, Body: body,
+		ResourceType: "project", ResourceID: change.ProjectID,
+		SourceKey: fmt.Sprintf("project:%s:control:%d", change.ProjectID, state.Version),
+	}); err != nil {
+		return ProjectControlResult{}, err
 	}
 	if err := tx.Commit(ctx); err != nil {
 		return ProjectControlResult{}, fmt.Errorf("commit project control change; read status before retrying: %w", err)

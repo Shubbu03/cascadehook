@@ -281,6 +281,7 @@ func LoadJanitor() (JanitorConfig, error) {
 		maximum int
 	}{
 		{name: "RETENTION_DAYS", value: &cfg.Retention.Days, minimum: 1, maximum: retention.MaxDays},
+		{name: "NOTIFICATION_RETENTION_DAYS", value: &cfg.Retention.NotificationDays, minimum: 1, maximum: retention.MaxDays},
 		{name: "JANITOR_BATCH_SIZE", value: &cfg.Retention.BatchSize, minimum: 1, maximum: retention.MaxBatchSize},
 		{
 			name: "JANITOR_MAX_BATCHES", value: &cfg.Retention.MaxBatches,

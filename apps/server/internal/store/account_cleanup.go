@@ -25,7 +25,7 @@ func cleanupOrganizationData(ctx context.Context, tx pgx.Tx, limit int, preview 
 	if err != nil {
 		return 0, fmt.Errorf("select organization cleanup: %w", err)
 	}
-	selections := []lifecycleCleanupSelection{
+	selections := append(organizationNotificationCleanup(id, limit), []lifecycleCleanupSelection{
 		{retentionSelection: retentionSelection{
 			query: `SELECT i.id FROM organization_invitations i WHERE i.organization_id = $1 ORDER BY i.id LIMIT $2`,
 			table: "organization_invitations", lockAlias: "i", match: `t.id = c.id`, args: []any{id, limit},
@@ -70,10 +70,13 @@ func cleanupOrganizationData(ctx context.Context, tx pgx.Tx, limit int, preview 
 				AND NOT EXISTS (SELECT 1 FROM organization_invitations i WHERE i.organization_id = o.id)
 				AND NOT EXISTS (SELECT 1 FROM organization_usage_months u WHERE u.organization_id = o.id)
 				AND NOT EXISTS (SELECT 1 FROM organization_ownership_actions a WHERE a.organization_id = o.id)
-				AND NOT EXISTS (SELECT 1 FROM organization_quota_actions a WHERE a.organization_id = o.id) LIMIT $2`,
+				AND NOT EXISTS (SELECT 1 FROM organization_quota_actions a WHERE a.organization_id = o.id)
+				AND NOT EXISTS (SELECT 1 FROM notifications n WHERE n.organization_id = o.id)
+				AND NOT EXISTS (SELECT 1 FROM notification_recipients r WHERE r.organization_id = o.id)
+				AND NOT EXISTS (SELECT 1 FROM notification_delivery_state s WHERE s.organization_id = o.id) LIMIT $2`,
 			table: "organizations", lockAlias: "o", match: `t.id = c.id`, args: []any{id, limit},
 		}},
-	}
+	}...)
 	return cleanupLifecycleSelections(
 		ctx,
 		tx,
@@ -105,6 +108,12 @@ func cleanupAccountData(ctx context.Context, tx pgx.Tx, limit int, preview bool)
 	}
 	selections := []lifecycleCleanupSelection{
 		{retentionSelection: retentionSelection{
+			query: `SELECT r.notification_id,r.user_id FROM notification_recipients r WHERE r.user_id = $1
+				ORDER BY r.notification_id LIMIT $2`,
+			table: "notification_recipients", lockAlias: "r",
+			match: `t.notification_id = c.notification_id AND t.user_id = c.user_id`, args: []any{id, limit},
+		}},
+		{retentionSelection: retentionSelection{
 			query: `SELECT m.organization_id, m.user_id FROM memberships m WHERE m.user_id = $1
 				ORDER BY m.organization_id LIMIT $2`,
 			table: "memberships", lockAlias: "m",
@@ -113,7 +122,8 @@ func cleanupAccountData(ctx context.Context, tx pgx.Tx, limit int, preview bool)
 		{retentionSelection: retentionSelection{
 			query: `SELECT u.id FROM users u WHERE u.id = $1 AND u.deletion_requested_at IS NOT NULL
 				AND u.provider_deleted_at IS NOT NULL
-				AND NOT EXISTS (SELECT 1 FROM memberships m WHERE m.user_id = u.id) LIMIT $2`,
+				AND NOT EXISTS (SELECT 1 FROM memberships m WHERE m.user_id = u.id)
+				AND NOT EXISTS (SELECT 1 FROM notification_recipients r WHERE r.user_id = u.id) LIMIT $2`,
 			table: "users", lockAlias: "u", match: `t.id = c.id`, args: []any{id, limit},
 		}},
 	}

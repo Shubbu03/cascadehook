@@ -11,6 +11,7 @@ import (
 	"github.com/jackc/pgx/v5"
 
 	"cascadehook/internal/accounts"
+	"cascadehook/internal/notifications"
 	"cascadehook/internal/pagination"
 )
 
@@ -384,6 +385,14 @@ func (s *Store) AcceptInvitation(
 		return accounts.Membership{}, fmt.Errorf("consume invitation: %w", err)
 	}
 	if err := completeOnboarding(ctx, tx, userID); err != nil {
+		return accounts.Membership{}, err
+	}
+	if _, err := emitNotification(ctx, tx, notificationEvent{
+		OrganizationID: organizationID, ActorID: userID,
+		Type: "invitation_accepted", Category: notifications.Team, Severity: "success", Audience: "owner",
+		Title: "An invitation was accepted", Body: "An invited member accepted their organization invitation.",
+		ResourceType: "members", ResourceID: userID, SourceKey: "invitation:" + fmt.Sprintf("%x", hash) + ":accepted",
+	}); err != nil {
 		return accounts.Membership{}, err
 	}
 	if err := tx.Commit(ctx); err != nil {

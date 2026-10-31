@@ -55,6 +55,10 @@ PostgreSQL and the signing encryption key. Apply migrations before starting the
 API and schedule `db:cleanup` regularly. The API exposes `/healthz` and `/readyz`
 for health checks.
 
+The [notification backend](apps/server/NOTIFICATIONS.md) requires migration
+`00021`. It provides organization-scoped personal inbox APIs and notification
+generation. Schedule cleanup with `NOTIFICATION_RETENTION_DAYS` (default 90).
+
 See [frontend documentation](apps/web/README.md) for dashboard configuration.
 The standalone [docs app](apps/docs/README.md) has its own build and deployment.
 Set `NEXT_PUBLIC_DOCS_URL` on the web app to its public root URL when deploying.
