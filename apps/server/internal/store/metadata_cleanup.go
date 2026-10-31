@@ -29,9 +29,15 @@ func cleanupMetadata(ctx context.Context, tx pgx.Tx, reference time.Time, limit 
 			match: `t.endpoint_id = c.endpoint_id AND t.event_type = c.event_type`, args: []any{limit},
 		}},
 		{retentionSelection: retentionSelection{
+			query: `SELECT s.endpoint_id FROM notification_delivery_state s JOIN endpoints e ON e.id = s.endpoint_id
+				WHERE e.deleted_at IS NOT NULL ORDER BY s.endpoint_id LIMIT $1`,
+			table: "notification_delivery_state", lockAlias: "s", match: `t.endpoint_id = c.endpoint_id`, args: []any{limit},
+		}},
+		{retentionSelection: retentionSelection{
 			query: `SELECT e.id FROM endpoints e WHERE e.deleted_at IS NOT NULL
 				AND NOT EXISTS (SELECT 1 FROM deliveries d WHERE d.endpoint_id = e.id)
 				AND NOT EXISTS (SELECT 1 FROM endpoint_subscriptions s WHERE s.endpoint_id = e.id)
+				AND NOT EXISTS (SELECT 1 FROM notification_delivery_state s WHERE s.endpoint_id = e.id)
 				ORDER BY e.id LIMIT $1`,
 			table: "endpoints", lockAlias: "e", match: `t.id = c.id`, args: []any{limit},
 		}},

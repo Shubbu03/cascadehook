@@ -54,6 +54,10 @@ func (s *Store) RetentionClock(ctx context.Context) (time.Time, error) {
 	if _, err := s.pool.Exec(ctx, lifecycleSchema); err != nil {
 		return time.Time{}, fmt.Errorf("usage/invitation cleanup schema unavailable; apply migrations through 00018: %w", err)
 	}
+	if _, err := s.pool.Exec(ctx, `SELECT n.source_key,r.membership_created_at,s.last_failure_at
+		FROM notifications n CROSS JOIN notification_recipients r CROSS JOIN notification_delivery_state s LIMIT 0`); err != nil {
+		return time.Time{}, fmt.Errorf("notification cleanup schema unavailable; apply migrations through 00021: %w", err)
+	}
 	var now time.Time
 	if err := s.pool.QueryRow(ctx, `SELECT clock_timestamp()`).Scan(&now); err != nil {
 		return time.Time{}, fmt.Errorf("read cleanup database time: %w", err)
@@ -84,6 +88,9 @@ func (s *Store) PreviewRetentionBatch(ctx context.Context, batch retention.Batch
 			batch.Limit,
 			true,
 		)
+	}
+	if batch.Phase == retention.DeleteNotifications {
+		return cleanupNotifications(ctx, tx, batch.NotificationCutoff, batch.Limit, true)
 	}
 	if batch.Phase == retention.DeleteProjects {
 		return cleanupProjectData(
@@ -141,6 +148,8 @@ func (s *Store) CleanupRetentionBatch(ctx context.Context, batch retention.Batch
 	}
 	var affected int64
 	switch batch.Phase {
+	case retention.DeleteNotifications:
+		affected, err = cleanupNotifications(ctx, tx, batch.NotificationCutoff, batch.Limit, false)
 	case retention.DeleteMetadata:
 		affected, err = cleanupMetadata(
 			ctx,

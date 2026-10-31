@@ -10,6 +10,7 @@ import (
 
 	"cascadehook/internal/auth"
 	"cascadehook/internal/endpoints"
+	"cascadehook/internal/notifications"
 	"cascadehook/internal/signing"
 )
 
@@ -50,6 +51,14 @@ func (s *Store) RotateEndpointSecret(ctx context.Context, actor auth.Principal, 
 	).Scan(&result.UpdatedAt, &result.PreviousSecretExpiresAt)
 	if err != nil {
 		return endpoints.SecretRotation{}, fmt.Errorf("rotate endpoint signing secret: %w", err)
+	}
+	if _, err := emitNotification(ctx, tx, notificationEvent{
+		ProjectID: projectID, ActorID: actor.UserID, Type: "signing_secret_changed",
+		Category: notifications.Credentials, Severity: "warning", Audience: "manager",
+		Title: "An endpoint signing secret changed", Body: "A signing credential was provisioned or rotated. Ensure the receiver has the current secret.",
+		ResourceType: "endpoint", ResourceID: endpointID,
+	}); err != nil {
+		return endpoints.SecretRotation{}, err
 	}
 	if err := tx.Commit(ctx); err != nil {
 		return endpoints.SecretRotation{}, fmt.Errorf("commit signing secret rotation: %w", err)

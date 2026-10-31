@@ -307,5 +307,5 @@ func updateDeliveryLease(ctx context.Context, tx pgx.Tx, held lockedDelivery, co
 	if result.RowsAffected() != 1 {
 		return deliveries.ErrLeaseLost
 	}
-	return nil
+	return notifyDeliveryCompletion(ctx, tx, held, completion)
 }

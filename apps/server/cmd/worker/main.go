@@ -10,6 +10,7 @@ import (
 
 	"cascadehook/internal/config"
 	"cascadehook/internal/delivery"
+	"cascadehook/internal/notifications"
 	"cascadehook/internal/signing"
 	"cascadehook/internal/store"
 	"cascadehook/internal/telemetry"
@@ -77,7 +78,14 @@ func run() error {
 		metrics,
 		logger,
 		func(serviceCtx context.Context) error {
-			return worker.Run(
+			maintenanceCtx, stopMaintenance := context.WithCancel(serviceCtx)
+			defer stopMaintenance()
+			maintenanceDone := make(chan struct{})
+			go func() {
+				defer close(maintenanceDone)
+				notifications.RunMaintenance(maintenanceCtx, db, logger)
+			}()
+			err := worker.Run(
 				serviceCtx,
 				worker.Options{
 					PollInterval:           cfg.PollInterval,
@@ -92,6 +100,9 @@ func run() error {
 				vault,
 				logger,
 			)
+			stopMaintenance()
+			<-maintenanceDone
+			return err
 		},
 	)
 }

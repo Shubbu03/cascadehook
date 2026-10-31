@@ -47,6 +47,7 @@ func Run(ctx context.Context, db Store, options Options, logger *slog.Logger) (R
 	}
 	report.Reference = clock.UTC()
 	report.Cutoff = report.Reference.Add(-time.Duration(options.Days) * 24 * time.Hour)
+	report.NotificationCutoff = report.Reference.Add(-time.Duration(options.NotificationDays) * 24 * time.Hour)
 	for report.Batches < options.MaxBatches {
 		var passRows int64
 		for _, phase := range Phases() {
@@ -57,6 +58,7 @@ func Run(ctx context.Context, db Store, options Options, logger *slog.Logger) (R
 			batch := Batch{
 				Phase: phase, Limit: options.BatchSize,
 				Reference: report.Reference, Cutoff: report.Cutoff,
+				NotificationCutoff: report.NotificationCutoff,
 			}
 			opCtx, opCancel := context.WithTimeout(ctx, OperationTimeout)
 			var result BatchResult
