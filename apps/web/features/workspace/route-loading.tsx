@@ -2,11 +2,14 @@
 
 import { usePathname } from "next/navigation";
 import { Suspense } from "react";
+import { NotificationPageSkeleton } from "@/features/notifications/notification-skeleton";
 import { PageSkeleton, type PageSkeletonVariant } from "./skeletons";
 
 function RouteSkeleton() {
   const pathname = usePathname();
   const segments = pathname.split("/").filter(Boolean);
+  if (segments[1] === "organizations" && segments[3] === "notifications")
+    return <NotificationPageSkeleton />;
   let variant: PageSkeletonVariant = "projects";
   if (segments[0] === "account") variant = "settings";
   else if (segments[1] === "organizations")

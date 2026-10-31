@@ -14,6 +14,8 @@ import { useCallback, useEffect, useId, useState } from "react";
 import { Brand } from "@/components/brand";
 import { Modal } from "@/components/modal";
 import { ThemeSwitcher } from "@/components/theme-switcher";
+import { NotificationBell } from "@/features/notifications/notification-bell";
+import { notificationAccessLost } from "@/features/notifications/queries";
 import { SidebarNavigation } from "./sidebar-navigation";
 import { useWorkspaceSelection } from "./use-workspace-selection";
 import { WorkspaceNavigation } from "./workspace-navigation";
@@ -119,6 +121,9 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           </button>
           <WorkspaceNavigation />
           <div className="dashboard-account">
+            {organization.data && !notificationAccessLost(organization.error) && (
+              <NotificationBell key={organization.data.id} organization={organization.data} />
+            )}
             <div className="desktop-theme">
               <ThemeSwitcher />
             </div>
