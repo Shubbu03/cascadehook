@@ -3,8 +3,12 @@ import { documentationBaseURL } from "./lib/docs";
 
 const nextConfig: NextConfig = {
   async redirects() {
-    if (!documentationBaseURL) return [];
-    return [
+    const accountRedirects = [
+      { source: "/sign-in/:path*", destination: "/login#/:path*", permanent: false },
+      { source: "/sign-up/:path*", destination: "/login#/create/:path*", permanent: false },
+    ];
+    if (!documentationBaseURL) return accountRedirects;
+    const docsRedirects = [
       "/docs/:path*",
       "/openapi.json",
       "/llms.txt",
@@ -17,6 +21,7 @@ const nextConfig: NextConfig = {
       destination: documentationBaseURL + source,
       permanent: false,
     }));
+    return [...accountRedirects, ...docsRedirects];
   },
   experimental: {
     optimizePackageImports: ["@phosphor-icons/react"],

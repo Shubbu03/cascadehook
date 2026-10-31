@@ -3,6 +3,7 @@
 import { useAuth } from "@clerk/nextjs";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createContext, useContext, useState } from "react";
+import { Notifications } from "@/components/notifications";
 import { AccessRedirectNotice } from "./access-redirect";
 import { WorkspaceLoading } from "./loading";
 import { WorkspaceCreation } from "./workspace-creation";
@@ -54,10 +55,12 @@ export function WorkspaceSession({
   return (
     <UserIdContext value={userId}>
       <QueryClientProvider client={queryClient}>
-        <AccessRedirectNotice />
-        <WorkspaceCreation>
-          <DashboardShell>{children}</DashboardShell>
-        </WorkspaceCreation>
+        <Notifications>
+          <AccessRedirectNotice />
+          <WorkspaceCreation>
+            <DashboardShell>{children}</DashboardShell>
+          </WorkspaceCreation>
+        </Notifications>
       </QueryClientProvider>
     </UserIdContext>
   );

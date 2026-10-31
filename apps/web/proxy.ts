@@ -15,6 +15,7 @@ export default function proxy(request: NextRequest, event: NextFetchEvent) {
 
 export const config = {
   matcher: [
+    "/login(.*)",
     "/sign-in(.*)",
     "/sign-up(.*)",
     "/onboarding(.*)",

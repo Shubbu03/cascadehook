@@ -7,12 +7,9 @@ import { AuthBrand } from "./auth-brand";
 
 export function AuthShell({
   children,
-  mode,
 }: {
   children: React.ReactNode;
-  mode: "sign-in" | "sign-up";
 }) {
-  const isSignUp = mode === "sign-up";
   const brand = isAuthConfigured() ? <AuthBrand /> : <Brand href="/" />;
 
   return (
@@ -21,14 +18,12 @@ export function AuthShell({
         {brand}
         <div className="auth-story-content">
           <h2>
-            {isSignUp ? "Start" : "Welcome"}
+            Welcome.
             <br />
-            <span>{isSignUp ? "building." : "back."}</span>
+            <span>Let’s build.</span>
           </h2>
           <p>
-            {isSignUp
-              ? "Create an account and connect your first endpoint."
-              : "Sign in to manage your projects and deliveries."}
+            Sign in or create an account to manage your webhook deliveries.
           </p>
         </div>
       </aside>
@@ -47,7 +42,7 @@ export function AuthShell({
         <main
           id="main-content"
           className="auth-form-area"
-          aria-label={isSignUp ? "Create an account" : "Sign in"}
+          aria-label="Account access"
         >
           {children}
         </main>

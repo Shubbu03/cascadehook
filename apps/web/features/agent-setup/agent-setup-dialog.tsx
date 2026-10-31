@@ -4,9 +4,9 @@ import { XIcon } from "@phosphor-icons/react";
 import Link from "next/link";
 import { useId } from "react";
 import { CopyButton } from "@/components/copy-button";
+import { DocsLink } from "@/components/docs-link";
 import { Modal } from "@/components/modal";
 import { projectHref, useProject } from "@/features/projects/project-workspace";
-import { docsHref } from "@/lib/docs";
 import { buildSetupPrompt, integrationAPIBaseURL } from "./prompt";
 
 export function AgentSetupDialog({ siteOrigin, onClose }: {
@@ -90,9 +90,9 @@ export function AgentSetupDialog({ siteOrigin, onClose }: {
         </p>
       )}
       <div className="agent-setup-links">
-        <a href={docsHref("/docs/agents")} className="text-link">Agent setup guide →</a>
-        <a href={docsHref("/docs/agents.md")} className="text-link">Markdown guide</a>
-        <a href={docsHref("/openapi.json")} className="text-link">API schema</a>
+        <DocsLink path="/docs/agents" className="text-link">Agent setup guide →</DocsLink>
+        <DocsLink path="/docs/agents.md" className="text-link">Markdown guide</DocsLink>
+        <DocsLink path="/openapi.json" className="text-link">API schema</DocsLink>
       </div>
     </Modal>
   );

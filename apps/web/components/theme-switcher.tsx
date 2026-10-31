@@ -1,62 +1,26 @@
 "use client";
 
 import { MoonIcon, SunIcon } from "@phosphor-icons/react";
-import { useSyncExternalStore } from "react";
+import { useContext, type MouseEvent } from "react";
+import { useTheme } from "@/components/theme-provider";
+import { NotificationContext } from "@/lib/notification-context";
 import { notify } from "@/lib/notify";
-import {
-  isThemePreference,
-  themeStorageKey,
-  type ThemePreference,
-} from "@/lib/theme";
-
-const changeEvent = "cascadehook-theme-change";
-
-function currentTheme(): ThemePreference {
-  const value = document.documentElement.dataset.theme;
-  if (value === "light" || value === "dark") return value;
-  return window.matchMedia("(prefers-color-scheme: dark)").matches
-    ? "dark"
-    : "light";
-}
-
-function subscribe(onChange: () => void) {
-  const systemTheme = window.matchMedia("(prefers-color-scheme: dark)");
-
-  function onStorage(event: StorageEvent) {
-    if (event.key !== themeStorageKey && event.key !== null) return;
-    document.documentElement.dataset.theme = isThemePreference(event.newValue)
-      ? event.newValue
-      : "system";
-    onChange();
-  }
-  window.addEventListener(changeEvent, onChange);
-  window.addEventListener("storage", onStorage);
-  systemTheme.addEventListener("change", onChange);
-  return () => {
-    window.removeEventListener(changeEvent, onChange);
-    window.removeEventListener("storage", onStorage);
-    systemTheme.removeEventListener("change", onChange);
-  };
-}
-
-function serverTheme(): ThemePreference {
-  return "system";
-}
 
 export function ThemeSwitcher() {
-  const theme = useSyncExternalStore(subscribe, currentTheme, serverTheme);
+  const notificationsEnabled = useContext(NotificationContext);
+  const { theme, toggleTheme } = useTheme();
   const label =
     theme === "system"
       ? "Toggle color theme"
       : `Switch to ${theme === "dark" ? "light" : "dark"} theme`;
 
-  function toggleTheme() {
-    const value = currentTheme() === "dark" ? "light" : "dark";
-    document.documentElement.dataset.theme = value;
-    window.dispatchEvent(new Event(changeEvent));
-    try {
-      localStorage.setItem(themeStorageKey, value);
-    } catch {
+  async function toggle(event: MouseEvent<HTMLButtonElement>) {
+    const { left, top, width, height } = event.currentTarget.getBoundingClientRect();
+    const origin = event.detail === 0
+      ? { x: left + width / 2, y: top + height / 2 }
+      : { x: event.clientX, y: event.clientY };
+    const persisted = await toggleTheme(origin);
+    if (persisted === false && notificationsEnabled) {
       notify(
         "Theme changed. Your browser couldn't save the preference.",
         "warn",
@@ -68,7 +32,7 @@ export function ThemeSwitcher() {
     <button
       type="button"
       className="theme-switcher"
-      onClick={toggleTheme}
+      onClick={toggle}
       aria-label={label}
       title={label}
     >

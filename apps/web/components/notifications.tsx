@@ -1,9 +1,26 @@
 "use client";
 
+import { useAuth } from "@clerk/nextjs";
 import { XIcon } from "@phosphor-icons/react";
+import { Suspense, type ReactNode } from "react";
 import toast, { ToastBar, Toaster } from "react-hot-toast";
+import { NotificationContext } from "@/lib/notification-context";
 
-export function Notifications() {
+export function Notifications({ children }: { children: ReactNode }) {
+  return (
+    <NotificationContext.Provider value={true}>
+      {children}
+      <Suspense fallback={null}>
+        <NotificationToaster />
+      </Suspense>
+    </NotificationContext.Provider>
+  );
+}
+
+function NotificationToaster() {
+  const { isSignedIn } = useAuth();
+  if (isSignedIn !== true) return null;
+
   return (
     <Toaster
       position="top-right"

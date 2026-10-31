@@ -1,0 +1,15 @@
+@layer components {
+  :root[data-theme-transition="circular"]::view-transition-old(root),
+  :root[data-theme-transition="circular"]::view-transition-new(root) {
+    animation: none;
+    mix-blend-mode: normal;
+  }
+
+  :root[data-theme-transition="circular"]::view-transition-old(root) {
+    z-index: 1;
+  }
+
+  :root[data-theme-transition="circular"]::view-transition-new(root) {
+    z-index: 2;
+  }
+}

@@ -1,6 +1,8 @@
 @layer theme, base, clerk, components, utilities;
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   color-scheme: light;
   --theme-light-icon: block;

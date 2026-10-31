@@ -100,7 +100,7 @@ export function AcceptInvitation() {
                   Sign in with the invited email, then reopen your invitation
                   link.
                 </p>
-                <Link className="button button-primary" href="/sign-in">
+                <Link className="button button-primary" href="/login">
                   Sign in
                 </Link>
               </>

@@ -6,10 +6,10 @@ import {
   PlusIcon,
 } from "@phosphor-icons/react";
 import Link from "next/link";
+import { DocsLink } from "@/components/docs-link";
 import { EndpointReadinessSkeleton } from "@/features/workspace/skeletons";
 import { endpointState, type Endpoint } from "@/features/endpoints/types";
 import { projectHref, useProject } from "../project-workspace";
-import { docsHref } from "@/lib/docs";
 
 export function OverviewEndpoints({
   endpoints,
@@ -112,12 +112,12 @@ export function OverviewEndpoints({
           View all endpoints
           <ArrowRightIcon size={14} aria-hidden="true" />
         </Link>
-        <a
-          href={docsHref("/docs/receivers")}
+        <DocsLink
+          path="/docs/receivers"
           className="text-link workspace-muted"
         >
           Receiver guide <ArrowRightIcon size={14} aria-hidden="true" />
-        </a>
+        </DocsLink>
       </div>
     </aside>
   );

@@ -7,6 +7,6 @@ import { isAuthConfigured } from "./auth";
 
 export const requireSession = cache(async () => {
   await connection();
-  if (!isAuthConfigured()) redirect("/sign-in");
+  if (!isAuthConfigured()) redirect("/login");
   return auth.protect();
 });

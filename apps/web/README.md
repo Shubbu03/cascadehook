@@ -22,8 +22,8 @@ Configure these variables before starting the frontend:
 | `NEXT_PUBLIC_API_BASE_URL` | Public Go API origin, without `/v1` or credentials |
 | `NEXT_PUBLIC_DOCS_URL` | Public root URL of `apps/docs`; defaults to port 3001 in development |
 
-The example also configures local sign-in/sign-up routes. Sign-in returns to
-`/dashboard`; sign-up starts at `/onboarding`. Keep secrets out of `NEXT_PUBLIC_`
+The example configures `/login` for both sign-in and account creation. Sign-in
+returns to `/dashboard`; sign-up starts at `/onboarding`. Keep secrets out of `NEXT_PUBLIC_`
 variables. Public variables are set at build time; restart development after
 changing environment files.
 
@@ -44,9 +44,10 @@ produces a connection error in the authenticated workspace.
 
 | Route | Purpose |
 | --- | --- |
-| `/` | Landing page with illustrative delivery examples |
+| `/` | Landing page with a static delivery illustration and request examples |
 | `/docs/*`, `/openapi.json` | Compatibility redirects to the standalone docs app |
-| `/sign-in`, `/sign-up` | Clerk account access |
+| `/login` | Google and email account access, with sign-up in the same page |
+| `/sign-in/*`, `/sign-up/*` | Compatibility redirects to the matching `/login` form step |
 | `/onboarding/organization`, `/onboarding/project` | First workspace setup |
 | `/dashboard` | Organization and project selection |
 | `/dashboard/projects/:projectId` | Project overview and receiver setup checklist |
@@ -60,6 +61,13 @@ produces a connection error in the authenticated workspace.
 | `/dashboard/organizations/:organizationId/usage` | Organization resource usage and quotas |
 | `/account` | Account settings and deletion |
 | `/invitations/accept` | Accept an invitation using the invited verified email |
+
+The login page starts with sign-in and a Google button above the email form.
+"Create account" and "Sign in" switch Clerk's forms within that page using hash
+routes, including verification, password recovery and OAuth callbacks. Existing
+auth links keep their query parameters when redirected to `/login`. Clerk owns
+authentication; the Go API finds or provisions the local account from the
+verified session identity, so this flow does not require a separate signup API.
 
 First-time setup resumes from the account's persisted onboarding state. Deleting
 the last project shows an empty workspace without restarting onboarding. Owners
@@ -95,15 +103,34 @@ instead of sending users to a development address.
 
 ## UI conventions
 
+The landing page's delivery illustration is a labelled static example. Its
+primary calls to action lead to `/login`; delivery logs and replay are
+available inside a project after setup.
+
+Use `DocsLink` from `@/components/docs-link` for documentation pages, receiver
+guides, Markdown guides, and API schemas. It opens documentation in a new tab
+so the current app page stays available.
+
 Feature code lives in `features/`, shared controls in `components/`, API/session
 helpers in `lib/`, and route entry points in `app/`. Global stylesheets are
 imported from the root layout. IBM Plex fonts are self-hosted with licenses in
 `app/fonts`.
 
 The system theme is the default. Explicit choices are saved and synchronized
-across tabs; blocked browser storage still allows a temporary choice. Use
-`notify` from `@/lib/notify` for success/error/warn/info notifications. Important
-form errors also remain inline.
+across tabs; blocked browser storage still allows a temporary choice. The root
+`ThemeProvider` synchronizes the resolved theme with the `<html>` dark class and
+the existing palette attributes. Theme clicks reveal the new theme from the
+click position using View Transitions; unsupported browsers and reduced motion
+switch instantly. Animation rules are scoped to a temporary root attribute in
+`app/theme-transition.css`. The reusable pixel dissolve experiment is archived
+in [this gist](https://gist.github.com/Shubbu03/1e48142e18dc2c2b29b77dee857919a9).
+
+Use `notify` from `@/lib/notify` for success/error/warn/info notifications inside the
+signed-in app. The notification provider belongs in the authenticated workspace
+and onboarding shells, after their session checks. Its Clerk-dependent toaster
+has its own Suspense boundary so it cannot block page content. Public copy
+actions show inline confirmation or failure on the button; public theme changes
+do not emit toasts. Important form errors also remain inline.
 
 ## Checks
 
@@ -121,8 +148,9 @@ loaders in worker threads; use a supported Node.js version for builds.
 
 Verify manually:
 
-1. Landing/docs navigation, code copying, and receiver downloads.
-2. Sign-up/sign-in, interrupted onboarding, organization/project switching, and
+1. Landing account links, request-language tabs and copying, docs navigation,
+   and receiver downloads.
+2. `/login` form switching, Google/email access, interrupted onboarding, organization/project switching, and
    access with owner/admin/member roles. As a member, open project API Keys,
    project Usage, and organization Usage URLs directly; check the destination,
    single permission toast, refresh, and Back behavior. Owners and admins should

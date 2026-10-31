@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { RootProvider } from "fumadocs-ui/provider/next";
+import { ThemeTransitionProvider } from "@/components/theme-transition-provider";
 import "./globals.css";
+import "./theme-transition.css";
 
 const sans = localFont({
   src: "./fonts/ibm-plex-sans-latin.woff2",
@@ -33,8 +35,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="flex min-h-screen flex-col">
         <a href="#nd-page" className="docs-skip-link">Skip to content</a>
-        <RootProvider theme={{ defaultTheme: "system", storageKey: "cascadehook-docs-theme" }}>
-          {children}
+        <RootProvider theme={{ attribute: "class", defaultTheme: "system", storageKey: "cascadehook-docs-theme", hotKey: false }}>
+          <ThemeTransitionProvider>{children}</ThemeTransitionProvider>
         </RootProvider>
       </body>
     </html>

@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
-import { Notifications } from "@/components/notifications";
+import { ThemeProvider } from "@/components/theme-provider";
 import { themeScript } from "@/lib/theme";
 import "./globals.css";
+import "./theme-transition.css";
 import "./site.css";
+import "./marketing.css";
 import "./project.css";
 import "./endpoint-detail.css";
 import "./onboarding.css";
@@ -63,8 +65,7 @@ export default function RootLayout({
         <a className="skip-link" href="#main-content">
           Skip to content
         </a>
-        {children}
-        <Notifications />
+        <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>
   );
