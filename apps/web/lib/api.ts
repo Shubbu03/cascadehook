@@ -93,6 +93,10 @@ function problemMessage(status: number, code?: string) {
     invalid_invitation_email: "Enter a plain email address.",
     invitation_pending:
       "An invitation for this email is already pending. Revoke it before creating another.",
+    invitation_email_not_configured:
+      "Invitation emails aren't configured yet. Ask your administrator to set up email delivery.",
+    invitation_resend_rate_limited:
+      "Wait at least one minute before resending this invitation.",
     invitation_unavailable:
       "This invitation has expired, been revoked, or is unavailable.",
     invitation_email_mismatch:

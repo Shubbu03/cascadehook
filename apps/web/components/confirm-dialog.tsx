@@ -29,7 +29,6 @@ export function ConfirmDialog({
       aria-labelledby={id}
       aria-describedby={id + "-description"}
       onDismiss={onCancel}
-      dismissDisabled={pending}
     >
       <h2 id={id}>{title}</h2>
       <div id={id + "-description"}>{children}</div>

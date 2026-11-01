@@ -18,6 +18,7 @@ var (
 	ErrInvitationInvalid     = errors.New("invitation is invalid, expired or unavailable")
 	ErrInvitationEmail       = errors.New("sign in with a verified email matching the invitation")
 	ErrInvitationRateLimited = errors.New("wait before another invitation identity lookup")
+	ErrInvitationResend      = errors.New("wait before resending this invitation")
 )
 
 type Invitation struct {
@@ -29,6 +30,9 @@ type Invitation struct {
 	ExpiresAt      time.Time  `json:"expires_at"`
 	AcceptedAt     *time.Time `json:"accepted_at"`
 	RevokedAt      *time.Time `json:"revoked_at"`
+	ProjectID      *uuid.UUID `json:"project_id"`
+	EmailStatus    string     `json:"email_status"`
+	LastEmailAt    *time.Time `json:"last_email_at"`
 }
 
 func NormalizeEmail(value string) (string, error) {

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log/slog"
 	"net"
-	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -15,6 +14,7 @@ import (
 	"cascadehook/internal/clerk"
 	"cascadehook/internal/deliveries"
 	"cascadehook/internal/limits"
+	"cascadehook/internal/mailoutbox"
 	"cascadehook/internal/retention"
 	"cascadehook/internal/telemetry"
 )
@@ -37,7 +37,7 @@ type APIConfig struct {
 	Metrics               telemetry.Config
 	ClerkBackend          clerk.Config
 	ClerkWebhookSecrets   []string `json:"-"`
-	InvitationURL         string
+	Email                 mailoutbox.Config
 }
 
 type WorkerConfig struct {
@@ -49,6 +49,8 @@ type WorkerConfig struct {
 	ClaimBatchSize         int
 	PollInterval           time.Duration
 	Metrics                telemetry.Config
+	Email                  mailoutbox.Config
+	ClerkBackend           clerk.Config
 }
 
 type JanitorConfig struct {
@@ -148,15 +150,12 @@ func LoadAPI() (APIConfig, error) {
 	if _, err := clerk.NewWebhook(cfg.ClerkWebhookSecrets); err != nil {
 		return APIConfig{}, err
 	}
-	cfg.InvitationURL = os.Getenv("INVITATION_ACCEPT_URL")
-	if cfg.InvitationURL != "" {
-		u, err := url.Parse(cfg.InvitationURL)
-		if err != nil || u.Scheme != "https" || u.Hostname() == "" {
-			return APIConfig{}, fmt.Errorf("INVITATION_ACCEPT_URL must be an HTTPS application URL")
-		}
-		if u.User != nil || u.RawQuery != "" || u.ForceQuery || u.Fragment != "" || len(cfg.InvitationURL) > 2048 {
-			return APIConfig{}, fmt.Errorf("INVITATION_ACCEPT_URL cannot contain credentials, query or fragment")
-		}
+	cfg.Email, err = emailConfig()
+	if err != nil {
+		return APIConfig{}, err
+	}
+	if cfg.Email.Enabled() && cfg.ClerkBackend.SecretKey == "" {
+		return APIConfig{}, fmt.Errorf("CLERK_SECRET_KEY is required for invitation emails")
 	}
 	if parties := os.Getenv("CLERK_AUTHORIZED_PARTIES"); parties != "" {
 		for _, party := range strings.Split(parties, ",") {
@@ -208,6 +207,17 @@ func LoadWorker() (WorkerConfig, error) {
 		return WorkerConfig{}, err
 	}
 	cfg := WorkerConfig{Config: shared, PollInterval: time.Second}
+	cfg.Email, err = emailConfig()
+	if err != nil {
+		return WorkerConfig{}, err
+	}
+	cfg.ClerkBackend = clerk.Config{IssuerURL: os.Getenv("CLERK_ISSUER_URL"), SecretKey: os.Getenv("CLERK_SECRET_KEY")}
+	if err := cfg.ClerkBackend.Validate(); err != nil {
+		return WorkerConfig{}, err
+	}
+	if cfg.Email.Enabled() && cfg.ClerkBackend.SecretKey == "" {
+		return WorkerConfig{}, fmt.Errorf("CLERK_SECRET_KEY is required for invitation emails")
+	}
 	cfg.SigningEncryptionKey, err = signingEncryptionKey()
 	if err != nil {
 		return WorkerConfig{}, err
@@ -239,6 +249,18 @@ func LoadWorker() (WorkerConfig, error) {
 		return WorkerConfig{}, err
 	}
 	return cfg, nil
+}
+
+func emailConfig() (mailoutbox.Config, error) {
+	limit, err := boundedInt("EMAIL_DAILY_LIMIT", 100, 1, 1000000)
+	if err != nil {
+		return mailoutbox.Config{}, err
+	}
+	cfg := mailoutbox.Config{
+		APIKey: os.Getenv("RESEND_API_KEY"), From: os.Getenv("EMAIL_FROM"),
+		WebhookSecret: os.Getenv("RESEND_WEBHOOK_SECRET"), InvitationURL: os.Getenv("INVITATION_ACCEPT_URL"), DailyLimit: limit,
+	}
+	return cfg, cfg.Validate()
 }
 
 func metricsConfig() (telemetry.Config, error) {

@@ -12,6 +12,7 @@ import (
 	"cascadehook/internal/clerk"
 	"cascadehook/internal/delivery"
 	"cascadehook/internal/limits"
+	"cascadehook/internal/mailoutbox"
 	"cascadehook/internal/signing"
 	"cascadehook/internal/store"
 	"cascadehook/internal/telemetry"
@@ -27,7 +28,8 @@ type api struct {
 	identityWebhook *clerk.Webhook
 	clerkIssuer     string
 	clerkBackend    *clerk.Client
-	invitationURL   string
+	emailEnabled    bool
+	emailWebhook    *mailoutbox.Webhook
 }
 
 type HandlerOptions struct {
@@ -41,13 +43,17 @@ type HandlerOptions struct {
 	IdentityWebhook *clerk.Webhook
 	ClerkIssuer     string
 	ClerkBackend    *clerk.Client
-	InvitationURL   string
+	Email           mailoutbox.Config
 }
 
 // readinessTimeout bounds the database check behind /readyz.
 const readinessTimeout = 2 * time.Second
 
 func NewHandler(options HandlerOptions) (http.Handler, error) {
+	emailWebhook, err := mailoutbox.NewWebhook(options.Email.WebhookSecret)
+	if err != nil {
+		return nil, err
+	}
 	requestLimits, err := limits.New(options.RequestLimits)
 	if err != nil {
 		return nil, err
@@ -57,8 +63,8 @@ func NewHandler(options HandlerOptions) (http.Handler, error) {
 		outbound: options.Outbound, sessions: options.Sessions,
 		requestLimits:   requestLimits,
 		identityWebhook: options.IdentityWebhook, clerkIssuer: options.ClerkIssuer,
-		clerkBackend:  options.ClerkBackend,
-		invitationURL: options.InvitationURL,
+		clerkBackend: options.ClerkBackend,
+		emailEnabled: options.Email.Enabled(), emailWebhook: emailWebhook,
 	}
 	mux := http.NewServeMux()
 	routes := make([]string, 0)
@@ -111,6 +117,7 @@ func NewHandler(options HandlerOptions) (http.Handler, error) {
 	handle("/v1/project-status", api.withProjectKey(api.projectStatus))
 	handle("/v1/me", api.accountResource)
 	handle("/v1/webhooks/clerk", api.clerkWebhook)
+	handle("/v1/webhooks/resend", api.resendWebhook)
 	handle("/v1/organizations", api.withSession(api.organizationCollection))
 	handle("/v1/organizations/{organization_id}", api.withSession(api.organizationResource))
 	handle("/v1/organizations/{organization_id}/usage", api.withSession(api.organizationUsage))
@@ -122,6 +129,8 @@ func NewHandler(options HandlerOptions) (http.Handler, error) {
 	handle("/v1/organizations/{organization_id}/invitations", api.withSession(api.invitationCollection))
 	handle("/v1/organizations/{organization_id}/invitations/{invitation_id}", api.withSession(api.revokeInvitation))
 	handle("/v1/invitations/accept", api.withSession(api.acceptInvitation))
+	handle("/v1/organizations/{organization_id}/invitations/{invitation_id}/resend", api.withSession(api.resendInvitation))
+	handle("/v1/invitations/{invitation_id}/accept", api.withSession(api.acceptInvitationByID))
 	handle("/v1/organizations/{organization_id}/members/{user_id}", api.withSession(api.membershipResource))
 	handle("/v1/organizations/{organization_id}/projects", api.withSession(api.projectCollection))
 	handle("/v1/projects/{project_id}", api.withSession(api.projectResource))
