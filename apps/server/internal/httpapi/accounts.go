@@ -258,6 +258,9 @@ func (api *api) accountProblem(w http.ResponseWriter, r *http.Request, err error
 			http.StatusTooManyRequests,
 			"invitation_lookup_rate_limited",
 		)
+	case errors.Is(err, accounts.ErrInvitationResend):
+		w.Header().Set("Retry-After", "60")
+		writeProblem(w, r, http.StatusTooManyRequests, "invitation_resend_rate_limited")
 	case errors.Is(err, accounts.ErrInvalidEmail):
 		writeProblem(
 			w,

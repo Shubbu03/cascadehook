@@ -91,8 +91,12 @@ when their route is hidden or unmounted. Signing-secret and API-key rotation
 retain the previous credential for five minutes. Changing an endpoint URL clears
 verification and disables delivery until the new receiver is verified.
 
-Invitations are shared manually; the UI sends no email. The API uses its Clerk
-secret key to verify the recipient's email. Deletion requests block access and
+Invitations are emailed by the backend worker through Resend. New recipients
+can complete Clerk signup from their personal link; existing users authenticate
+through Clerk and join the invited organization. Owners can track delivery,
+resend, revoke, and choose a project landing page. Authentication links are
+never returned to owners. See [email setup](../server/EMAIL.md).
+The API checks the recipient's authoritative verified email before granting membership. Deletion requests block access and
 queue cleanup; the backend janitor completes local/provider deletion.
 
 Guides, the OpenAPI contract, and receiver downloads belong to `apps/docs`.

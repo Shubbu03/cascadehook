@@ -59,6 +59,10 @@ The [notification backend](apps/server/NOTIFICATIONS.md) requires migration
 `00021`. It provides organization-scoped personal inbox APIs and notification
 generation. Schedule cleanup with `NOTIFICATION_RETENTION_DAYS` (default 90).
 
+Invitation emails require migration `00022` and Resend/Clerk configuration on
+the API and worker. Follow [email setup](apps/server/EMAIL.md) for sender-domain
+verification, delivery webhooks, and passwordless invitation onboarding.
+
 See [frontend documentation](apps/web/README.md) for dashboard configuration.
 The standalone [docs app](apps/docs/README.md) has its own build and deployment.
 Set `NEXT_PUBLIC_DOCS_URL` on the web app to its public root URL when deploying.

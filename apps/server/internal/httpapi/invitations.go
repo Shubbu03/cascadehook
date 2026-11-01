@@ -2,7 +2,8 @@ package httpapi
 
 import (
 	"net/http"
-	"net/url"
+
+	"github.com/google/uuid"
 
 	"cascadehook/internal/accounts"
 	"cascadehook/internal/pagination"
@@ -40,12 +41,17 @@ func (api *api) invitationCollection(w http.ResponseWriter, r *http.Request, use
 			},
 		)
 	case http.MethodPost:
+		if !api.emailEnabled || api.clerkBackend == nil {
+			writeProblem(w, r, http.StatusServiceUnavailable, "invitation_email_not_configured")
+			return
+		}
 		if !accountQueryEmpty(w, r) {
 			return
 		}
 		var body struct {
-			Email string        `json:"email"`
-			Role  accounts.Role `json:"role"`
+			Email     string        `json:"email"`
+			Role      accounts.Role `json:"role"`
+			ProjectID *uuid.UUID    `json:"project_id"`
 		}
 		if err := readJSON(w, r, &body); err != nil {
 			jsonProblem(w, r, err)
@@ -54,21 +60,17 @@ func (api *api) invitationCollection(w http.ResponseWriter, r *http.Request, use
 		if body.Role == "" {
 			body.Role = accounts.Member
 		}
-		token, hash, err := accounts.NewInvitationToken()
+		_, hash, err := accounts.NewInvitationToken()
 		if err != nil {
 			api.accountProblem(w, r, err)
 			return
 		}
 		invitation, err := api.db.CreateInvitation(r.Context(), user.ID, store.CreateInvitationParams{
-			OrganizationID: organizationID, Email: body.Email, Role: body.Role, Hash: hash,
+			OrganizationID: organizationID, Email: body.Email, Role: body.Role, Hash: hash, ProjectID: body.ProjectID,
 		})
 		if err != nil {
 			api.accountProblem(w, r, err)
 			return
-		}
-		link := ""
-		if api.invitationURL != "" {
-			link = api.invitationURL + "#token=" + url.QueryEscape(token)
 		}
 		w.Header().Set("Location", "/v1/organizations/"+organizationID.String()+"/invitations")
 		writeJSON(
@@ -77,9 +79,7 @@ func (api *api) invitationCollection(w http.ResponseWriter, r *http.Request, use
 			http.StatusCreated,
 			struct {
 				Invitation accounts.Invitation `json:"invitation"`
-				Token      string              `json:"token"`
-				AcceptURL  string              `json:"accept_url,omitempty"`
-			}{Invitation: invitation, Token: token, AcceptURL: link},
+			}{Invitation: invitation},
 		)
 	default:
 		w.Header().Set("Allow", "GET, HEAD, POST")
@@ -90,6 +90,76 @@ func (api *api) invitationCollection(w http.ResponseWriter, r *http.Request, use
 			"method_not_allowed",
 		)
 	}
+}
+
+func (api *api) resendInvitation(w http.ResponseWriter, r *http.Request, user accounts.User) {
+	if r.Method != http.MethodPost {
+		w.Header().Set("Allow", "POST")
+		writeProblem(w, r, 405, "method_not_allowed")
+		return
+	}
+	if !api.emailEnabled {
+		writeProblem(w, r, 503, "invitation_email_not_configured")
+		return
+	}
+	organizationID, ok := readResourceID(w, r, "organization_id")
+	if !ok || !emptyAccountAction(w, r) {
+		return
+	}
+	id, ok := readResourceID(w, r, "invitation_id")
+	if !ok {
+		return
+	}
+	if err := api.db.ResendInvitation(r.Context(), user.ID, organizationID, id); err != nil {
+		api.accountProblem(w, r, err)
+		return
+	}
+	w.WriteHeader(http.StatusAccepted)
+}
+
+func (api *api) acceptInvitationByID(w http.ResponseWriter, r *http.Request, user accounts.User) {
+	if r.Method != http.MethodPost {
+		w.Header().Set("Allow", "POST")
+		writeProblem(w, r, 405, "method_not_allowed")
+		return
+	}
+	id, ok := readResourceID(w, r, "invitation_id")
+	if !ok || !emptyAccountAction(w, r) {
+		return
+	}
+	if api.clerkBackend == nil {
+		writeProblem(w, r, 503, "invitation_identity_lookup_not_configured")
+		return
+	}
+	hash, err := api.db.InvitationHash(r.Context(), user.ID, id)
+	if err != nil {
+		api.accountProblem(w, r, err)
+		return
+	}
+	subject, err := api.db.InvitationIdentity(r.Context(), user.ID, hash)
+	if err != nil {
+		api.accountProblem(w, r, err)
+		return
+	}
+	emails, err := api.clerkBackend.VerifiedEmails(r.Context(), subject)
+	if err != nil {
+		writeProblem(w, r, 503, "invitation_identity_lookup_unavailable")
+		return
+	}
+	member, err := api.db.AcceptInvitation(r.Context(), user.ID, hash, emails)
+	if err != nil {
+		api.accountProblem(w, r, err)
+		return
+	}
+	destination, err := api.db.InvitationDestination(r.Context(), user.ID, id)
+	if err != nil {
+		api.accountProblem(w, r, err)
+		return
+	}
+	writeJSON(w, r, http.StatusOK, struct {
+		Membership  accounts.Membership `json:"membership"`
+		Destination string              `json:"destination"`
+	}{Membership: member, Destination: destination})
 }
 
 func (api *api) revokeInvitation(w http.ResponseWriter, r *http.Request, user accounts.User) {

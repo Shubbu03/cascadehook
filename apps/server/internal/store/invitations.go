@@ -15,7 +15,10 @@ import (
 	"cascadehook/internal/pagination"
 )
 
-const invitationColumns = `id, organization_id, email, role, created_at, expires_at, accepted_at, revoked_at`
+const invitationColumns = `id, organization_id, email, role, created_at, expires_at, accepted_at, revoked_at, project_id,
+	coalesce((SELECT e.state FROM email_outbox e WHERE e.invitation_id = organization_invitations.id
+	ORDER BY e.created_at DESC,e.id DESC LIMIT 1),'not_sent'),
+	(SELECT max(e.created_at) FROM email_outbox e WHERE e.invitation_id = organization_invitations.id)`
 
 func scanInvitation(row pgx.Row, invitation *accounts.Invitation) error {
 	return row.Scan(
@@ -27,6 +30,9 @@ func scanInvitation(row pgx.Row, invitation *accounts.Invitation) error {
 		&invitation.ExpiresAt,
 		&invitation.AcceptedAt,
 		&invitation.RevokedAt,
+		&invitation.ProjectID,
+		&invitation.EmailStatus,
+		&invitation.LastEmailAt,
 	)
 }
 
@@ -35,6 +41,7 @@ type CreateInvitationParams struct {
 	Email          string
 	Role           accounts.Role
 	Hash           [sha256.Size]byte
+	ProjectID      *uuid.UUID
 }
 
 func (s *Store) CreateInvitation(
@@ -69,6 +76,16 @@ func (s *Store) CreateInvitation(
 	}
 	if role != accounts.Owner {
 		return accounts.Invitation{}, accounts.ErrForbidden
+	}
+	if params.ProjectID != nil {
+		var valid bool
+		if err := tx.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM projects WHERE id=$1
+			AND organization_id=$2 AND deletion_requested_at IS NULL)`, params.ProjectID, params.OrganizationID).Scan(&valid); err != nil {
+			return accounts.Invitation{}, fmt.Errorf("check invitation project: %w", err)
+		}
+		if !valid {
+			return accounts.Invitation{}, accounts.ErrNotFound
+		}
 	}
 	if err := checkResourceQuota(
 		ctx,
@@ -123,14 +140,15 @@ func (s *Store) CreateInvitation(
 	var invitation accounts.Invitation
 	err = scanInvitation(tx.QueryRow(
 		ctx,
-		`INSERT INTO organization_invitations (id, organization_id, email, role, token_hash, created_by_user_id)
-		VALUES ($1,$2,$3,$4,$5,$6) ON CONFLICT DO NOTHING RETURNING `+invitationColumns,
+		`INSERT INTO organization_invitations (id, organization_id, email, role, token_hash, created_by_user_id, project_id)
+		VALUES ($1,$2,$3,$4,$5,$6,$7) ON CONFLICT DO NOTHING RETURNING `+invitationColumns,
 		id,
 		params.OrganizationID,
 		email,
 		params.Role,
 		params.Hash[:],
 		actorID,
+		params.ProjectID,
 	), &invitation)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return accounts.Invitation{}, accounts.ErrInvitationConflict
@@ -138,8 +156,13 @@ func (s *Store) CreateInvitation(
 	if err != nil {
 		return accounts.Invitation{}, fmt.Errorf("create invitation: %w", err)
 	}
+	if err := enqueueInvitationEmail(ctx, tx, actorID, invitation); err != nil {
+		return accounts.Invitation{}, err
+	}
+	invitation.EmailStatus = "queued"
+	invitation.LastEmailAt = &invitation.CreatedAt
 	if err := tx.Commit(ctx); err != nil {
-		return accounts.Invitation{}, fmt.Errorf("commit invitation; revoke and recreate if token response is lost: %w", err)
+		return accounts.Invitation{}, fmt.Errorf("commit invitation: %w", err)
 	}
 	return invitation, nil
 }
@@ -216,6 +239,10 @@ func (s *Store) RevokeInvitation(ctx context.Context, actorID, organizationID, i
 	if _, err := tx.Exec(ctx, `UPDATE organization_invitations SET revoked_at = coalesce(revoked_at,clock_timestamp())
 		WHERE id = $1`, id); err != nil {
 		return fmt.Errorf("revoke invitation: %w", err)
+	}
+	if _, err := tx.Exec(ctx, `UPDATE email_outbox SET state='cancelled',payload_ciphertext=NULL,
+		updated_at=clock_timestamp() WHERE invitation_id=$1 AND state IN ('queued','sending')`, id); err != nil {
+		return err
 	}
 	return tx.Commit(ctx)
 }

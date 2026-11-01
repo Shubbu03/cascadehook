@@ -8,8 +8,10 @@ import (
 	"syscall"
 	"time"
 
+	"cascadehook/internal/clerk"
 	"cascadehook/internal/config"
 	"cascadehook/internal/delivery"
+	"cascadehook/internal/mailoutbox"
 	"cascadehook/internal/notifications"
 	"cascadehook/internal/signing"
 	"cascadehook/internal/store"
@@ -44,6 +46,17 @@ func run() error {
 		return err
 	}
 	defer outbound.CloseIdleConnections()
+	identity, err := clerk.New(cfg.ClerkBackend)
+	if err != nil {
+		return err
+	}
+	if identity != nil {
+		defer identity.CloseIdleConnections()
+	}
+	emailCipher, err := mailoutbox.NewCipher(cfg.SigningEncryptionKey, cfg.PreviousEncryptionKey)
+	if err != nil {
+		return err
+	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
@@ -81,6 +94,11 @@ func run() error {
 			maintenanceCtx, stopMaintenance := context.WithCancel(serviceCtx)
 			defer stopMaintenance()
 			maintenanceDone := make(chan struct{})
+			emailDone := make(chan struct{})
+			go func() {
+				defer close(emailDone)
+				mailoutbox.Run(maintenanceCtx, cfg.Email, db, identity, emailCipher, logger)
+			}()
 			go func() {
 				defer close(maintenanceDone)
 				notifications.RunMaintenance(maintenanceCtx, db, logger)
@@ -102,6 +120,7 @@ func run() error {
 			)
 			stopMaintenance()
 			<-maintenanceDone
+			<-emailDone
 			return err
 		},
 	)

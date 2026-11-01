@@ -52,7 +52,7 @@ func Run(ctx context.Context, cfg config.APIConfig, db *store.Store, logger *slo
 		DB: db, Logger: logger, Vault: vault, Outbound: outbound, Sessions: sessions,
 		RequestLimits: cfg.RequestLimits, Metrics: metrics,
 		IdentityWebhook: identityWebhook, ClerkIssuer: cfg.Clerk.IssuerURL, ClerkBackend: clerkBackend,
-		InvitationURL: cfg.InvitationURL,
+		Email: cfg.Email,
 	})
 	if err != nil {
 		return err

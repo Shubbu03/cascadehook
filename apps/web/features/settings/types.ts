@@ -46,11 +46,12 @@ export type Invitation = {
   expires_at: string;
   accepted_at: string | null;
   revoked_at: string | null;
+  project_id: string | null;
+  email_status: "not_sent" | "queued" | "sending" | "sent" | "delivered" | "failed" | "bounced" | "complained" | "suppressed" | "cancelled";
+  last_email_at: string | null;
 };
 export type InvitationReceipt = {
   invitation: Invitation;
-  token: string;
-  accept_url?: string;
 };
 
 export function invitationStatus(invitation: Invitation, now = Date.now()) {

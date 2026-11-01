@@ -4,7 +4,7 @@
   textarea {
     border: 0;
   }
-  .form-field :is(input, textarea),
+  .form-field :is(input, textarea, select),
   .filter-field :is(input, select),
   .account-input {
     border: 0;
@@ -12,12 +12,13 @@
     box-shadow: inset 0 -2px transparent;
     transition: box-shadow 0.15s;
   }
-  .form-field :is(input, textarea):focus-visible,
+  .form-field :is(input, textarea, select):focus-visible,
   .filter-field :is(input, select):focus-visible,
   .account-input:focus-visible {
     outline: none;
     box-shadow: inset 0 -2px var(--accent);
   }
+  .form-field .select-control,
   .filter-field .select-control {
     appearance: none;
     padding-inline: 14px 42px;
@@ -29,23 +30,34 @@
     text-align: start;
     text-overflow: ellipsis;
   }
+  .form-field .select-control {
+    display: block;
+    width: 100%;
+    min-height: 44px;
+    padding-block: 10px;
+    border-radius: 7px;
+    color: var(--foreground);
+    font-size: 14px;
+    line-height: 1.5;
+  }
   .select-control:disabled {
     opacity: 0.6;
   }
 }
 
 @media (forced-colors: active) {
+  .form-field .select-control,
   .filter-field .select-control {
     appearance: auto;
     background-image: none;
   }
-  .form-field :is(input, textarea),
+  .form-field :is(input, textarea, select),
   .filter-field :is(input, select),
   .account-input {
     outline: 1px solid CanvasText;
     outline-offset: -1px;
   }
-  .form-field :is(input, textarea):focus-visible,
+  .form-field :is(input, textarea, select):focus-visible,
   .filter-field :is(input, select):focus-visible,
   .account-input:focus-visible {
     outline: 2px solid Highlight;
@@ -54,7 +66,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .form-field :is(input, textarea),
+  .form-field :is(input, textarea, select),
   .filter-field :is(input, select),
   .account-input {
     transition: none;

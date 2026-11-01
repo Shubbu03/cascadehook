@@ -1,0 +1,153 @@
+@layer components {
+  .invitation-trigger:hover:not(:disabled),
+  .invitation-trigger[aria-expanded="true"] {
+    background: var(--surface-hover);
+  }
+  .invitation-dialog {
+    width: min(480px, calc(100vw - 32px));
+    padding: 0;
+  }
+  .invitation-dialog-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 24px 24px 20px;
+  }
+  .invitation-dialog-heading > div {
+    min-width: 0;
+  }
+  .invitation-dialog-heading h2 {
+    margin: 0;
+    font-size: 21px;
+    font-weight: 600;
+    line-height: 1.3;
+  }
+  .invitation-dialog .invitation-dialog-context {
+    margin: 6px 0 0;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+  }
+  .invitation-dialog-context strong {
+    color: var(--foreground);
+    font-weight: 500;
+  }
+  .invitation-dialog .invitation-close {
+    width: 34px;
+    min-height: 34px;
+    margin: -4px -5px 0 0;
+    padding: 0;
+    color: var(--muted);
+  }
+  .invitation-close:hover {
+    color: var(--foreground);
+  }
+  .invitation-dialog-fields {
+    display: grid;
+    gap: 18px;
+    padding: 0 24px 24px;
+  }
+  .invitation-dialog-options {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+  }
+  .invitation-dialog .form-field {
+    gap: 7px;
+    min-width: 0;
+    margin: 0;
+  }
+  .invitation-dialog .form-field > span {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .invitation-dialog .form-field :is(input, select) {
+    width: 100%;
+    min-height: 44px;
+    padding: 10px 12px;
+    border: 0;
+    border-radius: 6px;
+    background-color: var(--background);
+    color: var(--foreground);
+    box-shadow: inset 0 -2px transparent;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .invitation-dialog .form-field select {
+    padding-inline: 12px 38px;
+    background-position: right 12px center;
+  }
+  .invitation-dialog .form-field :is(input, select):focus-visible {
+    outline: none;
+    box-shadow: inset 0 -2px var(--accent);
+  }
+  .invitation-dialog .form-field small {
+    display: block;
+    margin: 0;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.5;
+  }
+  .invitation-dialog .field-help,
+  .invitation-dialog .form-error {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.6;
+  }
+  .invitation-dialog .form-error {
+    color: var(--danger);
+  }
+  .invitation-dialog .invitation-dialog-note {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    padding: 10px 12px;
+    border-radius: 6px;
+    background: var(--surface-hover);
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.5;
+  }
+  .invitation-dialog-note svg {
+    flex-shrink: 0;
+    color: var(--accent);
+  }
+  .invitation-dialog .form-actions {
+    justify-content: flex-end;
+    gap: 8px;
+    margin: 0;
+    padding: 16px 24px;
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+  }
+  .invitation-dialog .form-actions .button {
+    min-height: 38px;
+    font-size: 13px;
+  }
+  .invitation-dialog .form-actions .button-primary {
+    min-width: 132px;
+  }
+  .invitation-row-actions, .invitation-entry-actions { display: flex; flex-wrap: wrap; gap: 14px; }
+  .invitation-entry-actions { margin-top: 20px; }
+  .invitation-email-state { color: var(--muted); font-size: 12px; }
+  .invitation-email-state[data-state="delivered"] { color: var(--success); }
+  .invitation-email-state[data-state="failed"], .invitation-email-state[data-state="bounced"],
+  .invitation-email-state[data-state="suppressed"], .invitation-email-state[data-state="complained"] { color: var(--danger); }
+  .invitation-entry .onboarding-card { max-width: 520px; }
+  .invitation-entry .cl-rootBox, .invitation-entry .cl-cardBox { width: 100%; max-width: 100%; }
+  .invitation-entry .section-description { margin-bottom: 24px; }
+}
+
+@media (max-width: 440px) {
+  .invitation-dialog-options {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+  .invitation-dialog .form-field :is(input, select) {
+    font-size: 16px;
+  }
+}
