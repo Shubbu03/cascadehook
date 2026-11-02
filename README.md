@@ -67,3 +67,5 @@ Keep the root custom domain on the web Worker; the docs
 [configuration](apps/docs/wrangler.jsonc) adds the required path routes.
 
 [Dashboard setup](apps/web/README.md) · [Integration guide](apps/docs/content/docs/agents/integration.md)
+
+[Support and policy setup](docs/support-setup.md).

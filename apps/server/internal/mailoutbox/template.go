@@ -64,7 +64,7 @@ func invitationMessage(cfg Config, job Job, link string) ([]byte, error) {
 	}
 	name := strings.NewReplacer("\r", " ", "\n", " ").Replace(job.OrganizationName)
 	message := Message{
-		From: cfg.From, To: []string{job.Email}, Subject: "You're invited to " + name + " on Cascadehook",
+		From: cfg.From, ReplyTo: cfg.ReplyTo, To: []string{job.Email}, Subject: "You're invited to " + name + " on Cascadehook",
 		HTML: body.String(),
 		Tags: []Tag{{Name: "cascadehook_job", Value: job.ID.String()}},
 		Text: fmt.Sprintf(

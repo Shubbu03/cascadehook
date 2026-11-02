@@ -257,8 +257,11 @@ func emailConfig() (mailoutbox.Config, error) {
 		return mailoutbox.Config{}, err
 	}
 	cfg := mailoutbox.Config{
-		APIKey: os.Getenv("RESEND_API_KEY"), From: os.Getenv("EMAIL_FROM"),
+		APIKey: os.Getenv("RESEND_API_KEY"), From: os.Getenv("EMAIL_FROM"), ReplyTo: "support@mail.cascadehook.com",
 		WebhookSecret: os.Getenv("RESEND_WEBHOOK_SECRET"), InvitationURL: os.Getenv("INVITATION_ACCEPT_URL"), DailyLimit: limit,
+	}
+	if value := os.Getenv("EMAIL_REPLY_TO"); value != "" {
+		cfg.ReplyTo = value
 	}
 	return cfg, cfg.Validate()
 }

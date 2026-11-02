@@ -6,8 +6,7 @@ import { DeliveryExample } from "@/components/marketing/delivery-example";
 import { FooterWordmark } from "@/components/marketing/footer-wordmark";
 import { IntegrationCode } from "@/components/marketing/integration-code";
 import { LandingMotion } from "@/components/marketing/landing-motion";
-import { MobileNav } from "@/components/marketing/mobile-nav";
-import { ThemeSwitcher } from "@/components/theme-switcher";
+import { MarketingHeader } from "@/components/marketing/marketing-header";
 
 const signatureExample = [
   'const key = decodeSecret(signingSecret);',
@@ -18,20 +17,7 @@ const signatureExample = [
 export function LandingPage() {
   return (
     <LandingMotion>
-      <header className="landing-header landing-container">
-        <Brand href={null} />
-        <nav className="landing-desktop-nav" aria-label="Main navigation">
-          <a href="#how-it-works">How it works</a>
-          <DocsLink path="/docs">Docs</DocsLink>
-        </nav>
-        <div className="landing-header-actions">
-          <ThemeSwitcher />
-          <Link href="/login" className="landing-header-cta">
-            Get started <ArrowUpRightIcon size={16} aria-hidden="true" />
-          </Link>
-          <MobileNav />
-        </div>
-      </header>
+      <MarketingHeader home />
       <main id="main-content" className="landing-container">
         <section className="landing-hero" aria-labelledby="hero-heading">
           <div className="landing-hero-copy">
@@ -130,6 +116,9 @@ export function LandingPage() {
             <nav className="landing-footer-links" aria-label="Footer navigation">
               <DocsLink path="/docs">Docs</DocsLink>
               <DocsLink path="/docs/api">API reference</DocsLink>
+              <Link href="/support">Support</Link>
+              <Link href="/terms">Terms</Link>
+              <Link href="/privacy">Privacy</Link>
               <a href="https://github.com/Shubbu03/cascadehook" target="_blank" rel="noopener noreferrer">
                 GitHub <ArrowUpRightIcon size={13} aria-hidden="true" />
               </a>

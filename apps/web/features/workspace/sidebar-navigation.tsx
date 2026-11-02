@@ -236,6 +236,10 @@ export function SidebarNavigation({
             <span>Receiver guide</span>
           </DocsLink>
         )}
+        <Link href="/support" className="sidebar-link" aria-label="Support" title="Support" onClick={onNavigate}>
+          <BookOpenIcon size={18} aria-hidden="true" />
+          <span>Support</span>
+        </Link>
       </div>
     </nav>
   );
