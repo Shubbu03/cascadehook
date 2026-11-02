@@ -7,6 +7,9 @@
   "scripts": {
     "dev": "next dev --port 3001",
     "build": "next build",
+    "build:cloudflare": "opennextjs-cloudflare build",
+    "deploy:cloudflare": "opennextjs-cloudflare deploy",
+    "preview:cloudflare": "opennextjs-cloudflare preview",
     "start": "next start",
     "lint": "eslint",
     "typecheck": "fumadocs-mdx && next typegen && tsc --noEmit",

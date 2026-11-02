@@ -1,0 +1,11 @@
+[Unit]
+Description=Run CascadeHook cleanup every day
+
+[Timer]
+OnCalendar=daily
+RandomizedDelaySec=10min
+Persistent=true
+Unit=cascadehook-janitor.service
+
+[Install]
+WantedBy=timers.target

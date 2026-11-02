@@ -1,0 +1,161 @@
+name: cascadehook
+
+x-logging: &logging
+  driver: local
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+x-app: &app
+  image: cascadehook-server:local
+  platform: linux/amd64
+  build:
+    context: ../apps/server
+  restart: unless-stopped
+  read_only: true
+  cap_drop: [ALL]
+  security_opt: [no-new-privileges:true]
+  tmpfs: ["/tmp:size=16m,mode=1777"]
+  mem_limit: 192m
+  pids_limit: 128
+  stop_grace_period: 30s
+  logging: *logging
+
+x-database: &database
+  DATABASE_URL: postgres://cascadehook:${POSTGRES_APP_PASSWORD:?Run init-env.sh first}@postgres:5432/cascadehook?sslmode=disable
+  LOG_LEVEL: info
+  SHUTDOWN_TIMEOUT: 10s
+  GOMEMLIMIT: 128MiB
+  GOMAXPROCS: "1"
+
+x-application: &application
+  <<: *database
+  DATABASE_URL: postgres://cascadehook:${POSTGRES_APP_PASSWORD:?Run init-env.sh first}@postgres:5432/cascadehook?sslmode=disable&pool_max_conns=5
+  SIGNING_ENCRYPTION_KEY: ${SIGNING_ENCRYPTION_KEY:?Run init-env.sh first}
+  SIGNING_ENCRYPTION_PREVIOUS_KEY: ${SIGNING_ENCRYPTION_PREVIOUS_KEY:-}
+  CLERK_ISSUER_URL: ${CLERK_ISSUER_URL:-}
+  CLERK_SECRET_KEY: ${CLERK_SECRET_KEY:-}
+  RESEND_API_KEY: ${RESEND_API_KEY:-}
+  EMAIL_FROM: ${EMAIL_FROM:-}
+  RESEND_WEBHOOK_SECRET: ${RESEND_WEBHOOK_SECRET:-}
+  INVITATION_ACCEPT_URL: ${INVITATION_ACCEPT_URL:-}
+  EMAIL_DAILY_LIMIT: ${EMAIL_DAILY_LIMIT:-100}
+
+services:
+  postgres:
+    image: postgres:18.6-alpine3.24
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: cascadehook
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_ADMIN_PASSWORD:?Run init-env.sh first}
+      POSTGRES_APP_PASSWORD: ${POSTGRES_APP_PASSWORD:?Run init-env.sh first}
+      POSTGRES_INITDB_ARGS: --auth-host=scram-sha-256
+    command:
+      - postgres
+      - -c
+      - shared_buffers=32MB
+      - -c
+      - max_connections=30
+      - -c
+      - work_mem=2MB
+      - -c
+      - maintenance_work_mem=32MB
+    volumes:
+      - postgres_data:/var/lib/postgresql
+      - ./postgres-init.sh:/docker-entrypoint-initdb.d/10-create-app.sh:ro
+    healthcheck:
+      test: [CMD, pg_isready, -h, "127.0.0.1", -U, postgres, -d, cascadehook]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 15s
+    mem_limit: 384m
+    pids_limit: 128
+    logging: *logging
+
+  migrate:
+    <<: *app
+    command: [/app/migrate]
+    restart: "no"
+    environment: *database
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  api:
+    <<: *app
+    command: [/app/api]
+    ports: ["127.0.0.1:8080:8080"]
+    environment:
+      <<: *application
+      HTTP_ADDR: 0.0.0.0:8080
+      CLERK_JWT_PUBLIC_KEY: ${CLERK_JWT_PUBLIC_KEY:-}
+      CLERK_AUTHORIZED_PARTIES: ${CLERK_AUTHORIZED_PARTIES:-}
+      CLERK_WEBHOOK_SIGNING_SECRETS: ${CLERK_WEBHOOK_SIGNING_SECRETS:-}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  worker:
+    <<: *app
+    command: [/app/worker]
+    environment:
+      <<: *application
+      WORKER_CONCURRENCY: ${WORKER_CONCURRENCY:-4}
+      WORKER_DESTINATION_CONCURRENCY: ${WORKER_DESTINATION_CONCURRENCY:-2}
+      WORKER_CLAIM_BATCH_SIZE: ${WORKER_CLAIM_BATCH_SIZE:-4}
+      WORKER_POLL_INTERVAL: 1s
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  janitor:
+    <<: *app
+    profiles: [tools]
+    command: [/app/janitor]
+    restart: "no"
+    environment:
+      <<: *database
+      CLERK_ISSUER_URL: ${CLERK_ISSUER_URL:-}
+      CLERK_SECRET_KEY: ${CLERK_SECRET_KEY:-}
+      RETENTION_DAYS: ${RETENTION_DAYS:-30}
+      NOTIFICATION_RETENTION_DAYS: ${NOTIFICATION_RETENTION_DAYS:-90}
+      JANITOR_BATCH_SIZE: "100"
+      JANITOR_MAX_BATCHES: "100"
+      JANITOR_RUN_TIMEOUT: 5m
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  cloudflare:
+    profiles: [production]
+    image: cloudflare/cloudflared:2026.10.7
+    command: [tunnel, --no-autoupdate, --protocol, http2, run]
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:-}
+    restart: unless-stopped
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    tmpfs: ["/tmp:size=16m,mode=1777"]
+    mem_limit: 128m
+    pids_limit: 64
+    depends_on: [api]
+    logging: *logging
+
+  tunnel:
+    profiles: [preview]
+    image: cloudflare/cloudflared:2026.10.7
+    command: [tunnel, --no-autoupdate, --protocol, http2, --url, "http://api:8080"]
+    restart: unless-stopped
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 128m
+    pids_limit: 64
+    depends_on: [api]
+    logging: *logging
+
+volumes:
+  postgres_data:

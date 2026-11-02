@@ -5,7 +5,7 @@ history, and replay. Built with Go, PostgreSQL, Next.js, and Clerk.
 
 ## Setup
 
-Requires Bun 1.3.13, Go 1.27.3, PostgreSQL, and a Clerk application.
+Requires Node.js 22.16+, Bun 1.3.13, Go 1.27.3, PostgreSQL, and a Clerk application.
 
 ```sh
 bun install --frozen-lockfile
@@ -44,8 +44,10 @@ docs API origin using [its environment example](apps/docs/.env.example).
 | --- | --- |
 | `bun run check` | Lint, type checking, Go vet, and Go build |
 | `bun run build:web` | Production frontend build |
+| `bun run build:cloudflare:web` | Build the frontend for Cloudflare Workers |
 | `bun run dev:docs` | Documentation development server on port 3001 |
 | `bun run build:docs` | Production documentation build |
+| `bun run build:cloudflare:docs` | Build documentation for Cloudflare Workers |
 | `bun run db:cleanup` | Run retention and pending deletion cleanup |
 
 ## Deployment
@@ -54,6 +56,11 @@ Run the frontend, API, and worker as separate services. API and worker share
 PostgreSQL and the signing encryption key. Apply migrations before starting the
 API and schedule `db:cleanup` regularly. The API exposes `/healthz` and `/readyz`
 for health checks.
+
+For a Google Cloud VM backend with Cloudflare-hosted frontends, see the
+[Docker Compose configuration](deploy/compose.yaml),
+[web Worker configuration](apps/web/wrangler.jsonc), and
+[docs Worker configuration](apps/docs/wrangler.jsonc).
 
 The [notification backend](apps/server/NOTIFICATIONS.md) requires migration
 `00021`. It provides organization-scoped personal inbox APIs and notification
@@ -64,7 +71,7 @@ the API and worker. Follow [email setup](apps/server/EMAIL.md) for sender-domain
 verification, delivery webhooks, and passwordless invitation onboarding.
 
 See [frontend documentation](apps/web/README.md) for dashboard configuration.
-The standalone [docs app](apps/docs/README.md) has its own build and deployment.
+The standalone [docs app](apps/docs) has its own build and deployment.
 Set `NEXT_PUBLIC_DOCS_URL` on the web app to its public root URL when deploying.
 
 ## Agent-assisted integration

@@ -1,0 +1,10 @@
+[Unit]
+Description=CascadeHook retention and account cleanup
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/cascadehook/deploy
+ExecStart=/usr/bin/docker compose --profile tools run --rm --no-deps janitor
+TimeoutStartSec=10min

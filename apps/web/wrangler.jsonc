@@ -1,0 +1,21 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "cascadehook-web",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-10-30",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "keep_vars": true,
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "vars": {
+    "NEXT_PUBLIC_API_BASE_URL": "https://api.cascadehook.com",
+    "NEXT_PUBLIC_DOCS_URL": "https://docs.cascadehook.com",
+    "NEXT_PUBLIC_CLERK_SIGN_IN_URL": "/login",
+    "NEXT_PUBLIC_CLERK_SIGN_UP_URL": "/login#/create",
+    "NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL": "/dashboard",
+    "NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL": "/onboarding"
+  },
+  "observability": { "enabled": true }
+}

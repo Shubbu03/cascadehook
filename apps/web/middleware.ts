@@ -6,11 +6,11 @@ import {
 } from "next/server";
 import { isAuthConfigured } from "@/lib/server/auth";
 
-const clerkProxy = clerkMiddleware();
+const clerkHandler = clerkMiddleware();
 
-export default function proxy(request: NextRequest, event: NextFetchEvent) {
+export default function middleware(request: NextRequest, event: NextFetchEvent) {
   if (!isAuthConfigured()) return NextResponse.next();
-  return clerkProxy(request, event);
+  return clerkHandler(request, event);
 }
 
 export const config = {
