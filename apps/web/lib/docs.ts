@@ -1,8 +1,9 @@
 function configuredDocsURL() {
+  // Production docs share the app's origin, including in older build environments.
+  if (process.env.NODE_ENV !== "development") return undefined;
+
   const value = process.env.NEXT_PUBLIC_DOCS_URL?.trim();
-  if (!value) {
-    return process.env.NODE_ENV === "development" ? "http://localhost:3001" : undefined;
-  }
+  if (!value) return "http://localhost:3001";
   const url = new URL(value);
   if (
     !["http:", "https:"].includes(url.protocol) ||

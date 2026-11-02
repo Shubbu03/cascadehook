@@ -62,7 +62,7 @@ and deploy command `bun run deploy:cloudflare`. Build variables:
 `NEXT_PUBLIC_API_BASE_URL=https://api.cascadehook.com`.
 
 The web Worker also needs production Clerk keys at build time and runtime.
-Leave its `NEXT_PUBLIC_DOCS_URL` empty and rebuild after changing that value.
+Production docs links always use the current origin.
 Keep the root custom domain on the web Worker; the docs
 [configuration](apps/docs/wrangler.jsonc) adds the required path routes.
 
