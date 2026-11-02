@@ -24,6 +24,7 @@
     "db:cleanup": "cd apps/server && bun --env-file=../../.env run go run ./cmd/janitor",
     "ops:project": "cd apps/server && bun --env-file=../../.env run go run ./cmd/projectctl",
     "ops:tenant": "cd apps/server && bun --env-file=../../.env run go run ./cmd/tenantctl",
+    "ops:billing": "cd apps/server && bun --env-file=../../.env run go run ./cmd/billingctl",
     "ops:secrets": "cd apps/server && bun --env-file=../../.env run go run ./cmd/secretctl",
     "build:go": "cd apps/server && go build ./...",
     "fmt:go": "cd apps/server && go fmt ./...",

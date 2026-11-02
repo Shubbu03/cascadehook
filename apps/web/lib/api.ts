@@ -63,6 +63,11 @@ async function sessionToken(getToken: GetToken, signal?: AbortSignal | null) {
 
 function problemMessage(status: number, code?: string) {
   const endpointMessages: Record<string, string> = {
+    billing_not_configured: "Paid checkout is not available yet. Contact support for billing questions.",
+    billing_conflict: "A subscription or checkout already exists. Open Billing to resume it or contact support.",
+    billing_checkout_unconfirmed: "Checkout could not be confirmed. Contact support before trying another purchase.",
+    billing_unavailable: "The billing provider is temporarily unavailable. Your stored subscription has not been changed.",
+    invalid_billing_plan: "Choose one of the available plans and billing intervals.",
     invalid_event: "Enter a JSON payload with a valid event type.",
     invalid_event_type:
       "Use 3–128 lowercase letters, numbers, dots, underscores, or hyphens for the event type.",

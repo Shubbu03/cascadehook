@@ -24,7 +24,7 @@ func recordUsage(ctx context.Context, tx pgx.Tx, projectID uuid.UUID, delta usag
 	var period time.Time
 	err := tx.QueryRow(ctx, `SELECT o.id, o.max_monthly_events, o.max_monthly_deliveries,
 		date_trunc('month', clock_timestamp() AT TIME ZONE 'UTC')::date
-		FROM projects p JOIN organizations o ON o.id = p.organization_id WHERE p.id = $1`,
+		FROM projects p JOIN organization_entitlements o ON o.id = p.organization_id WHERE p.id = $1`,
 		projectID).Scan(
 		&organizationID,
 		&eventLimit,
@@ -96,11 +96,11 @@ func reservePayloadStorage(ctx context.Context, tx pgx.Tx, projectID uuid.UUID, 
 	result, err := tx.Exec(
 		ctx,
 		`INSERT INTO project_storage AS s (project_id, payload_bytes)
-		SELECT p.id, $2::bigint FROM projects p JOIN organizations o ON o.id = p.organization_id
+		SELECT p.id, $2::bigint FROM projects p JOIN organization_entitlements o ON o.id = p.organization_id
 		WHERE p.id = $1 AND $2::bigint <= o.max_payload_bytes_per_project
 		ON CONFLICT (project_id) DO UPDATE SET payload_bytes = s.payload_bytes + EXCLUDED.payload_bytes
 		WHERE s.payload_bytes + EXCLUDED.payload_bytes <=
-		(SELECT o.max_payload_bytes_per_project FROM projects p JOIN organizations o ON o.id = p.organization_id
+		(SELECT o.max_payload_bytes_per_project FROM projects p JOIN organization_entitlements o ON o.id = p.organization_id
 		 WHERE p.id = $1)`,
 		projectID,
 		size,
@@ -135,16 +135,16 @@ func checkResourceQuota(ctx context.Context, tx pgx.Tx, id uuid.UUID, resource s
 	queries := map[string]string{
 		"projects": `SELECT (SELECT count(*) FROM projects
 			WHERE organization_id = o.id AND deletion_requested_at IS NULL) < o.max_projects
-			FROM organizations o WHERE o.id = $1`,
+			FROM organization_entitlements o WHERE o.id = $1`,
 		"members": `SELECT (SELECT count(*) FROM memberships WHERE organization_id = o.id) < o.max_members
-			FROM organizations o WHERE o.id = $1`,
+			FROM organization_entitlements o WHERE o.id = $1`,
 		"endpoints": `SELECT (SELECT count(*) FROM endpoints e WHERE e.project_id = p.id)
-			< o.max_endpoints_per_project FROM projects p JOIN organizations o ON o.id = p.organization_id WHERE p.id = $1`,
+			< o.max_endpoints_per_project FROM projects p JOIN organization_entitlements o ON o.id = p.organization_id WHERE p.id = $1`,
 		"api_keys": `SELECT (SELECT count(*) FROM api_keys k WHERE k.project_id = p.id AND k.revoked_at IS NULL
 			AND (k.expires_at IS NULL OR k.expires_at > clock_timestamp())
 			AND k.revokes_at IS NULL) < o.max_keys_per_project
 			AND (SELECT count(*) FROM api_keys k WHERE k.project_id = p.id) < 1000
-			FROM projects p JOIN organizations o ON o.id = p.organization_id WHERE p.id = $1`,
+			FROM projects p JOIN organization_entitlements o ON o.id = p.organization_id WHERE p.id = $1`,
 		"retained_api_keys": `SELECT count(*) < 1000 FROM api_keys WHERE project_id = $1`,
 	}
 	query, ok := queries[resource]

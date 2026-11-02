@@ -14,6 +14,7 @@ import (
 
 	"cascadehook/internal/accounts"
 	"cascadehook/internal/auth"
+	"cascadehook/internal/billing"
 )
 
 // User locks precede organization/project locks. Membership mutations acquire
@@ -140,6 +141,14 @@ func (s *Store) RequestOrganizationDeletion(
 	}
 	if role != accounts.Owner {
 		return accounts.OrganizationDeletion{}, accounts.ErrForbidden
+	}
+	var pendingBilling bool
+	if err := tx.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM organization_billing WHERE organization_id=$1
+        AND (checkout_id IS NOT NULL OR (subscription_id IS NOT NULL AND status NOT IN ('cancelled','expired','failed','refunded'))))`, organizationID).Scan(&pendingBilling); err != nil {
+		return accounts.OrganizationDeletion{}, fmt.Errorf("check organization subscription: %w", err)
+	}
+	if pendingBilling {
+		return accounts.OrganizationDeletion{}, billing.ErrConflict
 	}
 	if requestedAt == nil {
 		var at time.Time

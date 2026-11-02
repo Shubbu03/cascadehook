@@ -16,7 +16,7 @@ export default function DocumentationLayout({ children }: { children: React.Reac
           </span>
         ),
       }}
-      links={[]}
+      links={[{ text: "Pricing", url: "https://cascadehook.com/pricing" }]}
       tabs={false}
       themeSwitch={{ enabled: false }}
       sidebar={{

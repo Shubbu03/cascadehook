@@ -1,6 +1,7 @@
 "use client";
 
 import { ListIcon } from "@phosphor-icons/react";
+import Link from "next/link";
 import { useRef } from "react";
 import { DocsLink } from "@/components/docs-link";
 
@@ -27,6 +28,7 @@ export function MobileNav() {
         <a href="#how-it-works" onClick={close}>
           How it works
         </a>
+        <Link href="/pricing" onClick={close}>Pricing</Link>
         <DocsLink path="/docs" onClick={close}>
           Docs
         </DocsLink>

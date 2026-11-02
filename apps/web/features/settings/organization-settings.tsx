@@ -5,6 +5,7 @@ import { useAuth } from "@clerk/nextjs";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { billingHref } from "@/lib/plans";
 import { PageHeader } from "@/components/page-header";
 import { QueryState } from "@/components/query-state";
 import {
@@ -64,6 +65,7 @@ export function OrganizationSettings({
                 )
               }
             />
+            {organization.data.role!=="member" && <p className="settings-section"><Link href={billingHref(organizationId)} className="text-link">Manage organization billing →</Link></p>}
             {organization.data.role === "owner" && (
               <RenameForm
                 kind="Organization"

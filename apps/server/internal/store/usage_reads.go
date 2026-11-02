@@ -23,7 +23,7 @@ func (s *Store) GetUsage(ctx context.Context, organizationID, projectID uuid.UUI
 	var period time.Time
 	err = tx.QueryRow(ctx, `SELECT max_projects, max_members, max_endpoints_per_project, max_keys_per_project,
 		max_monthly_events, max_monthly_deliveries, max_payload_bytes_per_project,
-		date_trunc('month', now() AT TIME ZONE 'UTC')::date FROM organizations
+		date_trunc('month', now() AT TIME ZONE 'UTC')::date FROM organization_entitlements
 		WHERE id = $1 AND deletion_requested_at IS NULL`, organizationID).Scan(
 		&usage.Quotas.Projects,
 		&usage.Quotas.Members,

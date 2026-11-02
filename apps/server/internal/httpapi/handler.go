@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"cascadehook/internal/auth"
+	"cascadehook/internal/billing"
 	"cascadehook/internal/clerk"
 	"cascadehook/internal/delivery"
 	"cascadehook/internal/limits"
@@ -19,6 +20,8 @@ import (
 )
 
 type api struct {
+	billing         *billing.Provider
+	billingConfig   billing.Config
 	db              *store.Store
 	logger          *slog.Logger
 	vault           *signing.Vault
@@ -33,6 +36,8 @@ type api struct {
 }
 
 type HandlerOptions struct {
+	Billing         *billing.Provider
+	BillingConfig   billing.Config
 	DB              *store.Store
 	Logger          *slog.Logger
 	Vault           *signing.Vault
@@ -58,7 +63,7 @@ func NewHandler(options HandlerOptions) (http.Handler, error) {
 	if err != nil {
 		return nil, err
 	}
-	api := &api{
+	api := &api{billing: options.Billing, billingConfig: options.BillingConfig,
 		db: options.DB, logger: options.Logger, vault: options.Vault,
 		outbound: options.Outbound, sessions: options.Sessions,
 		requestLimits:   requestLimits,
@@ -118,6 +123,12 @@ func NewHandler(options HandlerOptions) (http.Handler, error) {
 	handle("/v1/me", api.accountResource)
 	handle("/v1/webhooks/clerk", api.clerkWebhook)
 	handle("/v1/webhooks/resend", api.resendWebhook)
+	handle("/v1/webhooks/dodo", api.dodoWebhook)
+	handle("/v1/billing/plans", api.billingPlans)
+	handle("/v1/organizations/{organization_id}/billing", api.withSession(api.organizationBilling))
+	handle("/v1/organizations/{organization_id}/billing/checkout", api.withSession(api.billingCheckout))
+	handle("/v1/organizations/{organization_id}/billing/portal", api.withSession(api.billingPortal))
+	handle("/v1/organizations/{organization_id}/billing/change-plan", api.withSession(api.billingChangePlan))
 	handle("/v1/organizations", api.withSession(api.organizationCollection))
 	handle("/v1/organizations/{organization_id}", api.withSession(api.organizationResource))
 	handle("/v1/organizations/{organization_id}/usage", api.withSession(api.organizationUsage))

@@ -22,6 +22,7 @@ export function LandingPage() {
         <Brand href={null} />
         <nav className="landing-desktop-nav" aria-label="Main navigation">
           <a href="#how-it-works">How it works</a>
+          <Link href="/pricing">Pricing</Link>
           <DocsLink path="/docs">Docs</DocsLink>
         </nav>
         <div className="landing-header-actions">
@@ -130,6 +131,8 @@ export function LandingPage() {
             <nav className="landing-footer-links" aria-label="Footer navigation">
               <DocsLink path="/docs">Docs</DocsLink>
               <DocsLink path="/docs/api">API reference</DocsLink>
+              <Link href="/pricing">Pricing</Link>
+              <Link href="/refunds">Refunds</Link>
               <a href="https://github.com/Shubbu03/cascadehook" target="_blank" rel="noopener noreferrer">
                 GitHub <ArrowUpRightIcon size={13} aria-hidden="true" />
               </a>

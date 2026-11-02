@@ -15,9 +15,9 @@ import (
 // ownership releases it automatically after cancellation, failure, or commit.
 const retentionBatchLock int64 = 0x4348524554454e54
 
-const retentionEligibility = `e.purge_started_at IS NULL AND e.created_at <= $1
+const retentionEligibility = `e.purge_started_at IS NULL AND e.created_at <= (CASE WHEN (SELECT q.plan FROM projects rp JOIN organization_entitlements q ON q.id=rp.organization_id WHERE rp.id=e.project_id)='legacy' THEN $1 ELSE $2 - make_interval(days => (SELECT q.retention_days FROM projects rp JOIN organization_entitlements q ON q.id=rp.organization_id WHERE rp.id=e.project_id)) END)
 	AND NOT EXISTS (SELECT 1 FROM deliveries d WHERE d.event_id = e.id AND d.state IN ('pending', 'leased'))
-	AND NOT EXISTS (SELECT 1 FROM deliveries d WHERE d.event_id = e.id AND d.updated_at > $1)
+	AND NOT EXISTS (SELECT 1 FROM deliveries d WHERE d.event_id = e.id AND d.updated_at > (CASE WHEN (SELECT q.plan FROM projects rp JOIN organization_entitlements q ON q.id=rp.organization_id WHERE rp.id=e.project_id)='legacy' THEN $1 ELSE $2 - make_interval(days => (SELECT q.retention_days FROM projects rp JOIN organization_entitlements q ON q.id=rp.organization_id WHERE rp.id=e.project_id)) END))
 	AND NOT EXISTS (SELECT 1 FROM event_idempotency_keys k WHERE k.event_id = e.id AND k.expires_at > $2)`
 
 // Finish the current retired set before admitting another. An event with many

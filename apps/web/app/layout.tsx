@@ -6,6 +6,8 @@ import "./globals.css";
 import "./theme-transition.css";
 import "./site.css";
 import "./marketing.css";
+import "./public.css";
+import "./billing.css";
 import "./project.css";
 import "./endpoint-detail.css";
 import "./onboarding.css";

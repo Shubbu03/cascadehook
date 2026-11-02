@@ -111,7 +111,7 @@ func (s *Store) CreateInvitation(
 	var hasSlot bool
 	if err := tx.QueryRow(ctx, `SELECT (SELECT count(*) FROM memberships WHERE organization_id = o.id)
 		+ (SELECT count(*) FROM organization_invitations WHERE organization_id = o.id AND accepted_at IS NULL
-		AND revoked_at IS NULL AND expires_at > clock_timestamp()) < o.max_members FROM organizations o WHERE o.id = $1`,
+		AND revoked_at IS NULL AND expires_at > clock_timestamp()) < o.max_members FROM organization_entitlements o WHERE o.id = $1`,
 		params.OrganizationID).Scan(&hasSlot); err != nil {
 		return accounts.Invitation{}, fmt.Errorf("check pending invitation slots: %w", err)
 	}

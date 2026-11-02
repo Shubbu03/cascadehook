@@ -18,7 +18,7 @@ func notifyUsageThresholds(ctx context.Context, tx pgx.Tx, projectID uuid.UUID, 
 	var version, events, jobs, stored, eventLimit, jobLimit, storageLimit int64
 	err := tx.QueryRow(ctx, `SELECT o.id,o.quota_version,
 		u.events,u.deliveries,coalesce(s.payload_bytes,0),o.max_monthly_events,o.max_monthly_deliveries,o.max_payload_bytes_per_project
-		FROM projects p JOIN organizations o ON o.id = p.organization_id
+		FROM projects p JOIN organization_entitlements o ON o.id = p.organization_id
 		JOIN organization_usage_months u ON u.organization_id = o.id
 			AND u.period = $2
 		LEFT JOIN project_storage s ON s.project_id = p.id WHERE p.id = $1`, projectID, period).Scan(

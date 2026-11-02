@@ -1,0 +1,50 @@
+[
+  {
+    "id": "free",
+    "name": "Free",
+    "monthly_cents": 0,
+    "annual_cents": 0,
+    "retention_days": 7,
+    "limits": {
+      "projects": 1,
+      "members": 1,
+      "endpoints_per_project": 3,
+      "active_api_keys_per_project": 5,
+      "monthly_events": 5000,
+      "monthly_deliveries": 5000,
+      "payload_bytes_per_project": 104857600
+    }
+  },
+  {
+    "id": "starter",
+    "name": "Starter",
+    "monthly_cents": 900,
+    "annual_cents": 9000,
+    "retention_days": 14,
+    "limits": {
+      "projects": 3,
+      "members": 3,
+      "endpoints_per_project": 25,
+      "active_api_keys_per_project": 20,
+      "monthly_events": 100000,
+      "monthly_deliveries": 100000,
+      "payload_bytes_per_project": 1073741824
+    }
+  },
+  {
+    "id": "growth",
+    "name": "Growth",
+    "monthly_cents": 2900,
+    "annual_cents": 29000,
+    "retention_days": 30,
+    "limits": {
+      "projects": 10,
+      "members": 10,
+      "endpoints_per_project": 100,
+      "active_api_keys_per_project": 20,
+      "monthly_events": 500000,
+      "monthly_deliveries": 500000,
+      "payload_bytes_per_project": 5368709120
+    }
+  }
+]

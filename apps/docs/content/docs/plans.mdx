@@ -1,0 +1,16 @@
+---
+title: Plans and support
+description: Organization billing, usage allowances, and getting help.
+---
+
+[Compare plans and exact limits](https://cascadehook.com/pricing). Free requires no card. Paid subscriptions belong to an organization; its owner can purchase and manage them from **Billing** in the dashboard.
+
+One event scheduled to one endpoint counts as one delivery. Three endpoints count as three deliveries. Failed deliveries count, automatic retries are included, and a manual replay counts again. Allowances are shared across the organization's projects. Monthly usage resets at 00:00 UTC on the first day of each calendar month, including annual subscriptions. Unused allowances do not roll over; changing plans does not reset consumed usage.
+
+At the limit, new work returns `429 quota_exceeded`; already accepted deliveries and automatic retries continue. Payloads, retained storage, project resources, and request rates also have limits. Dashboard access remains available. There are no automatic overage charges.
+
+Plan changes are scheduled for the next renewal. Cancellation stops future renewals and preserves access through the paid period. After expiry, Free limits and retention apply. Existing resources are not deleted simply to meet lower resource limits. History and payload cleanup runs separately and can wait for active deliveries or recent replay work.
+
+Need help with integration, a subscription, or a refund? Email [support@mail.cascadehook.com](mailto:support@mail.cascadehook.com). Include organization/project IDs and relevant event/delivery IDs, without keys, secrets, card details, or sensitive payloads. Support is provided by the developer; there is no guaranteed response time or uptime SLA.
+
+[Terms](https://cascadehook.com/terms) · [Privacy](https://cascadehook.com/privacy) · [Refunds and cancellation](https://cascadehook.com/refunds)

@@ -4,6 +4,7 @@ import {
   BookOpenIcon,
   BellSimpleIcon,
   ChartBarIcon,
+  CreditCardIcon,
   FolderSimpleIcon,
   GearSixIcon,
   KeyIcon,
@@ -15,6 +16,7 @@ import {
   UsersIcon,
 } from "@phosphor-icons/react";
 import Link from "next/link";
+import { billingHref } from "@/lib/plans";
 import { DocsLink } from "@/components/docs-link";
 import type { OrganizationRole } from "./types";
 import { organizationHref } from "./queries";
@@ -213,6 +215,7 @@ export function SidebarNavigation({
           {notificationsLink}
         </div>
       )}
+      {organizationId && canManage && <div className="sidebar-group"><Link href={billingHref(organizationId)} className="sidebar-link" aria-label="Billing" title="Billing" aria-current={pathname===billingHref(organizationId)?"page":undefined} onClick={onNavigate}><CreditCardIcon size={18} aria-hidden="true"/><span>Billing</span></Link></div>}
       <div className="sidebar-guide">
         <DocsLink
           path="/docs/quickstart"
