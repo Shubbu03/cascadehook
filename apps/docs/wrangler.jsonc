@@ -5,6 +5,15 @@
   "compatibility_date": "2026-10-30",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "keep_vars": true,
+  "routes": [
+    { "pattern": "cascadehook.com/docs*", "zone_name": "cascadehook.com" },
+    { "pattern": "cascadehook.com/api/search*", "zone_name": "cascadehook.com" },
+    { "pattern": "cascadehook.com/openapi.json*", "zone_name": "cascadehook.com" },
+    { "pattern": "cascadehook.com/llms.txt*", "zone_name": "cascadehook.com" },
+    { "pattern": "cascadehook.com/llms-full.txt*", "zone_name": "cascadehook.com" },
+    { "pattern": "cascadehook.com/llms.mdx/*", "zone_name": "cascadehook.com" },
+    { "pattern": "cascadehook.com/examples/*", "zone_name": "cascadehook.com" }
+  ],
   "assets": {
     "directory": ".open-next/assets",
     "binding": "ASSETS"

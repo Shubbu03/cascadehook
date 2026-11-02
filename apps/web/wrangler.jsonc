@@ -11,7 +11,7 @@
   },
   "vars": {
     "NEXT_PUBLIC_API_BASE_URL": "https://api.cascadehook.com",
-    "NEXT_PUBLIC_DOCS_URL": "https://docs.cascadehook.com",
+    "NEXT_PUBLIC_DOCS_URL": "",
     "NEXT_PUBLIC_CLERK_SIGN_IN_URL": "/login",
     "NEXT_PUBLIC_CLERK_SIGN_UP_URL": "/login#/create",
     "NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL": "/dashboard",

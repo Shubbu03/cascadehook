@@ -1,11 +1,11 @@
-# Cascadehook
+# CascadeHook
 
-Outbound webhook delivery with signed requests, automatic retries, delivery
-history, and replay. Built with Go, PostgreSQL, Next.js, and Clerk.
+Webhook delivery with signed requests, retries, delivery history, and replay.
+Go and PostgreSQL backend, Next.js dashboard and docs, Clerk authentication.
 
-## Setup
+## Development
 
-Requires Node.js 22.16+, Bun 1.3.13, Go 1.27.3, PostgreSQL, and a Clerk application.
+Requires Node.js 22.16+, Bun 1.3.13, Go 1.27.3, PostgreSQL, and a Clerk app.
 
 ```sh
 bun install --frozen-lockfile
@@ -14,18 +14,16 @@ cp apps/web/.env.example apps/web/.env.local
 cp apps/docs/.env.example apps/docs/.env.local
 ```
 
-Configure the database, signing encryption key, and Clerk settings using the
-[backend](.env.example) and [frontend](apps/web/.env.example) environment examples.
-Use the same Clerk application for both services. Set `CLERK_AUTHORIZED_PARTIES`
-to `http://localhost:3000` and `NEXT_PUBLIC_API_BASE_URL` to your API origin.
-
-Apply migrations:
+Set the database URL, signing encryption key, and Clerk credentials in these
+files. Use the same Clerk app for the API and dashboard. For local development,
+set `CLERK_AUTHORIZED_PARTIES=http://localhost:3000` on the API and
+`NEXT_PUBLIC_API_BASE_URL=http://localhost:8080` in both frontend apps.
 
 ```sh
 bun run db:migrate
 ```
 
-Start each process in a separate terminal:
+Run each service in a separate terminal:
 
 ```sh
 bun run dev:api
@@ -34,56 +32,38 @@ bun run dev:web
 bun run dev:docs
 ```
 
-Open `http://localhost:3000` to create your account and first project.
-Documentation runs separately at `http://localhost:3001/docs`. Configure the
-docs API origin using [its environment example](apps/docs/.env.example).
+Dashboard: `http://localhost:3000`. Docs: `http://localhost:3001/docs`.
 
 ## Commands
 
 | Command | Purpose |
 | --- | --- |
-| `bun run check` | Lint, type checking, Go vet, and Go build |
-| `bun run build:web` | Production frontend build |
-| `bun run build:cloudflare:web` | Build the frontend for Cloudflare Workers |
-| `bun run dev:docs` | Documentation development server on port 3001 |
-| `bun run build:docs` | Production documentation build |
-| `bun run build:cloudflare:docs` | Build documentation for Cloudflare Workers |
-| `bun run db:cleanup` | Run retention and pending deletion cleanup |
+| `bun run check` | Lint, type checks, Go vet, and Go build |
+| `bun run build:cloudflare:web` | Build the web Worker |
+| `bun run build:cloudflare:docs` | Build the docs Worker |
+| `bun run db:cleanup` | Run retention and account cleanup |
 
 ## Deployment
 
-Run the frontend, API, and worker as separate services. API and worker share
-PostgreSQL and the signing encryption key. Apply migrations before starting the
-API and schedule `db:cleanup` regularly. The API exposes `/healthz` and `/readyz`
-for health checks.
+Run the API, worker, and PostgreSQL on the VM using
+[Docker Compose](deploy/compose.yaml) and its [environment template](deploy/.env.example).
+Apply migrations before starting the app; schedule cleanup regularly.
 
-For a Google Cloud VM backend with Cloudflare-hosted frontends, see the
-[Docker Compose configuration](deploy/compose.yaml),
-[web Worker configuration](apps/web/wrangler.jsonc), and
-[docs Worker configuration](apps/docs/wrangler.jsonc).
+Deploy the frontends as separate Cloudflare Workers:
 
-The [notification backend](apps/server/NOTIFICATIONS.md) requires migration
-`00021`. It provides organization-scoped personal inbox APIs and notification
-generation. Schedule cleanup with `NOTIFICATION_RETENTION_DAYS` (default 90).
+| Worker | Root directory | Public URL |
+| --- | --- | --- |
+| `cascadehook-web` | `apps/web` | `cascadehook.com` |
+| `cascadehook-docs` | `apps/docs` | `cascadehook.com/docs` |
 
-Invitation emails require migration `00022` and Resend/Clerk configuration on
-the API and worker. Follow [email setup](apps/server/EMAIL.md) for sender-domain
-verification, delivery webhooks, and passwordless invitation onboarding.
+For both, use build command `bun install --frozen-lockfile && bun run build:cloudflare`
+and deploy command `bun run deploy:cloudflare`. Build variables:
+`NODE_VERSION=22.23.3`, `BUN_VERSION=1.3.13`, `SKIP_DEPENDENCY_INSTALL=true`, and
+`NEXT_PUBLIC_API_BASE_URL=https://api.cascadehook.com`.
 
-See [frontend documentation](apps/web/README.md) for dashboard configuration.
-The standalone [docs app](apps/docs) has its own build and deployment.
-Set `NEXT_PUBLIC_DOCS_URL` on the web app to its public root URL when deploying.
+The web Worker also needs production Clerk keys at build time and runtime.
+Leave its `NEXT_PUBLIC_DOCS_URL` empty and rebuild after changing that value.
+Keep the root custom domain on the web Worker; the docs
+[configuration](apps/docs/wrangler.jsonc) adds the required path routes.
 
-## Agent-assisted integration
-
-After creating an account, organization, and project, open the project's
-Overview and select **Set up with AI**. Create a project API key and store it
-locally as `CASCADEHOOK_API_KEY`, then copy the project-specific prompt into
-your coding agent. The prompt contains context and documentation links without
-credentials. Keys currently grant project-wide access; Development and Live
-labels have identical permissions.
-
-The docs app publishes a [Markdown agent guide](apps/docs/content/docs/agents/integration.md)
-at `/docs/agents.md` and the project API schema at `/openapi.json`. The schema
-uses `NEXT_PUBLIC_API_BASE_URL` for the API server address and returns 503 if
-that configuration is missing or invalid. The human guide is at `/docs/agents`.
+[Dashboard setup](apps/web/README.md) · [Integration guide](apps/docs/content/docs/agents/integration.md)
