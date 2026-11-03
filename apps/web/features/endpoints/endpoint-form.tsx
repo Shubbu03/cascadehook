@@ -1,5 +1,7 @@
 "use client";
 
+import { Button } from "@/components/button";
+
 import { useAuth } from "@clerk/nextjs";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
@@ -83,7 +85,7 @@ export function EndpointForm({
 
   return (
     <form
-      className="endpoint-form"
+      data-ui="endpoint-form" className="max-w-190"
       onSubmit={submit}
       aria-busy={save.isPending}
       noValidate
@@ -102,12 +104,12 @@ export function EndpointForm({
         error={errors.eventTypes}
         disabled={save.isPending || !allowed}
       />
-      <p className="field-help endpoint-form-note">
+      <p className="text-[12px] text-muted leading-[1.7] mb-5 in-data-[ui~='endpoint-registration-dialog']:text-muted in-data-[ui~='endpoint-registration-dialog']:text-[12px] in-data-[ui~='endpoint-registration-dialog']:leading-[1.7]">
         Delivery starts disabled. After registering, configure your signing
         secret and verify the receiver.
       </p>
       {!allowed && (
-        <p className="notice notice-warning" role="status">
+        <p data-ui="notice" className="rounded-lg bg-warning-subtle text-warning text-[13px] leading-[1.7] my-4 py-3.5 px-4.25 border border-solid border-border in-data-[ui~='endpoint-registration-dialog']:text-warning" role="status">
           {!canManage
             ? "Only an owner or admin can register endpoints."
             : suspended
@@ -116,24 +118,24 @@ export function EndpointForm({
         </p>
       )}
       {save.error && (
-        <p className="form-error" role="alert">{save.error.message}</p>
+        <p className="text-danger text-[13px] my-0 [[data-ui~='endpoint-form']_>_&]:my-4 in-data-[ui~='endpoint-registration-dialog']:text-danger" role="alert">{save.error.message}</p>
       )}
-      <div className="form-actions">
-        <button
+      <div data-ui="form-actions" className="flex items-center flex-wrap gap-2.5 in-data-[ui~='confirmation-dialog']:mt-6 in-data-[ui~='workspace-create-dialog']:flex-row-reverse in-data-[ui~='workspace-create-dialog']:mt-6">
+        <Button
           type="submit"
-          className="button button-primary"
+          data-ui="button"
           disabled={save.isPending || !allowed}
         >
           {save.isPending ? "Registering…" : "Register endpoint"}
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
-          className="button button-quiet"
+          data-ui="button" variant="quiet"
           disabled={save.isPending}
           onClick={onCancel}
         >
           Cancel
-        </button>
+        </Button>
       </div>
     </form>
   );

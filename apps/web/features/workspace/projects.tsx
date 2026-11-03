@@ -1,5 +1,7 @@
 "use client";
 
+import { Button } from "@/components/button";
+
 import { useAuth } from "@clerk/nextjs";
 import {
   ArrowUpRightIcon,
@@ -37,14 +39,14 @@ export function Projects({
         titleId="projects-heading"
         actions={
           canCreate && (
-            <button
+            <Button
               type="button"
-              className="button button-small button-primary"
+              data-ui="button" size="small" className="leading-[1.4]"
               onClick={() => createProject(organization)}
             >
               <PlusIcon size={16} aria-hidden="true" />
               Create project
-            </button>
+            </Button>
           )
         }
       />
@@ -62,7 +64,7 @@ export function Projects({
             />
           )}
           {projects.isSuccess && items.length === 0 && (
-            <div className="empty-state">
+            <div data-ui="empty-state" className="grid justify-items-start rounded-xl bg-surface gap-3.5 p-7 border border-solid border-border [&_h3]:text-[20px] [&_h3]:tracking-[-0.02em] [&_p]:text-muted [&_p]:text-[14px] [&_p]:leading-[1.7] in-data-[ui~='dashboard-main']:flex in-data-[ui~='dashboard-main']:flex-col in-data-[ui~='dashboard-main']:items-center in-data-[ui~='dashboard-main']:justify-center in-data-[ui~='dashboard-main']:min-h-55 in-data-[ui~='dashboard-main']:bg-transparent in-data-[ui~='dashboard-main']:text-center in-data-[ui~='dashboard-main']:gap-3 in-data-[ui~='dashboard-main']:py-8 in-data-[ui~='dashboard-main']:px-6 in-data-[ui~='dashboard-main']:border-dashed [[data-ui~='dashboard-main']_&_h2]:text-[17px] [[data-ui~='dashboard-main']_&_h2]:m-0 [[data-ui~='dashboard-main']_&_h3]:text-[17px] [[data-ui~='dashboard-main']_&_h3]:m-0 [[data-ui~='dashboard-main']_&_p]:max-w-120 [[data-ui~='dashboard-main']_&_p]:text-[13px] [[data-ui~='dashboard-main']_&_p]:leading-[1.7] [[data-ui~='dashboard-main']_&_p]:m-0 max-[37.5rem]:in-data-[ui~='dashboard-main']:min-h-50 max-[37.5rem]:in-data-[ui~='dashboard-main']:px-4.5">
               <FolderSimpleIcon
                 size={28}
                 className="text-accent"
@@ -76,14 +78,14 @@ export function Projects({
               </p>
             </div>
           )}
-          <div className="workspace-project-grid">
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,280px),1fr))] gap-4 my-4">
             {items.map((project) => (
               <Link
                 key={project.id}
                 href={"/dashboard/projects/" + encodeURIComponent(project.id)}
-                className="workspace-project-card"
+                className="flex items-center min-w-0 rounded-[10px] bg-surface [transition:border-color_0.15s,background-color_0.15s] gap-3.5 p-5 border border-solid border-border [&_>_div]:min-w-0 [&_h2]:text-[16px] [&_h2]:font-medium [&_h2]:wrap-anywhere [&_>_svg]:shrink-0 [&_>_svg]:ml-auto [&_>_svg]:text-muted [&_div_>_span]:block [&_div_>_span]:mt-1.25 [&_div_>_span]:text-muted [&_div_>_span]:text-[12px] [&:hover]:bg-surface-hover [&:hover]:border-[color-mix(in_srgb,var(--accent)_50%,var(--border))]"
               >
-                <span className="workspace-project-icon" aria-hidden="true">
+                <span className="grid place-items-center shrink-0 rounded-[9px] text-accent bg-accent-subtle size-9" aria-hidden="true">
                   <FolderSimpleIcon size={22} />
                 </span>
                 <div>
@@ -95,16 +97,16 @@ export function Projects({
             ))}
           </div>
           {projects.hasNextPage && (
-            <button
+            <Button
               type="button"
-              className="button button-quiet"
+              data-ui="button" variant="quiet"
               disabled={projects.isFetchingNextPage}
               onClick={() => {
                 void projects.fetchNextPage();
               }}
             >
               {projects.isFetchingNextPage ? "Loading…" : "Load more projects"}
-            </button>
+            </Button>
           )}
         </>
       )}

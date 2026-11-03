@@ -17,8 +17,8 @@ const TUNING = {
   boil: 0.02,
   haloScale: 1.14,
   haloPad: 8,
-	droplets: 5,
-	stretch: 0.5,
+  droplets: 5,
+  stretch: 0.5,
 };
 
 type Flow = {
@@ -43,10 +43,10 @@ function edgeRadius(theta: number, phase: number) {
   return (
     1 +
     TUNING.ragged *
-      (0.5 * Math.sin(theta * 3 + phase) +
-        0.32 * Math.sin(theta * 5 - phase * 1.3 + 1.7) +
-        0.22 * Math.sin(theta * 8 + phase * 0.9 + 4.1) +
-        0.14 * Math.sin(theta * 13 - phase * 1.7 + 0.6))
+    (0.5 * Math.sin(theta * 3 + phase) +
+      0.32 * Math.sin(theta * 5 - phase * 1.3 + 1.7) +
+      0.22 * Math.sin(theta * 8 + phase * 0.9 + 4.1) +
+      0.14 * Math.sin(theta * 13 - phase * 1.7 + 0.6))
   );
 }
 
@@ -85,14 +85,14 @@ function blobPath(s: Flow, halo: boolean) {
   const first = pts[0];
   const last = pts[N - 1];
   let d = `M${((first.x + last.x) / 2).toFixed(1)},${((first.y + last.y) / 2).toFixed(1)}`;
-  for (let i = 0; i < N; i += 1) {
+  for (let i = 0;i < N;i += 1) {
     const p = pts[i];
     const n = pts[(i + 1) % N];
     d += `Q${p.x.toFixed(1)},${p.y.toFixed(1)} ${((p.x + n.x) / 2).toFixed(1)},${((p.y + n.y) / 2).toFixed(1)}`;
   }
   d += "Z";
 
-  for (let j = 0; j < TUNING.droplets; j += 1) {
+  for (let j = 0;j < TUNING.droplets;j += 1) {
     const life = 0.5 + 0.5 * Math.sin(phase * 1.1 + j * 2.3);
     const a = (j / TUNING.droplets) * TAU + Math.sin(phase * 0.6 + j) * 0.6;
     const dist = 0.78 + 0.34 * Math.sin(phase * 0.8 + j * 1.9);
@@ -209,7 +209,7 @@ export function FooterWordmark() {
 
   return (
     <svg
-      className="landing-footer-wordmark"
+      data-ui="landing-footer-wordmark" className="block w-full h-auto mt-[clamp(40px,5.5vw,88px)] overflow-hidden [user-select:none] [&_text]:font-sans [&_text]:text-[200px] [&_text]:font-semibold"
       viewBox="0 0 1200 128"
       aria-hidden="true"
       focusable="false"
@@ -227,14 +227,14 @@ export function FooterWordmark() {
         </mask>
       </defs>
       <text
-        className="landing-wordmark-outline"
+        className="fill-[color-mix(in_srgb,var(--foreground)_3%,transparent)] stroke-muted stroke-[0.8px] [vector-effect:non-scaling-stroke]"
         x="16" y="155" textLength="1168" lengthAdjust="spacingAndGlyphs"
         fontSize="200" fontWeight="600"
       >
         cascadehook.
       </text>
       <text
-        className="landing-wordmark-halo"
+        className="fill-[color-mix(in_srgb,var(--accent)_20%,transparent)]"
         x="16" y="155" textLength="1168" lengthAdjust="spacingAndGlyphs"
         fontSize="200" fontWeight="600"
         mask={`url(#${haloMaskId})`}
@@ -242,7 +242,7 @@ export function FooterWordmark() {
         cascadehook.
       </text>
       <text
-        className="landing-wordmark-fill"
+        className="fill-accent opacity-[0] pointer-events-none motion-safe:[transition:opacity_180ms_ease-out] [@media(hover:_hover)_and_(pointer:_fine)]:[[data-ui~='landing-footer-wordmark']:hover_&]:opacity-[1]"
         x="16" y="155" textLength="1168" lengthAdjust="spacingAndGlyphs"
         fontSize="200" fontWeight="600"
         mask={`url(#${inkMaskId})`}

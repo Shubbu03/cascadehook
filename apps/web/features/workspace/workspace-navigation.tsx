@@ -25,9 +25,9 @@ type Selection = ReturnType<typeof useWorkspaceSelection>;
 export function WorkspaceNavigation() {
   const selection = useWorkspaceSelection();
   return (
-    <nav className="workspace-switchers" aria-label="Workspace">
+    <nav className={"flex items-center min-w-0 gap-2 before:text-border before:text-[24px] before:font-light before:mr-2 before:[content:\"/\"] in-data-[ui~='dashboard-topbar']:flex-[0_1_auto] in-data-[ui~='dashboard-topbar']:min-w-0 in-data-[ui~='dashboard-topbar']:gap-1.5 [[data-ui~='dashboard-topbar']_&::before]:hidden [[data-ui~='dashboard-topbar']_&::before]:content-none max-[37.5rem]:gap-1 max-[56.25rem]:in-data-[ui~='dashboard-topbar']:flex-1"} aria-label="Workspace">
       <OrganizationSwitcher selection={selection} />
-      <span className="workspace-path-divider" aria-hidden="true">
+      <span className="text-border text-[24px] font-light max-[37.5rem]:in-data-[ui~='dashboard-topbar']:text-[18px]" aria-hidden="true">
         /
       </span>
       <ProjectSwitcher selection={selection} />
@@ -35,7 +35,7 @@ export function WorkspaceNavigation() {
   );
 }
 
-function OrganizationSwitcher({ selection }: { selection: Selection }) {
+function OrganizationSwitcher({ selection }: { selection: Selection; }) {
   const { organization, organizations } = selection;
   const { createOrganization } = useWorkspaceCreation();
   const active = organization.data;
@@ -50,14 +50,14 @@ function OrganizationSwitcher({ selection }: { selection: Selection }) {
       label={"Change organization" + (active ? ": " + active.name : "")}
       trigger={
         <>
-          <span className="workspace-avatar" aria-hidden="true">
+          <span className="grid place-items-center shrink-0 rounded-[7px] bg-accent-subtle text-accent text-[12px] font-medium size-7 in-data-[ui~='dashboard-topbar']:rounded-[5px] in-data-[ui~='dashboard-topbar']:text-[11px] in-data-[ui~='dashboard-topbar']:size-6" aria-hidden="true">
             {active ? (
               [...active.name][0]?.toUpperCase()
             ) : (
               <BuildingsIcon size={17} />
             )}
           </span>
-          <span className="switcher-name">
+          <span className="min-w-0 max-w-47.5 truncate in-data-[ui~='dashboard-topbar']:max-w-55 max-[56.25rem]:in-data-[ui~='dashboard-topbar']:max-w-40 max-[37.5rem]:in-data-[ui~='dashboard-topbar']:max-w-25">
             {active?.name ??
               (organization.isError
                 ? "Organization unavailable"
@@ -66,9 +66,9 @@ function OrganizationSwitcher({ selection }: { selection: Selection }) {
         </>
       }
     >
-      <div className="switcher-panel-heading">
+      <div className="flex items-center pt-3 pb-4.5 mb-1.5 border-b [border-bottom-style:solid] border-b-border gap-3 px-2.5 [&_>_div]:min-w-0 [&_strong]:block [&_strong]:text-[15px] [&_strong]:font-medium [&_strong]:wrap-anywhere [&_div_>_span]:block [&_div_>_span]:mt-1 [&_div_>_span]:text-muted [&_div_>_span]:text-[12px]">
         <span
-          className="workspace-avatar workspace-avatar-large"
+          className="grid place-items-center shrink-0 rounded-[9px] bg-accent-subtle text-accent text-[18px] font-medium size-10.5 in-data-[ui~='dashboard-topbar']:rounded-[5px] in-data-[ui~='dashboard-topbar']:text-[11px] in-data-[ui~='dashboard-topbar']:size-6"
           aria-hidden="true"
         >
           {active ? (
@@ -82,7 +82,7 @@ function OrganizationSwitcher({ selection }: { selection: Selection }) {
           <span>{active?.role ?? "Your workspaces"}</span>
         </div>
       </div>
-      <div className="switcher-options">
+      <div className="max-h-[min(360px,50svh)] overflow-y-auto overscroll-contain [&_ul]:list-none [&_ul]:m-0 [&_ul]:p-0">
         {organizations.isPending && (
           <NavigationSkeleton label="Loading organizations…" />
         )}
@@ -103,7 +103,7 @@ function OrganizationSwitcher({ selection }: { selection: Selection }) {
               name={item.name}
               selected={item.id === active?.id}
               icon={
-                <span className="workspace-avatar">
+                <span className="grid place-items-center shrink-0 rounded-[7px] bg-accent-subtle text-accent text-[12px] font-medium size-7 in-data-[ui~='dashboard-topbar']:rounded-[5px] in-data-[ui~='dashboard-topbar']:text-[11px] in-data-[ui~='dashboard-topbar']:size-6">
                   {[...item.name][0]?.toUpperCase()}
                 </span>
               }
@@ -112,7 +112,7 @@ function OrganizationSwitcher({ selection }: { selection: Selection }) {
         </ul>
         {organizations.hasNextPage && (
           <button
-            className="switcher-action"
+            className="flex items-center w-full min-h-11 rounded-md text-[14px] text-left bg-transparent text-muted gap-3 py-2.25 px-2.5 border-0 border-none border-current [&_>_svg]:shrink-0 [&_>_svg]:mx-1.25 [&:hover]:bg-surface-hover [&:hover]:text-foreground focus-visible:-outline-offset-2"
             type="button"
             disabled={organizations.isFetchingNextPage}
             onClick={() => {
@@ -125,10 +125,10 @@ function OrganizationSwitcher({ selection }: { selection: Selection }) {
           </button>
         )}
       </div>
-      <div className="switcher-panel-footer">
+      <div className="pt-1.5 mt-1.5 border-t [border-top-style:solid] border-t-border">
         {active && (
           <Link
-            className="switcher-action"
+            className="flex items-center w-full min-h-11 rounded-md text-[14px] text-left bg-transparent text-muted gap-3 py-2.25 px-2.5 border-0 border-none border-current [&_>_svg]:shrink-0 [&_>_svg]:mx-1.25 [&:hover]:bg-surface-hover [&:hover]:text-foreground focus-visible:-outline-offset-2"
             href={
               "/dashboard/organizations/" +
               encodeURIComponent(active.id) +
@@ -141,7 +141,7 @@ function OrganizationSwitcher({ selection }: { selection: Selection }) {
         )}
         {active && active.role !== "member" && (
           <Link
-            className="switcher-action"
+            className="flex items-center w-full min-h-11 rounded-md text-[14px] text-left bg-transparent text-muted gap-3 py-2.25 px-2.5 border-0 border-none border-current [&_>_svg]:shrink-0 [&_>_svg]:mx-1.25 [&:hover]:bg-surface-hover [&:hover]:text-foreground focus-visible:-outline-offset-2"
             href={
               "/dashboard/organizations/" +
               encodeURIComponent(active.id) +
@@ -153,7 +153,7 @@ function OrganizationSwitcher({ selection }: { selection: Selection }) {
           </Link>
         )}
         <button
-          className="switcher-action"
+          className="flex items-center w-full min-h-11 rounded-md text-[14px] text-left bg-transparent text-muted gap-3 py-2.25 px-2.5 border-0 border-none border-current [&_>_svg]:shrink-0 [&_>_svg]:mx-1.25 [&:hover]:bg-surface-hover [&:hover]:text-foreground focus-visible:-outline-offset-2"
           type="button"
           data-close-dropdown
           onClick={createOrganization}
@@ -166,7 +166,7 @@ function OrganizationSwitcher({ selection }: { selection: Selection }) {
   );
 }
 
-function ProjectSwitcher({ selection }: { selection: Selection }) {
+function ProjectSwitcher({ selection }: { selection: Selection; }) {
   const { organization, project, projectId } = selection;
   const { createProject } = useWorkspaceCreation();
   const { getToken } = useAuth();
@@ -190,10 +190,10 @@ function ProjectSwitcher({ selection }: { selection: Selection }) {
         <>
           <FolderSimpleIcon
             size={18}
-            className="switcher-project-icon"
+            className="shrink-0 text-muted max-[37.5rem]:in-data-[ui~='dashboard-topbar']:hidden"
             aria-hidden="true"
           />
-          <span className="switcher-name">
+          <span className="min-w-0 max-w-47.5 truncate in-data-[ui~='dashboard-topbar']:max-w-55 max-[56.25rem]:in-data-[ui~='dashboard-topbar']:max-w-40 max-[37.5rem]:in-data-[ui~='dashboard-topbar']:max-w-25">
             {current?.name ??
               (project.isError
                 ? "Project unavailable"
@@ -204,8 +204,8 @@ function ProjectSwitcher({ selection }: { selection: Selection }) {
         </>
       }
     >
-      <div className="switcher-panel-label">{active?.name ?? "Projects"}</div>
-      <div className="switcher-options">
+      <div className="text-muted text-[12px] wrap-anywhere py-3 px-2.5">{active?.name ?? "Projects"}</div>
+      <div className="max-h-[min(360px,50svh)] overflow-y-auto overscroll-contain [&_ul]:list-none [&_ul]:m-0 [&_ul]:p-0">
         {project.isError && (
           <SwitcherError
             error={project.error}
@@ -237,7 +237,7 @@ function ProjectSwitcher({ selection }: { selection: Selection }) {
           />
         )}
         {active && projects.isSuccess && items.length === 0 && (
-          <p className="switcher-message">No projects yet.</p>
+          <p className="text-muted text-[13px] leading-[1.7] py-3 px-2.5">No projects yet.</p>
         )}
         <ul role="list">
           {items.map((item) => (
@@ -247,7 +247,7 @@ function ProjectSwitcher({ selection }: { selection: Selection }) {
               name={item.name}
               selected={item.id === projectId}
               icon={
-                <span className="workspace-avatar workspace-avatar-project">
+                <span className="grid place-items-center shrink-0 rounded-[7px] bg-surface-hover text-muted text-[12px] font-medium size-7 in-data-[ui~='dashboard-topbar']:rounded-[5px] in-data-[ui~='dashboard-topbar']:text-[11px] in-data-[ui~='dashboard-topbar']:size-6">
                   <FolderSimpleIcon size={17} />
                 </span>
               }
@@ -256,7 +256,7 @@ function ProjectSwitcher({ selection }: { selection: Selection }) {
         </ul>
         {projects.hasNextPage && (
           <button
-            className="switcher-action"
+            className="flex items-center w-full min-h-11 rounded-md text-[14px] text-left bg-transparent text-muted gap-3 py-2.25 px-2.5 border-0 border-none border-current [&_>_svg]:shrink-0 [&_>_svg]:mx-1.25 [&:hover]:bg-surface-hover [&:hover]:text-foreground focus-visible:-outline-offset-2"
             type="button"
             disabled={projects.isFetchingNextPage}
             onClick={() => {
@@ -267,10 +267,10 @@ function ProjectSwitcher({ selection }: { selection: Selection }) {
           </button>
         )}
       </div>
-      <div className="switcher-panel-footer">
+      <div className="pt-1.5 mt-1.5 border-t [border-top-style:solid] border-t-border">
         {canCreate && (
           <button
-            className="switcher-action"
+            className="flex items-center w-full min-h-11 rounded-md text-[14px] text-left bg-transparent text-muted gap-3 py-2.25 px-2.5 border-0 border-none border-current [&_>_svg]:shrink-0 [&_>_svg]:mx-1.25 [&:hover]:bg-surface-hover [&:hover]:text-foreground focus-visible:-outline-offset-2"
             type="button"
             data-close-dropdown
             onClick={() => createProject(active)}
@@ -281,7 +281,7 @@ function ProjectSwitcher({ selection }: { selection: Selection }) {
         )}
         <Link
           href={active ? organizationHref(active.id) : "/dashboard"}
-          className="switcher-action"
+          className="flex items-center w-full min-h-11 rounded-md text-[14px] text-left bg-transparent text-muted gap-3 py-2.25 px-2.5 border-0 border-none border-current [&_>_svg]:shrink-0 [&_>_svg]:mx-1.25 [&:hover]:bg-surface-hover [&:hover]:text-foreground focus-visible:-outline-offset-2"
         >
           <SquaresFourIcon size={18} aria-hidden="true" />
           All projects
@@ -306,13 +306,13 @@ function SwitcherItem({
     <li>
       <Link
         href={href}
-        className="switcher-option"
+        className="flex items-center w-full min-h-11 rounded-md text-[14px] text-left gap-3 py-2.25 px-2.5 [&:hover]:bg-surface-hover [&:hover]:text-foreground aria-[current]:bg-accent-subtle focus-visible:-outline-offset-2 *:aria-hidden:shrink-0"
         aria-current={selected ? "true" : undefined}
       >
         <span aria-hidden="true">{icon}</span>
-        <span className="switcher-option-name">{name}</span>
+        <span className="min-w-0 wrap-anywhere">{name}</span>
         {selected && (
-          <CheckIcon size={17} className="switcher-check" aria-hidden="true" />
+          <CheckIcon size={17} className="shrink-0 ml-auto text-accent" aria-hidden="true" />
         )}
       </Link>
     </li>
@@ -329,11 +329,11 @@ function SwitcherError({
   pending: boolean;
 }) {
   return (
-    <div className="switcher-error" role="alert">
+    <div data-ui="switcher-error" className="text-muted text-[13px] leading-[1.7] py-3 px-2.5" role="alert">
       <p>{error.message}</p>
       <button
         type="button"
-        className="text-link"
+        className="inline-flex items-center font-medium gap-2 [&:hover]:underline [&:hover]:underline-offset-4 mt-1.25 text-[13px] text-accent [[data-ui~='dashboard-main']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='dashboard-main']_>_section_>_&:first-child]:text-[12px]"
         onClick={retry}
         disabled={pending}
       >

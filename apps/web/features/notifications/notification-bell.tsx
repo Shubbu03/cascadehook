@@ -12,7 +12,7 @@ import { NotificationFeed } from "./notification-feed";
 import { notificationAccessLost, notificationCountQuery, notificationScope } from "./queries";
 import { notificationInboxHref } from "./types";
 
-export function NotificationBell({ organization }: { organization: Organization }) {
+export function NotificationBell({ organization }: { organization: Organization; }) {
   const userId = useSessionUserId();
   const { getToken } = useAuth();
   const client = useQueryClient();
@@ -27,7 +27,7 @@ export function NotificationBell({ organization }: { organization: Organization 
   useEffect(() => {
     const previousOrganizations = {
       queryKey: ["notification-inbox", userId],
-      predicate: (query: { queryKey: readonly unknown[] }) => query.queryKey[2] !== organization.id,
+      predicate: (query: { queryKey: readonly unknown[]; }) => query.queryKey[2] !== organization.id,
     };
     void client.cancelQueries(previousOrganizations);
     client.removeQueries(previousOrganizations);
@@ -39,30 +39,30 @@ export function NotificationBell({ organization }: { organization: Organization 
   const unread = count.isError ? undefined : count.data?.unread_count;
   const label = count.isError ? "Notifications, couldn't refresh unread count"
     : unread === undefined ? "Notifications, loading unread count"
-    : "Notifications, " + unread + " unread in " + organization.name;
+      : "Notifications, " + unread + " unread in " + organization.name;
   return (
     <>
-      <button type="button" className="notification-bell" popoverTarget={id}
+      <button type="button" className="inline-flex items-center justify-center shrink-0 rounded-md bg-transparent text-muted relative p-0 size-8.5 border-0 border-none border-current [&:hover]:bg-surface-hover [&:hover]:text-foreground aria-expanded:bg-surface-hover aria-expanded:text-foreground pointer-coarse:size-11" popoverTarget={id}
         aria-label={label} aria-expanded={open} aria-controls={id} title="Notifications">
         <BellSimpleIcon size={21} weight={open ? "fill" : "regular"} aria-hidden="true" />
-        {unread !== undefined && unread > 0 && <span className="notification-count" aria-hidden="true">{unread > 99 ? "99+" : unread}</span>}
-        {count.isError && <span className="notification-count notification-count-error" aria-hidden="true">!</span>}
+        {unread !== undefined && unread > 0 && <span className="absolute -top-0.75 -right-1.25 grid place-items-center min-w-4.5 h-4.5 rounded-[20px] bg-accent text-accent-foreground text-[9px] font-semibold leading-none tabular-nums px-1 border-2 border-solid border-background" aria-hidden="true">{unread > 99 ? "99+" : unread}</span>}
+        {count.isError && <span className="absolute -top-0.75 -right-1.25 grid place-items-center min-w-4.5 h-4.5 rounded-[20px] bg-warning-subtle text-warning text-[9px] font-semibold leading-none tabular-nums px-1 border-2 border-solid border-background" aria-hidden="true">!</span>}
       </button>
-      <div ref={panel} id={id} popover="auto" className="notification-popover" role="dialog"
+      <div ref={panel} id={id} popover="auto" className="fixed top-[calc(var(--topbar-height,60px)+8px)] right-5 bottom-auto left-auto w-115 max-w-[calc(100vw-24px)] max-h-[calc(100dvh-var(--topbar-height,60px)-24px)] overflow-hidden rounded-[10px] bg-surface text-foreground shadow-floating m-0 p-0 border border-solid border-border [&:popover-open]:flex [&:popover-open]:flex-col max-[37.5rem]:right-3" role="dialog"
         aria-labelledby={id + "-heading"} aria-describedby={id + "-organization"}
         onToggle={(event) => setOpen(event.newState === "open")}>
-        <header className="notification-popover-header">
+        <header className="flex items-start justify-between pt-4.5 pb-2.5 gap-3 px-4.5 [&_>_div]:min-w-0 [&_h2]:text-[16px] [&_h2]:font-semibold [&_p]:mt-0.75 [&_p]:text-muted [&_p]:text-[12px] [&_p]:truncate">
           <div><h2 id={id + "-heading"}>Notifications</h2><p id={id + "-organization"}>{organization.name}</p></div>
-          <button type="button" className="notification-icon-button" aria-label="Close notifications" onClick={close}><XIcon size={18} aria-hidden="true" /></button>
+          <button type="button" className="inline-flex items-center justify-center shrink-0 rounded-md bg-transparent text-muted p-0 size-8.5 border-0 border-none border-current [&:hover]:bg-surface-hover [&:hover]:text-foreground pointer-coarse:size-11" aria-label="Close notifications" onClick={close}><XIcon size={18} aria-hidden="true" /></button>
         </header>
-        <div className="notification-tabs notification-popover-tabs" role="group" aria-label="Recent notification filter">
+        <div className={"flex items-center shrink-0 w-fit rounded-[7px] bg-background mt-0 mb-2.5 gap-1 p-0.75 mx-4.5 border border-solid border-border [&_button]:min-h-7.5 [&_button]:rounded-sm [&_button]:bg-transparent [&_button]:text-muted [&_button]:text-[12px] [&_button]:font-medium [&_button]:whitespace-nowrap [&_button]:py-1 [&_button]:px-3 [&_button]:border-0 [&_button]:border-none [&_button]:border-current [&_button:hover]:text-foreground [&_button[aria-pressed=\"true\"]]:bg-surface-hover [&_button[aria-pressed=\"true\"]]:text-foreground pointer-coarse:[&_button]:min-h-10"} role="group" aria-label="Recent notification filter">
           <button type="button" aria-pressed={state === "all"} onClick={() => setState("all")}>All</button>
           <button type="button" aria-pressed={state === "unread"} onClick={() => setState("unread")}>Unread</button>
         </div>
-        {open && <div className="notification-popover-scroll">
+        {open && <div className="min-h-0 overflow-y-auto overscroll-contain">
           <NotificationFeed key={state} organizationId={organization.id} filters={{ state }} compact onNavigate={close} />
         </div>}
-        <Link className="notification-popover-footer" href={notificationInboxHref(organization.id)} onNavigate={close}>
+        <Link className="flex items-center justify-between shrink-0 border-t [border-top-style:solid] border-t-border text-accent text-[13px] font-medium gap-3 py-3.25 px-4.5 [&:hover]:bg-surface-hover" href={notificationInboxHref(organization.id)} onNavigate={close}>
           View all notifications<ArrowRightIcon size={16} aria-hidden="true" />
         </Link>
       </div>

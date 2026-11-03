@@ -1,5 +1,7 @@
 "use client";
 
+import { Button } from "@/components/button";
+
 import {
   ArrowRightIcon,
   PlugsConnectedIcon,
@@ -37,39 +39,39 @@ export function OverviewEndpoints({
 
   return (
     <aside
-      className="overview-endpoints"
+      data-ui="overview-endpoints" className="min-w-0 rounded-[9px] bg-surface border border-solid border-border"
       aria-labelledby="overview-endpoints-heading"
     >
-      <div className="overview-card-heading">
+      <div className="flex items-center justify-between flex-wrap gap-y-2.5 gap-x-4 px-5 [&_h2]:text-[14px] [&_h2]:font-medium [&_h2]:tracking-[-0.01em] [&_p]:mt-1 [&_p]:text-muted [&_p]:text-[11px] py-3 @max-[27.5rem]/project-overview:px-4">
         <h2 id="overview-endpoints-heading">Endpoint readiness</h2>
         {canManage && (
-          <button
+          <Button
             type="button"
-            className="button button-small button-quiet"
+            data-ui="button" variant="quiet" size="small" className="leading-[1.4]"
             aria-label="Register endpoint"
             disabled={!availabilityKnown || suspended}
             onClick={onRegister}
           >
             <PlusIcon size={16} aria-hidden="true" />
-          </button>
+          </Button>
         )}
       </div>
       {loading ? (
         <EndpointReadinessSkeleton />
       ) : unavailable ? (
-        <p className="overview-panel-message">
+        <p className="pt-0 pb-5 text-muted text-[12px] leading-[1.7] px-5">
           Endpoint data is unavailable. Refresh to check readiness.
         </p>
       ) : endpoints.length ? (
         <>
-          <dl className="overview-endpoint-counts">
+          <dl className="grid grid-cols-3 pt-0 pb-4 gap-2.5 m-0 px-5 [&_dt]:text-muted [&_dt]:text-[11px] [&_dd]:mt-1 [&_dd]:mb-0 [&_dd]:text-[22px] [&_dd]:tabular-nums [&_dd]:mx-0">
             <div>
               <dt>Enabled</dt>
               <dd className="text-success">{enabled}</dd>
             </div>
             <div>
               <dt>Need setup</dt>
-              <dd className={needsSetup ? "text-warning" : ""}>{needsSetup}</dd>
+              <dd className={(needsSetup) ? "text-warning" : ""}>{needsSetup}</dd>
             </div>
             <div>
               <dt>Disabled</dt>
@@ -77,21 +79,21 @@ export function OverviewEndpoints({
             </div>
           </dl>
           {hasMore && (
-            <p className="overview-loaded-note">
+            <p className="pt-0 pb-3 text-muted text-[11px] px-5">
               From the {endpoints.length} most recent endpoints.
             </p>
           )}
-          <ul className="overview-endpoint-list">
+          <ul className="list-none p-0 m-0 [&_li]:border-t [&_li]:[border-top-style:solid] [&_li]:border-t-border [&_a]:flex [&_a]:items-center [&_a]:gap-2.5 [&_a]:py-3.25 [&_a]:px-5 [&_svg]:shrink-0 [&_svg]:text-muted [&_a:hover]:bg-surface-hover">
             {endpoints.slice(0, 4).map((endpoint) => (
               <li key={endpoint.id}>
                 <Link href={href + "/endpoints/" + endpoint.id}>
                   <PlugsConnectedIcon size={16} aria-hidden="true" />
-                  <span className="overview-endpoint-copy">
-                    <span className="mono" title={endpoint.url}>
+                  <span data-ui="overview-endpoint-copy" className="grid flex-1 min-w-0 text-[11px] gap-1 [&_>_span+span]:text-[10px]">
+                    <span className="font-mono [[data-ui~='overview-endpoint-copy']_>_&]:truncate" title={endpoint.url}>
                       {endpoint.url.replace(/^https:\/\//, "")}
                     </span>
                     <span
-                      className={endpoint.enabled ? "text-success" : "workspace-muted"}
+                      className={(endpoint.enabled) ? "text-success" : "text-muted text-[13px]"}
                     >
                       {endpointState(endpoint)}
                     </span>
@@ -103,18 +105,18 @@ export function OverviewEndpoints({
           </ul>
         </>
       ) : (
-        <p className="overview-panel-message">
+        <p className="pt-0 pb-5 text-muted text-[12px] leading-[1.7] px-5">
           Add a destination to start receiving signed webhooks.
         </p>
-        )}
-      <div className="overview-endpoint-footer">
-        <Link href={href + "/endpoints"} className="text-link">
+      )}
+      <div className="grid justify-items-start border-t [border-top-style:solid] border-t-border gap-3 py-4 px-5">
+        <Link href={href + "/endpoints"} className="inline-flex items-center text-[14px] font-medium gap-2 [&:hover]:underline [&:hover]:underline-offset-4 in-data-[ui~='onboarding-header']:min-h-11 in-data-[ui~='onboarding-header']:text-muted in-data-[ui~='onboarding-header']:text-[13px] in-data-[ui~='switcher-error']:mt-1.25 in-data-[ui~='switcher-error']:text-[13px] in-data-[ui~='switcher-error']:text-accent in-data-[ui~='workspace-banner']:[font-size:inherit] in-data-[ui~='workspace-banner']:underline in-data-[ui~='project-overview']:text-[12px] in-data-[ui~='notification-error']:ml-auto in-data-[ui~='notification-error']:text-[12px] [[data-ui~='dashboard-main']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='dashboard-main']_>_section_>_&:first-child]:text-[12px] [[data-ui~='project-content']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='project-content']_>_section_>_&:first-child]:text-[12px] max-[37.5rem]:in-data-[ui~='onboarding-header']:text-[12px]">
           View all endpoints
           <ArrowRightIcon size={14} aria-hidden="true" />
         </Link>
         <DocsLink
           path="/docs/receivers"
-          className="text-link workspace-muted"
+          className="inline-flex items-center text-[13px] font-medium text-muted gap-2 [&:hover]:underline [&:hover]:underline-offset-4 in-data-[ui~='onboarding-header']:min-h-11 in-data-[ui~='onboarding-header']:text-muted in-data-[ui~='onboarding-header']:text-[13px] in-data-[ui~='switcher-error']:mt-1.25 in-data-[ui~='switcher-error']:text-[13px] in-data-[ui~='switcher-error']:text-accent in-data-[ui~='workspace-banner']:[font-size:inherit] in-data-[ui~='workspace-banner']:underline in-data-[ui~='project-overview']:text-[12px] in-data-[ui~='notification-error']:ml-auto in-data-[ui~='notification-error']:text-[12px] [[data-ui~='dashboard-main']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='dashboard-main']_>_section_>_&:first-child]:text-[12px] [[data-ui~='project-content']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='project-content']_>_section_>_&:first-child]:text-[12px] max-[37.5rem]:in-data-[ui~='onboarding-header']:text-[12px]"
         >
           Receiver guide <ArrowRightIcon size={14} aria-hidden="true" />
         </DocsLink>

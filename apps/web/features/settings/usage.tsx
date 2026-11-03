@@ -40,8 +40,8 @@ function UsageContent() {
     queryFn: ({ signal }) =>
       apiRequest<Usage>(
         "/v1/organizations/" +
-          encodeURIComponent(project.organization_id) +
-          "/usage",
+        encodeURIComponent(project.organization_id) +
+        "/usage",
         getToken,
         { signal },
       ),
@@ -67,8 +67,8 @@ function UsageContent() {
       <QueryState query={projectUsage} loading={<UsageSkeleton />}>
         {projectUsage.data && (
           <>
-            <h2 className="settings-section-title">This project</h2>
-            <div className="usage-grid">
+            <h2 className="mt-9 text-[19px] in-data-[ui~='dashboard-main']:mt-7 in-data-[ui~='dashboard-main']:text-[17px]">This project</h2>
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,210px),1fr))] gap-4 my-6 in-data-[ui~='dashboard-main']:grid-cols-[repeat(auto-fit,minmax(min(100%,220px),1fr))] in-data-[ui~='dashboard-main']:gap-3.5 in-data-[ui~='dashboard-main']:my-5">
               <Quota
                 label="Endpoints"
                 value={projectUsage.data.endpoints}

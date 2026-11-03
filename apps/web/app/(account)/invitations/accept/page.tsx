@@ -13,12 +13,12 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
   referrer: "no-referrer",
 };
-type PageProps = { searchParams: Promise<{ invitation?: string | string[]; __clerk_ticket?: string | string[] }> };
+type PageProps = { searchParams: Promise<{ invitation?: string | string[]; __clerk_ticket?: string | string[]; }>; };
 async function Content({ searchParams }: PageProps) {
   await connection();
   if (!isAuthConfigured())
     return (
-      <main id="main-content" className="page-width workspace-main">
+      <main id="main-content" className="w-[min(1200px,calc(100%-80px))] pt-8 pb-16 mx-auto max-[65.625rem]:w-[calc(100%-56px)] max-[37.5rem]:w-[calc(100%-40px)] max-[37.5rem]:pt-6 max-[37.5rem]:pb-12">
         <h1>Account access unavailable</h1>
         <p>Please try again later.</p>
       </main>

@@ -10,6 +10,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useState } from "react";
+import { buttonStyles } from "@/components/button";
 import { Select } from "@/components/select";
 import type { Endpoint } from "@/features/endpoints/types";
 import { ConnectionError } from "@/features/workspace/connection-error";
@@ -118,9 +119,9 @@ export function OverviewSetup({
       case "event":
         return activityData?.latest
           ? {
-              href: href + "/events/" + activityData.latest.event_id,
-              label: "View event",
-            }
+            href: href + "/events/" + activityData.latest.event_id,
+            label: "View event",
+          }
           : { href: href + "/events", label: "View events" };
       case "delivery": {
         const delivery = activityData?.successful ?? activityData?.latest;
@@ -128,7 +129,7 @@ export function OverviewSetup({
           href: delivery
             ? href + "/deliveries/" + delivery.id
             : href + "/deliveries" +
-              (endpoint ? "?endpoint_id=" + encodeURIComponent(endpoint.id) : ""),
+            (endpoint ? "?endpoint_id=" + encodeURIComponent(endpoint.id) : ""),
           label: delivery ? "View delivery" : "View deliveries",
         };
       }
@@ -137,11 +138,11 @@ export function OverviewSetup({
 
   function stepAction(check: SetupCheck, primary = false) {
     const className = primary
-      ? "button button-small button-primary"
-      : "text-link overview-step-action";
+      ? buttonStyles({ size: "small" })
+      : "inline-flex min-h-7 items-center gap-1 border-0 bg-transparent p-0 text-xs font-medium whitespace-nowrap text-accent hover:underline hover:underline-offset-4 @max-[27.5rem]/project-overview:col-2 @max-[27.5rem]/project-overview:justify-self-start @max-[27.5rem]/project-overview:min-h-9 pointer-coarse:min-h-11";
     if (check.id === "endpoint" && !endpoint && mayRegister) {
       return (
-        <button type="button" className={className} onClick={onRegister}>
+        <button type="button" data-ui={primary ? "button" : undefined} className={className} onClick={onRegister}>
           Add endpoint <ArrowRightIcon size={14} aria-hidden="true" />
         </button>
       );
@@ -150,7 +151,7 @@ export function OverviewSetup({
       return (
         <button
           type="button"
-          className={className}
+          data-ui={primary ? "button" : undefined} className={className}
           disabled={Boolean(blockedReason)}
           title={blockedReason}
           onClick={() => onPublish(endpoint)}
@@ -163,7 +164,7 @@ export function OverviewSetup({
     return (
       <Link
         href={link.href}
-        className={className}
+        data-ui={primary ? "button" : undefined} className={className}
         aria-label={link.label + ": " + check.title}
       >
         {link.label}
@@ -176,31 +177,31 @@ export function OverviewSetup({
     return <SetupSkeleton />;
 
   return (
-    <details className="overview-setup" open={!complete} data-complete={complete}>
-      <summary className="overview-setup-summary">
-        <span className="overview-setup-label">
+    <details data-ui="overview-setup" className="mb-6 rounded-[9px] bg-surface border border-solid border-border" open={!complete} data-complete={complete}>
+      <summary className="flex items-center flex-wrap gap-y-3 gap-x-5 list-none py-4 px-5 [&::-webkit-details-marker]:hidden @max-[27.5rem]/project-overview:px-4">
+        <span className="flex items-center flex-wrap gap-y-2 gap-x-3 text-[14px] font-medium">
           {complete && (
             <CheckCircleIcon size={20} className="text-success" aria-hidden="true" />
           )}
           <span>{complete ? "Setup complete" : "Finish your setup"}</span>
-          <span className="overview-progress" role="status">
+          <span className="text-muted text-[12px] font-normal tabular-nums" role="status">
             {completed} of {checks.length} complete
           </span>
         </span>
-        <span className="overview-progress-track" aria-hidden="true">
+        <span className={"flex w-33 ml-auto gap-1 [&_>_span]:h-1 [&_>_span]:flex-1 [&_>_span]:rounded-xs [&_>_span]:bg-border *:data-[complete=\"true\"]:bg-success @max-[45rem]/project-overview:hidden"} aria-hidden="true">
           {checks.map((check) => (
             <span key={check.id} data-complete={check.state === "complete"} />
           ))}
         </span>
-        <span className="overview-setup-toggle">
+        <span className="flex items-center text-muted text-[12px] gap-2 [[data-ui~='overview-setup'][open]_&_svg]:transform-[rotate(180deg)] @max-[45rem]/project-overview:ml-auto">
           Review steps <CaretDownIcon size={14} aria-hidden="true" />
         </span>
       </summary>
-      <div className="overview-setup-body">
+      <div data-ui="overview-setup-body" className="pt-0 pb-4 border-t [border-top-style:solid] border-t-border px-5 @max-[27.5rem]/project-overview:px-4">
         {endpoints.length > 1 ? (
-          <label className="filter-field overview-endpoint-picker">
+          <label data-ui="filter-field" className="grid max-w-150 mt-3.5 gap-1.75 [&_>_span]:text-[12px] [&_>_span]:font-medium in-data-[ui~='dashboard-main']:flex-[0_1_auto] in-data-[ui~='dashboard-main']:gap-1.5">
             <span>Setup endpoint</span>
-            <Select
+            <Select className="[[data-ui~='dashboard-main']_&]:w-full [[data-ui~='dashboard-main']_&]:min-w-0 [[data-ui~='dashboard-main']_&]:min-h-9 [[data-ui~='dashboard-main']_&]:pr-10.5 [[data-ui~='dashboard-main']_&]:pl-3.5 [[data-ui~='dashboard-main']_&]:py-1.75 [[data-ui~='dashboard-main']_&]:text-[13px]/5 max-[37.5rem]:[[data-ui~='dashboard-main']_&]:w-full max-[37.5rem]:[[data-ui~='dashboard-main']_&]:min-w-0 max-[37.5rem]:[[data-ui~='dashboard-main']_&]:text-[16px] min-h-10.5 rounded-md text-foreground text-[14px] max-w-full py-2.25 px-2.75 max-[32.5rem]:text-[16px]"
               value={endpoint?.id ?? ""}
               onChange={(event) => setSelectedId(event.target.value)}
             >
@@ -210,15 +211,15 @@ export function OverviewSetup({
             </Select>
           </label>
         ) : endpoint ? (
-          <Link href={endpointHref} className="overview-destination mono">
+          <Link href={endpointHref} className="font-mono block pt-3.5 text-muted text-[11px] wrap-anywhere [&:hover]:text-foreground">
             {endpoint.url}
           </Link>
         ) : null}
         {loadMore}
         {next && (
-          <div className="overview-next-step">
+          <div data-ui="overview-next-step" className="flex items-center justify-between flex-wrap gap-y-3 gap-x-5 mt-3.5 mb-3 rounded-md bg-accent-subtle py-3.5 px-4 [&_>_div]:flex-[1_1_240px] [&_h2]:mt-0.75 [&_h2]:text-[14px] [&_h2]:font-medium [&_p]:mt-1 [&_p]:text-muted [&_p]:text-[12px] [&_p]:leading-[1.65]">
             <div>
-              <span className="eyebrow">Next step</span>
+              <span className="font-medium font-mono tracking-[0.02em] text-accent text-[10px]">Next step</span>
               <h2>{next.title}</h2>
               <p>
                 {next.state === "checking"
@@ -231,17 +232,17 @@ export function OverviewSetup({
             {next.state === "todo" && stepAction(next, true)}
           </div>
         )}
-        <ol className="overview-checklist">
+        <ol data-ui="overview-checklist" className="grid grid-cols-2 gap-y-0 gap-x-7 list-none p-0 my-2 mx-0 [&_li]:grid [&_li]:grid-cols-[22px_minmax(0,1fr)_auto] [&_li]:items-center [&_li]:min-w-0 [&_li]:border-b [&_li]:[border-bottom-style:solid] [&_li]:border-b-border [&_li]:gap-2 [&_li]:py-2.5 @max-[45rem]/project-overview:grid-cols-[1fr] @max-[27.5rem]/project-overview:[&_li]:grid-cols-[22px_minmax(0,1fr)]">
           {checks.map((check, index) => (
             <li
               key={check.id}
               data-state={check.state}
               aria-current={next?.id === check.id ? "step" : undefined}
             >
-              <span className="overview-step-number" aria-hidden="true">
+              <span className={"grid place-items-center rounded-full text-muted text-[10px] tabular-nums size-5.25 border border-solid border-border [[data-ui~='overview-checklist']_[aria-current=\"step\"]_&]:text-accent [[data-ui~='overview-checklist']_[aria-current=\"step\"]_&]:bg-accent-subtle [[data-ui~='overview-checklist']_[aria-current=\"step\"]_&]:border-accent [[data-ui~='overview-checklist']_[data-state=\"complete\"]_&]:text-success [[data-ui~='overview-checklist']_[data-state=\"complete\"]_&]:bg-success-subtle [[data-ui~='overview-checklist']_[data-state=\"complete\"]_&]:border-transparent"} aria-hidden="true">
                 {check.state === "complete" ? <CheckIcon size={13} /> : index + 1}
               </span>
-              <span className="overview-step-title">
+              <span className="text-[12px] wrap-anywhere">
                 {check.title}
                 <span className="sr-only"> — {check.state}</span>
               </span>
@@ -250,11 +251,11 @@ export function OverviewSetup({
           ))}
         </ol>
         {!canManage && (
-          <p className="field-help">
+          <p className="text-[12px] text-muted leading-[1.7]">
             An owner or admin can change setup and manage API keys.
           </p>
         )}
-        <p className="overview-history-note field-help">
+        <p className="text-[11px] text-muted leading-[1.7] pt-1.5">
           Checks reflect this endpoint’s current setup and retained delivery history.
         </p>
         {canManage && key.isError && (

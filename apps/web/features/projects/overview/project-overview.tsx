@@ -1,5 +1,7 @@
 "use client";
 
+import { Button } from "@/components/button";
+
 import { SetupSkeleton } from "@/features/workspace/skeletons";
 import { useAuth } from "@clerk/nextjs";
 import { PlusIcon, TerminalWindowIcon } from "@phosphor-icons/react";
@@ -28,7 +30,7 @@ export function ProjectOverview() {
     setupEndpointsQuery(userId, project.id, getToken),
   );
   const [refreshing, setRefreshing] = useState(false);
-  const [publisher, setPublisher] = useState<{ endpoint?: Endpoint } | null>(null);
+  const [publisher, setPublisher] = useState<{ endpoint?: Endpoint; } | null>(null);
   const [registering, setRegistering] = useState(false);
   const [agentSiteOrigin, setAgentSiteOrigin] = useState<string | null>(null);
   const items = endpoints.data?.pages.flatMap((page) => page.data) ?? [];
@@ -52,7 +54,7 @@ export function ProjectOverview() {
   }
 
   return (
-    <section className="project-overview" aria-labelledby="overview-heading">
+    <section data-ui="project-overview" className="[container:project-overview/inline-size]" aria-labelledby="overview-heading">
       <PageHeader
         title="Overview"
         titleId="overview-heading"
@@ -64,25 +66,25 @@ export function ProjectOverview() {
               refresh={refresh}
             />
             {canManage && (
-              <button
+              <Button
                 type="button"
-                className="button button-small button-secondary"
+                data-ui="button" variant="secondary" size="small" className="leading-[1.4]"
                 onClick={() => setAgentSiteOrigin(window.location.origin)}
               >
                 <TerminalWindowIcon size={16} aria-hidden="true" />
                 Set up with AI
-              </button>
+              </Button>
             )}
             {canManage && (
-              <button
+              <Button
                 type="button"
-                className="button button-small button-primary"
+                data-ui="button" size="small" className="leading-[1.4]"
                 disabled={!availabilityKnown || suspended}
                 onClick={() => setPublisher({})}
               >
                 <PlusIcon size={16} aria-hidden="true" />
                 Publish event
-              </button>
+              </Button>
             )}
           </>
         }
@@ -98,7 +100,7 @@ export function ProjectOverview() {
         )}
       </QueryState>
       {canManage && <OverviewMetrics />}
-      <div className="overview-workspace-grid">
+      <div className="grid grid-cols-[minmax(0,1fr)_300px] items-start gap-5 @max-[55rem]/project-overview:grid-cols-[1fr]">
         <OverviewActivity endpoints={items} />
         <OverviewEndpoints
           endpoints={items}

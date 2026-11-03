@@ -7,7 +7,7 @@ import { notify } from "@/lib/notify";
 const noticeParam = "notice";
 const accessDeniedNotice = "access-denied";
 
-export function AccessRedirect({ href }: { href: string }) {
+export function AccessRedirect({ href }: { href: string; }) {
   const router = useRouter();
 
   useEffect(() => {
@@ -19,7 +19,7 @@ export function AccessRedirect({ href }: { href: string }) {
   }, [href, router]);
 
   return (
-    <p className="workspace-muted" role="status">
+    <p className="text-muted text-[13px]" role="status">
       Returning to your dashboard…
     </p>
   );

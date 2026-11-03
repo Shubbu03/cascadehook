@@ -1,5 +1,7 @@
 "use client";
 
+import { Button } from "@/components/button";
+import { cn } from "@/lib/classes";
 import { CheckIcon, CopyIcon, WarningCircleIcon } from "@phosphor-icons/react";
 import { useContext, useEffect, useRef, useState } from "react";
 import { NotificationContext } from "@/lib/notification-context";
@@ -56,12 +58,15 @@ export function CopyButton({
   const Icon = status === "copied" ? CheckIcon : status === "error" ? WarningCircleIcon : CopyIcon;
 
   return (
-    <button
+    <Button
       type="button"
-      className={
-        "button button-small button-quiet copy-button" +
-        (iconOnly ? " copy-button-icon" : "")
-      }
+      variant="quiet"
+      size="small"
+      className={cn(
+        "data-[copy-state=copied]:bg-success-subtle data-[copy-state=copied]:text-success data-[copy-state=error]:bg-danger-subtle data-[copy-state=error]:text-danger",
+        "in-data-[ui~='landing-code-header']:min-w-33",
+        iconOnly && "in-data-[ui~='endpoint-destination-url']:shrink-0 in-data-[ui~='endpoint-metadata']:shrink-0 in-data-[ui~='event-identifier']:size-8 in-data-[ui~='event-identifier']:min-h-8 in-data-[ui~='event-identifier']:p-1.5 in-data-[ui~='member-identity']:w-9 in-data-[ui~='member-identity']:p-0 in-data-[ui~='delivery-identifier']:w-7.5 in-data-[ui~='delivery-identifier']:min-h-7.5 in-data-[ui~='delivery-identifier']:p-1.25 in-data-[ui~='delivery-copy-value']:w-7.5 in-data-[ui~='delivery-copy-value']:min-h-7.5 in-data-[ui~='delivery-copy-value']:p-1.25",
+      )}
       data-copy-state={status}
       aria-label={iconOnly ? text : undefined}
       aria-busy={status === "copying"}
@@ -73,6 +78,6 @@ export function CopyButton({
       <span className={iconOnly ? "sr-only" : undefined} aria-live="polite">
         {iconOnly && status === "idle" ? "" : text}
       </span>
-    </button>
+    </Button>
   );
 }

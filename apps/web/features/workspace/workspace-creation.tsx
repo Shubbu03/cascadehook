@@ -13,12 +13,12 @@ import { useSessionUserId } from "./session";
 import type { Organization, Project } from "./types";
 
 type CreateTarget =
-  | { kind: "organization" }
-  | { kind: "project"; organization: Organization };
+  | { kind: "organization"; }
+  | { kind: "project"; organization: Organization; };
 
 type CreatedResource =
-  | { kind: "organization"; organization: Organization }
-  | { kind: "project"; project: Project };
+  | { kind: "organization"; organization: Organization; }
+  | { kind: "project"; project: Project; };
 
 type CreationActions = {
   createOrganization: () => void;
@@ -33,7 +33,7 @@ export function useWorkspaceCreation() {
   return actions;
 }
 
-export function WorkspaceCreation({ children }: { children: React.ReactNode }) {
+export function WorkspaceCreation({ children }: { children: React.ReactNode; }) {
   const [target, setTarget] = useState<CreateTarget | null>(null);
   const router = useRouter();
 
@@ -98,8 +98,8 @@ function CreateDialog({
       }
       const project = await apiRequest<Project>(
         "/v1/organizations/" +
-          encodeURIComponent(target.organization.id) +
-          "/projects",
+        encodeURIComponent(target.organization.id) +
+        "/projects",
         getToken,
         { method: "POST", data: { name } },
       );
@@ -145,13 +145,13 @@ function CreateDialog({
 
   return (
     <Modal
-      className="workspace-create-dialog"
+      data-ui="workspace-create-dialog" className="w-[min(460px,calc(100%-40px))] max-h-[calc(100svh-48px)] rounded-xl bg-surface text-foreground shadow-floating overflow-y-auto m-auto p-7 border border-solid border-border [&_h2]:mb-7 [&_h2]:text-[24px] [&_h2]:tracking-[-0.035em] backdrop:bg-[#0008] max-[37.5rem]:p-6"
       aria-labelledby={titleId}
       onDismiss={onCancel}
       dismissDisabled={create.isPending}
     >
       {target.kind === "project" && (
-        <p className="workspace-create-context">{target.organization.name}</p>
+        <p className="mb-2 text-muted text-[13px] wrap-anywhere">{target.organization.name}</p>
       )}
       <NameForm
         titleId={titleId}

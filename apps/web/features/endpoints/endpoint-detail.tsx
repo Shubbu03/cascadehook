@@ -1,5 +1,9 @@
 "use client";
 
+import { Status } from "@/components/status";
+
+import { Button, buttonStyles } from "@/components/button";
+
 import { useAuth, useClerk } from "@clerk/nextjs";
 import {
   ArrowLeftIcon,
@@ -43,7 +47,7 @@ import {
   type EndpointInput,
 } from "./types";
 
-export function EndpointDetail({ endpointId }: { endpointId: string }) {
+export function EndpointDetail({ endpointId }: { endpointId: string; }) {
   const { project, canManage, suspended, availabilityKnown } = useProject();
   const userId = useSessionUserId();
   const { getToken, sessionId } = useAuth();
@@ -186,7 +190,7 @@ export function EndpointDetail({ endpointId }: { endpointId: string }) {
   )
     return (
       <section>
-        <Link href={href + "/endpoints"} className="text-link">
+        <Link href={href + "/endpoints"} className="inline-flex items-center text-[14px] font-medium gap-2 [&:hover]:underline [&:hover]:underline-offset-4 in-data-[ui~='notice']:[font-size:inherit] in-data-[ui~='notice']:underline in-data-[ui~='notice']:underline-offset-[3px] in-data-[ui~='notice']:ml-1.25 in-data-[ui~='endpoint-security-card']:text-[12px] in-data-[ui~='onboarding-header']:min-h-11 in-data-[ui~='onboarding-header']:text-muted in-data-[ui~='onboarding-header']:text-[13px] in-data-[ui~='switcher-error']:mt-1.25 in-data-[ui~='switcher-error']:text-[13px] in-data-[ui~='switcher-error']:text-accent in-data-[ui~='workspace-banner']:[font-size:inherit] in-data-[ui~='workspace-banner']:underline in-data-[ui~='notification-error']:ml-auto in-data-[ui~='notification-error']:text-[12px] [[data-ui~='dashboard-main']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='dashboard-main']_>_section_>_&:first-child]:text-[12px] [[data-ui~='project-content']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='project-content']_>_section_>_&:first-child]:text-[12px] [[data-ui~='project-content']_>_[data-ui~='endpoint-detail']_>_&:first-child]:mb-3 max-[37.5rem]:in-data-[ui~='onboarding-header']:text-[12px]">
           ← Endpoints
         </Link>
         <ConnectionError
@@ -202,18 +206,18 @@ export function EndpointDetail({ endpointId }: { endpointId: string }) {
   const current = endpoint.data;
 
   return (
-    <section className="endpoint-detail" aria-labelledby="endpoint-title">
-      <Link href={href + "/endpoints"} className="text-link workspace-muted">
+    <section data-ui="endpoint-detail" className="max-w-300 [container:endpoint-settings/inline-size]" aria-labelledby="endpoint-title">
+      <Link href={href + "/endpoints"} className="inline-flex items-center text-[13px] font-medium text-muted gap-2 [&:hover]:underline [&:hover]:underline-offset-4 in-data-[ui~='notice']:[font-size:inherit] in-data-[ui~='notice']:underline in-data-[ui~='notice']:underline-offset-[3px] in-data-[ui~='notice']:ml-1.25 in-data-[ui~='endpoint-security-card']:text-[12px] in-data-[ui~='onboarding-header']:min-h-11 in-data-[ui~='onboarding-header']:text-muted in-data-[ui~='onboarding-header']:text-[13px] in-data-[ui~='switcher-error']:mt-1.25 in-data-[ui~='switcher-error']:text-[13px] in-data-[ui~='switcher-error']:text-accent in-data-[ui~='workspace-banner']:[font-size:inherit] in-data-[ui~='workspace-banner']:underline in-data-[ui~='notification-error']:ml-auto in-data-[ui~='notification-error']:text-[12px] [[data-ui~='dashboard-main']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='dashboard-main']_>_section_>_&:first-child]:text-[12px] [[data-ui~='project-content']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='project-content']_>_section_>_&:first-child]:text-[12px] [[data-ui~='project-content']_>_[data-ui~='endpoint-detail']_>_&:first-child]:mb-3 max-[37.5rem]:in-data-[ui~='onboarding-header']:text-[12px]">
         <ArrowLeftIcon size={16} aria-hidden="true" />
         Endpoints
       </Link>
-      <PageHeader
+      <PageHeader variant="endpoint"
         title="Endpoint settings"
         titleId="endpoint-title"
         actions={
           <>
             <Link
-              className="button button-small button-quiet"
+              data-ui="button" className={buttonStyles({ variant: "quiet", size: "small", className: "leading-[1.4]" })}
               href={
                 href +
                 "/deliveries?endpoint_id=" +
@@ -225,9 +229,9 @@ export function EndpointDetail({ endpointId }: { endpointId: string }) {
             </Link>
             {canManage && (editing ? (
               <>
-                <button
+                <Button
                   type="button"
-                  className="button button-small button-secondary"
+                  data-ui="button" variant="secondary" size="small" className="leading-[1.4]"
                   disabled={save.isPending}
                   onClick={() => {
                     setDraft(null);
@@ -235,20 +239,20 @@ export function EndpointDetail({ endpointId }: { endpointId: string }) {
                   }}
                 >
                   Cancel
-                </button>
-                <button
+                </Button>
+                <Button
                   type="submit"
                   form={formId}
-                  className="button button-small button-primary"
+                  data-ui="button" size="small" className="leading-[1.4]"
                   disabled={save.isPending}
                 >
                   {save.isPending ? "Saving…" : "Save changes"}
-                </button>
+                </Button>
               </>
             ) : (
-              <button
+              <Button
                 type="button"
-                className="button button-small button-secondary"
+                data-ui="button" variant="secondary" size="small" className="leading-[1.4]"
                 disabled={busy}
                 onClick={() => {
                   save.reset();
@@ -261,7 +265,7 @@ export function EndpointDetail({ endpointId }: { endpointId: string }) {
               >
                 <PencilSimpleIcon size={16} aria-hidden="true" />
                 Edit endpoint
-              </button>
+              </Button>
             ))}
           </>
         }
@@ -276,7 +280,7 @@ export function EndpointDetail({ endpointId }: { endpointId: string }) {
         />
       )}
       {editing && save.error && (
-        <p className="form-error" role="alert">
+        <p className="text-danger text-[13px] my-3 [[data-ui~='endpoint-danger']_>_&]:basis-full [[data-ui~='endpoint-danger']_>_&]:text-danger" role="alert">
           {save.error.message}
         </p>
       )}
@@ -289,17 +293,17 @@ export function EndpointDetail({ endpointId }: { endpointId: string }) {
           pending={endpoint.isFetching}
         />
       )}
-      <div className="endpoint-overview">
+      <div className="rounded-[10px] bg-surface grid grid-cols-[minmax(0,1fr)_minmax(270px,0.55fr)] mb-4 border border-solid border-border @max-[38.75rem]/endpoint-settings:grid-cols-[1fr]">
         <section
-          className="endpoint-destination"
+          className="min-w-0 py-5 px-5.5 @max-[38.75rem]/endpoint-settings:p-4"
           aria-labelledby="destination-title"
         >
-          <div className="endpoint-panel-heading">
+          <div data-ui="endpoint-panel-heading" className="flex items-center flex-wrap gap-2 [&_>_svg]:shrink-0 [&_>_svg]:text-muted [&_h2]:font-medium [&_h2]:tracking-[-0.01em] [&_h2]:text-sm/normal">
             <LinkSimpleIcon size={18} aria-hidden="true" />
             <h2 id="destination-title">Destination URL</h2>
           </div>
           {editing && draft ? (
-            <div className="endpoint-inline-fields">
+            <div data-ui="endpoint-inline-fields" className="mt-3 [&_input]:font-mono [&_textarea]:font-mono [&_textarea]:min-h-24 [&_textarea]:bg-surface-hover">
               <EndpointDestinationField
                 id={formId + "-url"}
                 form={formId}
@@ -312,15 +316,15 @@ export function EndpointDetail({ endpointId }: { endpointId: string }) {
                 hideLabel
               />
               {draft.url.trim() !== current.url && (
-                <p className="notice notice-warning">
+                <p data-ui="notice" className="rounded-lg bg-warning-subtle text-warning my-4 border border-solid border-border mt-3 mb-0 text-[12px] py-2.5 px-3">
                   Changing the URL disables delivery and clears verification.
                   Verify the new receiver before enabling delivery again.
                 </p>
               )}
             </div>
           ) : (
-            <div className="endpoint-destination-url">
-              <code className="endpoint-url">{current.url}</code>
+            <div data-ui="endpoint-destination-url" className="flex items-start mt-2.5 gap-2">
+              <code className="block wrap-anywhere font-mono text-[13px] leading-[1.7] flex-1 min-w-0 text-foreground py-1.25">{current.url}</code>
               <CopyButton
                 value={current.url}
                 label="Copy destination URL"
@@ -329,7 +333,7 @@ export function EndpointDetail({ endpointId }: { endpointId: string }) {
               />
             </div>
           )}
-          <dl className="endpoint-metadata">
+          <dl data-ui="endpoint-metadata" className="flex items-center flex-wrap gap-y-1 gap-x-2.5 mt-4 mb-0 text-muted text-[11px] mx-0 [&_dd]:flex [&_dd]:items-center [&_dd]:min-w-0 [&_dd]:gap-1 [&_dd]:m-0 [&_code]:wrap-anywhere @max-[38.75rem]/endpoint-settings:block @max-[38.75rem]/endpoint-settings:mt-3 @max-[38.75rem]/endpoint-settings:[&_dd]:mt-0.5">
             <dt>Endpoint ID</dt>
             <dd>
               <code>{current.id}</code>
@@ -342,23 +346,16 @@ export function EndpointDetail({ endpointId }: { endpointId: string }) {
             </dd>
           </dl>
         </section>
-        <section className="endpoint-delivery" aria-labelledby="delivery-title">
-          <div className="endpoint-panel-heading">
+        <section className="min-w-0 border-l [border-left-style:solid] border-l-border bg-background rounded-[0_9px_9px_0] py-5 px-5.5 @max-[38.75rem]/endpoint-settings:border-t @max-[38.75rem]/endpoint-settings:[border-top-style:solid] @max-[38.75rem]/endpoint-settings:border-t-border @max-[38.75rem]/endpoint-settings:border-l-0 @max-[38.75rem]/endpoint-settings:[border-left-style:none] @max-[38.75rem]/endpoint-settings:border-l-[currentColor] @max-[38.75rem]/endpoint-settings:rounded-[0_0_9px_9px] @max-[38.75rem]/endpoint-settings:p-4" aria-labelledby="delivery-title">
+          <div data-ui="endpoint-panel-heading" className="flex items-center flex-wrap gap-2 [&_>_svg]:shrink-0 [&_>_svg]:text-muted [&_h2]:font-medium [&_h2]:tracking-[-0.01em] [&_h2]:text-sm/normal">
             <h2 id="delivery-title">Delivery</h2>
-            <span
-              className={
-                "status " +
-                (current.enabled
-                  ? "status-success"
-                  : !current.has_signing_secret || !current.verified_at
-                    ? "status-warning"
-                    : "status-neutral")
-              }
+            <Status
+              tone={(current.enabled ? "success" : !current.has_signing_secret || !current.verified_at ? "warning" : "neutral")}
             >
               {endpointState(current)}
-            </span>
+            </Status>
           </div>
-          <p className="endpoint-panel-description" id="delivery-description">
+          <p className="mt-2 mb-3.5 text-muted text-[13px] leading-[1.65] wrap-anywhere [[data-ui~='endpoint-security-card']_>_&:last-child]:mb-0" id="delivery-description">
             {current.enabled
               ? "Delivery is enabled for subscribed events."
               : current.has_signing_secret && current.verified_at
@@ -366,12 +363,10 @@ export function EndpointDetail({ endpointId }: { endpointId: string }) {
                 : "Configure a signing secret and verify your receiver to enable delivery."}
           </p>
           {canManage && (
-            <button
+            <Button
               type="button"
-              className={
-                "button button-small " +
-                (current.enabled ? "button-secondary" : "button-primary")
-              }
+              size="small"
+              variant={current.enabled ? "secondary" : "primary"}
               aria-describedby="delivery-description"
               disabled={
                 busy ||
@@ -391,29 +386,29 @@ export function EndpointDetail({ endpointId }: { endpointId: string }) {
                 : current.enabled
                   ? "Disable delivery"
                   : "Enable delivery"}
-            </button>
+            </Button>
           )}
           {toggle.error && (
-            <p className="form-error" role="alert">
+            <p className="text-danger text-[13px] my-3 [[data-ui~='endpoint-danger']_>_&]:basis-full [[data-ui~='endpoint-danger']_>_&]:text-danger" role="alert">
               {toggle.error.message}
             </p>
           )}
         </section>
       </div>
-      <div className="endpoint-configuration">
+      <div className="rounded-[10px] bg-surface border border-solid border-border">
         <section
-          className="endpoint-subscriptions"
+          className="min-w-0 border-b [border-bottom-style:solid] border-b-border py-5 px-5.5 @max-[38.75rem]/endpoint-settings:p-4"
           aria-labelledby="subscriptions-title"
         >
-          <div className="endpoint-panel-heading">
+          <div data-ui="endpoint-panel-heading" className="flex items-center flex-wrap gap-2 [&_>_svg]:shrink-0 [&_>_svg]:text-muted [&_h2]:font-medium [&_h2]:tracking-[-0.01em] [&_h2]:text-sm/normal">
             <h2 id="subscriptions-title">Event subscriptions</h2>
-            <span className="endpoint-subscription-count">
+            <span className="text-muted text-[12px]">
               {current.event_types.length} event{" "}
               {current.event_types.length === 1 ? "type" : "types"}
             </span>
           </div>
           {editing && draft ? (
-            <div className="endpoint-inline-fields">
+            <div data-ui="endpoint-inline-fields" className="mt-3 [&_input]:font-mono [&_textarea]:font-mono [&_textarea]:min-h-24 [&_textarea]:bg-surface-hover">
               <EndpointSubscriptionsField
                 id={formId + "-types"}
                 form={formId}
@@ -428,10 +423,10 @@ export function EndpointDetail({ endpointId }: { endpointId: string }) {
             </div>
           ) : (
             <>
-              <p className="endpoint-panel-description">
+              <p className="mt-2 mb-3.5 text-muted text-[13px] leading-[1.65] wrap-anywhere [[data-ui~='endpoint-security-card']_>_&:last-child]:mb-0">
                 Only events matching these exact types are delivered here.
               </p>
-              <ul className="event-type-list">
+              <ul className="flex flex-wrap list-none m-0 p-0 [&_li]:rounded-[5px] [&_li]:wrap-anywhere [&_li]:max-w-full [&_li]:border [&_li]:border-solid [&_li]:border-border gap-1.5 [&_li]:bg-background [&_li]:text-[11px] [&_li]:py-1 [&_li]:px-2">
                 {current.event_types.map((type) => (
                   <li key={type}><code>{type}</code></li>
                 ))}
@@ -439,7 +434,7 @@ export function EndpointDetail({ endpointId }: { endpointId: string }) {
             </>
           )}
         </section>
-        <div className="endpoint-security-grid">
+        <div className="grid grid-cols-2 @max-[47.5rem]/endpoint-settings:grid-cols-[1fr]">
           {canManage ? (
             <SigningSecret
               endpoint={current}
@@ -449,24 +444,19 @@ export function EndpointDetail({ endpointId }: { endpointId: string }) {
           ) : (
             <section
               id="signing-secret"
-              className="endpoint-security-card"
+              data-ui="endpoint-security-card" className="min-w-0 py-5 px-5.5 [[data-ui~='endpoint-security-card']+&]:border-l [[data-ui~='endpoint-security-card']+&]:[border-left-style:solid] [[data-ui~='endpoint-security-card']+&]:border-l-border @max-[38.75rem]/endpoint-settings:p-4 @max-[47.5rem]/endpoint-settings:[[data-ui~='endpoint-security-card']+&]:border-t @max-[47.5rem]/endpoint-settings:[[data-ui~='endpoint-security-card']+&]:[border-top-style:solid] @max-[47.5rem]/endpoint-settings:[[data-ui~='endpoint-security-card']+&]:border-t-border @max-[47.5rem]/endpoint-settings:[[data-ui~='endpoint-security-card']+&]:border-l-0 @max-[47.5rem]/endpoint-settings:[[data-ui~='endpoint-security-card']+&]:[border-left-style:none] @max-[47.5rem]/endpoint-settings:[[data-ui~='endpoint-security-card']+&]:border-l-[currentColor]"
               aria-labelledby="signing-secret-title"
             >
-              <div className="endpoint-panel-heading">
+              <div data-ui="endpoint-panel-heading" className="flex items-center flex-wrap gap-2 [&_>_svg]:shrink-0 [&_>_svg]:text-muted [&_h2]:font-medium [&_h2]:tracking-[-0.01em] [&_h2]:text-sm/normal">
                 <KeyIcon size={18} aria-hidden="true" />
                 <h2 id="signing-secret-title">Signing secret</h2>
-                <span
-                  className={
-                    "status " +
-                    (current.has_signing_secret
-                      ? "status-success"
-                      : "status-warning")
-                  }
+                <Status
+                  tone={(current.has_signing_secret ? "success" : "warning")}
                 >
                   {current.has_signing_secret ? "Configured" : "Not configured"}
-                </span>
+                </Status>
               </div>
-              <p className="endpoint-panel-description">
+              <p className="mt-2 mb-3.5 text-muted text-[13px] leading-[1.65] wrap-anywhere [[data-ui~='endpoint-security-card']_>_&:last-child]:mb-0">
                 {current.has_signing_secret
                   ? "A signing secret is configured for this endpoint."
                   : "An owner or admin needs to configure a signing secret."}
@@ -475,17 +465,14 @@ export function EndpointDetail({ endpointId }: { endpointId: string }) {
           )}
           <section
             id="receiver-verification"
-            className="endpoint-security-card"
+            data-ui="endpoint-security-card" className="min-w-0 py-5 px-5.5 [[data-ui~='endpoint-security-card']+&]:border-l [[data-ui~='endpoint-security-card']+&]:[border-left-style:solid] [[data-ui~='endpoint-security-card']+&]:border-l-border @max-[38.75rem]/endpoint-settings:p-4 @max-[47.5rem]/endpoint-settings:[[data-ui~='endpoint-security-card']+&]:border-t @max-[47.5rem]/endpoint-settings:[[data-ui~='endpoint-security-card']+&]:[border-top-style:solid] @max-[47.5rem]/endpoint-settings:[[data-ui~='endpoint-security-card']+&]:border-t-border @max-[47.5rem]/endpoint-settings:[[data-ui~='endpoint-security-card']+&]:border-l-0 @max-[47.5rem]/endpoint-settings:[[data-ui~='endpoint-security-card']+&]:[border-left-style:none] @max-[47.5rem]/endpoint-settings:[[data-ui~='endpoint-security-card']+&]:border-l-[currentColor]"
             aria-labelledby="verification-title"
           >
-            <div className="endpoint-panel-heading">
+            <div data-ui="endpoint-panel-heading" className="flex items-center flex-wrap gap-2 [&_>_svg]:shrink-0 [&_>_svg]:text-muted [&_h2]:font-medium [&_h2]:tracking-[-0.01em] [&_h2]:text-sm/normal">
               <ShieldCheckIcon size={18} aria-hidden="true" />
               <h2 id="verification-title">Receiver verification</h2>
-              <span
-                className={
-                  "status " +
-                  (current.verified_at ? "status-success" : "status-warning")
-                }
+              <Status
+                tone={(current.verified_at ? "success" : "warning")}
               >
                 {current.verified_at ? (
                   <>
@@ -495,30 +482,30 @@ export function EndpointDetail({ endpointId }: { endpointId: string }) {
                 ) : (
                   "Not verified"
                 )}
-              </span>
+              </Status>
             </div>
-            <p className="endpoint-panel-description">
+            <p className="mt-2 mb-3.5 text-muted text-[13px] leading-[1.65] wrap-anywhere [[data-ui~='endpoint-security-card']_>_&:last-child]:mb-0">
               {current.verified_at
                 ? "This destination has passed the signed ownership challenge."
                 : "Your receiver must validate our signature and return the challenge proof. A plain 200 response is not enough."}
             </p>
             <DocsLink
               path="/docs/security/verification"
-              className="text-link text-accent"
+              className="text-accent inline-flex items-center font-medium gap-2 [&:hover]:underline [&:hover]:underline-offset-4 in-data-[ui~='notice']:[font-size:inherit] in-data-[ui~='notice']:underline in-data-[ui~='notice']:underline-offset-[3px] in-data-[ui~='notice']:ml-1.25 text-[12px] in-data-[ui~='onboarding-header']:min-h-11 in-data-[ui~='onboarding-header']:text-muted in-data-[ui~='onboarding-header']:text-[13px] in-data-[ui~='switcher-error']:mt-1.25 in-data-[ui~='switcher-error']:text-[13px] in-data-[ui~='switcher-error']:text-accent in-data-[ui~='workspace-banner']:[font-size:inherit] in-data-[ui~='workspace-banner']:underline in-data-[ui~='notification-error']:ml-auto in-data-[ui~='notification-error']:text-[12px] [[data-ui~='dashboard-main']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='dashboard-main']_>_section_>_&:first-child]:text-[12px] [[data-ui~='project-content']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='project-content']_>_section_>_&:first-child]:text-[12px] [[data-ui~='project-content']_>_[data-ui~='endpoint-detail']_>_&:first-child]:mb-3 max-[37.5rem]:in-data-[ui~='onboarding-header']:text-[12px]"
             >
               Receiver setup guide
               <ArrowRightIcon size={14} aria-hidden="true" />
             </DocsLink>
             {canManage && !current.verified_at && (
-              <div className="verification-action">
+              <div className="grid justify-items-start mt-3.5 gap-2">
                 {!current.has_signing_secret && (
-                  <p className="field-help">
+                  <p className="text-[12px] text-muted leading-[1.7]">
                     Generate a signing secret and configure your receiver first.
                   </p>
                 )}
-                <button
+                <Button
                   type="button"
-                  className="button button-small button-secondary"
+                  data-ui="button" variant="secondary" size="small" className="leading-[1.4]"
                   disabled={
                     !current.has_signing_secret ||
                     busy ||
@@ -533,14 +520,14 @@ export function EndpointDetail({ endpointId }: { endpointId: string }) {
                     : remaining > 0
                       ? "Try again in " + remaining + "s"
                       : "Verify receiver"}
-                </button>
-                <p className="field-help">
+                </Button>
+                <p className="text-[12px] text-muted leading-[1.7]">
                   Sends a signed challenge. One attempt every 30 seconds.
                 </p>
               </div>
             )}
             {verify.error && (
-              <p className="form-error" role="alert">
+              <p className="text-danger text-[13px] my-3 [[data-ui~='endpoint-danger']_>_&]:basis-full [[data-ui~='endpoint-danger']_>_&]:text-danger" role="alert">
                 {verify.error.message}
               </p>
             )}
@@ -549,7 +536,7 @@ export function EndpointDetail({ endpointId }: { endpointId: string }) {
       </div>
       {canManage && (
         <section
-          className="endpoint-danger"
+          data-ui="endpoint-danger" className="flex items-center flex-wrap gap-y-3 gap-x-6 mt-5 border-t [border-top-style:solid] border-t-border py-4.5 [&_>_div]:flex-[1_1_320px] [&_h2]:text-[13px] [&_h2]:font-medium [&_p]:mt-1 [&_p]:text-muted [&_p]:text-[12px] [&_p]:leading-[1.65] @max-[38.75rem]/endpoint-settings:items-start @max-[38.75rem]/endpoint-settings:mt-4 @max-[38.75rem]/endpoint-settings:pt-4"
           aria-labelledby="delete-endpoint-title"
         >
           <div>
@@ -559,9 +546,9 @@ export function EndpointDetail({ endpointId }: { endpointId: string }) {
               Delivery history is kept.
             </p>
           </div>
-          <button
+          <Button
             type="button"
-            className="button button-small button-secondary text-danger"
+            data-ui="button" variant="secondary" size="small" className="text-danger leading-[1.4]"
             disabled={busy}
             onClick={() => {
               remove.reset();
@@ -569,9 +556,9 @@ export function EndpointDetail({ endpointId }: { endpointId: string }) {
             }}
           >
             Delete endpoint
-          </button>
+          </Button>
           {remove.isError && (
-            <p className="form-error" role="alert">
+            <p className="text-danger text-[13px] my-3 [[data-ui~='endpoint-danger']_>_&]:basis-full [[data-ui~='endpoint-danger']_>_&]:text-danger" role="alert">
               {remove.error.message}
             </p>
           )}
@@ -587,7 +574,7 @@ export function EndpointDetail({ endpointId }: { endpointId: string }) {
           onConfirm={() => remove.mutate()}
           onCancel={() => setDeleteConfirmation(false)}
         >
-          <p className="endpoint-url">{current.url}</p>
+          <p className="block wrap-anywhere font-mono text-[13px] leading-[1.7] in-data-[ui~='endpoint-destination-url']:flex-1 in-data-[ui~='endpoint-destination-url']:min-w-0 in-data-[ui~='endpoint-destination-url']:text-foreground in-data-[ui~='endpoint-destination-url']:py-1.25">{current.url}</p>
           <p>Pending deliveries will be canceled. This cannot be undone.</p>
         </ConfirmDialog>
       )}
@@ -604,7 +591,7 @@ export function EndpointDetail({ endpointId }: { endpointId: string }) {
             still finish. You can enable delivery again later.
           </p>
           {toggle.error && (
-            <p className="form-error" role="alert">
+            <p className="text-danger text-[13px] my-3 [[data-ui~='endpoint-danger']_>_&]:basis-full [[data-ui~='endpoint-danger']_>_&]:text-danger" role="alert">
               {toggle.error.message}
             </p>
           )}

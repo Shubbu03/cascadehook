@@ -1,5 +1,9 @@
 "use client";
 
+import { Input } from "@/components/input";
+
+import { Button } from "@/components/button";
+
 import { useAuth } from "@clerk/nextjs";
 import {
   useMutation,
@@ -41,12 +45,12 @@ export function ProjectSettings() {
         (data) =>
           data
             ? {
-                ...data,
-                pages: data.pages.map((page) => ({
-                  ...page,
-                  data: page.data.filter((item) => item.id !== project.id),
-                })),
-              }
+              ...data,
+              pages: data.pages.map((page) => ({
+                ...page,
+                data: page.data.filter((item) => item.id !== project.id),
+              })),
+            }
             : data,
       );
       void client.invalidateQueries({ queryKey, refetchType: "none" });
@@ -66,7 +70,7 @@ export function ProjectSettings() {
   return (
     <section>
       <PageHeader title="Project settings" />
-      <dl className="settings-identity">
+      <dl className="flex flex-wrap pb-5 mt-0 mb-6 border-b [border-bottom-style:solid] border-b-border gap-7 [&_dt]:mb-1.25 [&_dt]:text-muted [&_dt]:text-[12px] [&_dd]:flex [&_dd]:items-center [&_dd]:flex-wrap [&_dd]:text-[13px] [&_dd]:wrap-anywhere [&_dd]:gap-2.5 [&_dd]:m-0 [&_code]:text-[12px] [&_code]:wrap-anywhere">
         <div>
           <dt>Project ID</dt>
           <dd>
@@ -96,12 +100,12 @@ export function ProjectSettings() {
           }
         />
       ) : (
-        <p className="notice">An owner or admin can rename this project.</p>
+        <p data-ui="notice" className="rounded-lg bg-surface text-muted text-[13px] leading-[1.7] my-4 py-3.5 px-4.25 border border-solid border-border">An owner or admin can rename this project.</p>
       )}
-      <section className="settings-section">
+      <section data-ui="settings-section" className="mt-9 pt-7 border-t [border-top-style:solid] border-t-border [&_>_h3]:text-[19px] [&_>_h3]:mb-4 [&_>_h2]:mb-4 [&_>_h2]:text-[19px] in-data-[ui~='dashboard-main']:mt-7.5 in-data-[ui~='dashboard-main']:pt-6 [[data-ui~='dashboard-main']_&_>_h3]:text-[17px]">
         <h3>Organization</h3>
         <Link
-          className="text-link"
+          className="inline-flex items-center text-[14px] font-medium gap-2 [&:hover]:underline [&:hover]:underline-offset-4 in-data-[ui~='notice']:[font-size:inherit] in-data-[ui~='notice']:underline in-data-[ui~='notice']:underline-offset-[3px] in-data-[ui~='notice']:ml-1.25 in-data-[ui~='onboarding-header']:min-h-11 in-data-[ui~='onboarding-header']:text-muted in-data-[ui~='onboarding-header']:text-[13px] in-data-[ui~='switcher-error']:mt-1.25 in-data-[ui~='switcher-error']:text-[13px] in-data-[ui~='switcher-error']:text-accent [[data-ui~='settings-section']_>_&]:text-[14px] in-data-[ui~='workspace-banner']:[font-size:inherit] in-data-[ui~='workspace-banner']:underline in-data-[ui~='notification-error']:ml-auto in-data-[ui~='notification-error']:text-[12px] [[data-ui~='dashboard-main']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='dashboard-main']_>_section_>_&:first-child]:text-[12px] [[data-ui~='project-content']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='project-content']_>_section_>_&:first-child]:text-[12px] max-[37.5rem]:in-data-[ui~='onboarding-header']:text-[12px]"
           href={
             "/dashboard/organizations/" +
             encodeURIComponent(project.organization_id) +
@@ -112,25 +116,25 @@ export function ProjectSettings() {
         </Link>
       </section>
       {project.role === "owner" && (
-        <section className="settings-section danger-zone">
+        <section data-ui="settings-section danger-zone" className="mt-9 pt-7 border-t [border-top-style:solid] border-t-border [&_>_h3]:text-[19px] [&_>_h3]:mb-4 [&_>_h2]:mb-4 [&_>_h2]:text-[19px] [&_>_p]:max-w-145 [&_>_p]:mb-5 [&_>_p]:text-muted [&_>_p]:text-[13px] [&_>_p]:leading-[1.8] in-data-[ui~='dashboard-main']:mt-7.5 in-data-[ui~='dashboard-main']:pt-6 in-data-[ui~='dashboard-main']:max-w-190 [[data-ui~='dashboard-main']_&_>_h3]:text-[17px]">
           <h3>Delete project</h3>
           <p>
             This permanently removes this project, its credentials, endpoints,
             and retained history. New activity is blocked as soon as deletion is
             accepted.
           </p>
-          <label className="form-field">
+          <label data-ui="form-field" className="grid mb-4.5 gap-2 [&_>_span]:text-[13px] [&_>_span]:font-medium [&_>_label]:text-[13px] [&_>_label]:font-medium max-w-115">
             <span>Type {project.name} to confirm</span>
-            <input
+            <Input className="[[data-ui~='workspace-create-dialog']_&]:bg-surface-hover [[data-ui~='workspace-create-dialog']_&]:border-0 [[data-ui~='workspace-create-dialog']_&]:border-none [[data-ui~='workspace-create-dialog']_&]:border-current [[data-ui~='dashboard-main']_&]:min-h-10 [[data-ui~='dashboard-main']_&]:text-[14px] [[data-ui~='dashboard-main']_&]:py-2.25 [[data-ui~='dashboard-main']_&]:px-3 [[data-ui~='workspace-create-dialog']_&]:focus-visible:outline-hidden [[data-ui~='workspace-create-dialog']_&]:focus-visible:shadow-[inset_0_-2px_var(--accent)] max-[37.5rem]:[[data-ui~='dashboard-main']_&]:text-[16px] w-full min-h-11.5 rounded-md text-foreground text-[16px] py-2.75 px-3 placeholder:text-muted"
               value={typedName}
               onChange={(event) => setTypedName(event.target.value)}
               autoComplete="off"
               disabled={remove.isPending}
             />
           </label>
-          <button
+          <Button
             type="button"
-            className="button button-secondary text-danger"
+            data-ui="button" variant="secondary" className="text-danger"
             disabled={typedName !== project.name || remove.isPending}
             onClick={() => {
               remove.reset();
@@ -138,9 +142,9 @@ export function ProjectSettings() {
             }}
           >
             Delete project
-          </button>
+          </Button>
           {remove.isError && (
-            <p className="form-error" role="alert">
+            <p className="text-danger text-[13px] my-3" role="alert">
               {remove.error.message}
             </p>
           )}

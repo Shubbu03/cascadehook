@@ -6,7 +6,7 @@ import { Suspense, type ReactNode } from "react";
 import toast, { ToastBar, Toaster } from "react-hot-toast";
 import { NotificationContext } from "@/lib/notification-context";
 
-export function Notifications({ children }: { children: ReactNode }) {
+export function Notifications({ children }: { children: ReactNode; }) {
   return (
     <NotificationContext.Provider value={true}>
       {children}
@@ -25,10 +25,9 @@ function NotificationToaster() {
     <Toaster
       position="top-right"
       gutter={10}
-      containerClassName="notification-container"
       toastOptions={{
         duration: 3000,
-        className: "notification",
+        className: "wrap-anywhere",
         style: {
           background: "var(--surface)",
           color: "var(--foreground)",
@@ -52,7 +51,7 @@ function NotificationToaster() {
               {notification.type !== "loading" && (
                 <button
                   type="button"
-                  className="toast-dismiss"
+                  className="grid place-items-center shrink-0 rounded-[5px] bg-transparent text-muted p-0 size-7 border-0 border-none border-current [&:hover]:bg-surface-hover [&:hover]:text-foreground pointer-coarse:size-11"
                   aria-label="Dismiss notification"
                   onClick={() => toast.dismiss(notification.id)}
                 >

@@ -1,5 +1,7 @@
 "use client";
 
+import { Button } from "@/components/button";
+
 import { SettingsSkeleton } from "@/features/workspace/skeletons";
 import { useAuth, useClerk } from "@clerk/nextjs";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -58,7 +60,7 @@ export function AccountSettings() {
     details.error.code === "account_deleted";
   const accountId = details.data?.account.id;
   return (
-    <main id="main-content" className="dashboard-main account-settings">
+    <main id="main-content" data-ui="dashboard-main account-settings" className="w-full min-w-0 min-h-[calc(100svh-var(--topbar-height,60px))] pt-7 pb-16 m-0 px-8 max-[56.25rem]:pt-6 max-[56.25rem]:pb-12 max-[56.25rem]:px-6 max-[37.5rem]:pt-5.5 max-[37.5rem]:pb-10 max-[37.5rem]:px-4.5">
       <PageHeader
         title="Account settings"
         actions={
@@ -69,26 +71,26 @@ export function AccountSettings() {
                 refresh={details.refetch}
               />
             )}
-            <button
+            <Button
               type="button"
-              className="button button-small button-secondary"
+              data-ui="button" variant="secondary" size="small" className="leading-[1.4]"
               onClick={() => {
                 void finishSignOut();
               }}
               disabled={signingOut}
             >
               {signingOut ? "Signing out…" : "Sign out"}
-            </button>
+            </Button>
           </>
         }
       />
       {signOutError && (
-        <p className="form-error" role="alert">
+        <p className="text-danger text-[13px] my-3" role="alert">
           {signOutError}
         </p>
       )}
       {accepted || unavailable ? (
-        <div className="notice" role="status">
+        <div data-ui="notice" className="rounded-lg bg-surface text-muted text-[13px] leading-[1.7] my-4 py-3.5 px-4.25 border border-solid border-border [&_h2]:text-[18px] [&_h2]:mb-3" role="status">
           <h2>
             {accepted ? "Account deletion requested" : "Account unavailable"}
           </h2>
@@ -103,9 +105,9 @@ export function AccountSettings() {
           {details.data && accountId && (
             <>
               {details.data.organizations.length ? (
-                <section className="settings-section account-ownership">
+                <section data-ui="settings-section account-ownership" className="border-t [border-top-style:solid] border-t-border [&_>_h3]:mb-4 [&_>_h2]:mb-4 [&_>_h2]:text-[19px] [&_ul]:grid [&_ul]:list-none [&_ul]:gap-3 [&_ul]:p-0 [&_ul]:my-5.5 mt-7.5 pt-6 [&_>_h3]:text-[17px]">
                   <h2>Organization ownership</h2>
-                  <p className="section-description">
+                  <p className="mt-3 mb-4.5 text-muted max-w-162.5 text-[13px]">
                     Before deleting your account, delete each organization you
                     own or promote another owner and change your own role.
                   </p>
@@ -113,7 +115,7 @@ export function AccountSettings() {
                     {details.data.organizations.map((organization) => (
                       <li key={organization.id}>
                         <Link
-                          className="text-link"
+                          className="inline-flex items-center font-medium gap-2 [&:hover]:underline [&:hover]:underline-offset-4 in-data-[ui~='notice']:[font-size:inherit] in-data-[ui~='notice']:underline in-data-[ui~='notice']:underline-offset-[3px] in-data-[ui~='notice']:ml-1.25 in-data-[ui~='switcher-error']:mt-1.25 in-data-[ui~='switcher-error']:text-[13px] in-data-[ui~='switcher-error']:text-accent text-accent text-[14px] wrap-anywhere [[data-ui~='settings-section']_>_&]:text-[14px] in-data-[ui~='notification-error']:ml-auto in-data-[ui~='notification-error']:text-[12px] [[data-ui~='dashboard-main']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='dashboard-main']_>_section_>_&:first-child]:text-[12px]"
                           href={
                             "/dashboard/organizations/" +
                             encodeURIComponent(organization.id) +
@@ -125,7 +127,7 @@ export function AccountSettings() {
                       </li>
                     ))}
                   </ul>
-                  <p className="field-help">
+                  <p className="text-[12px] text-muted leading-[1.7] [[data-ui~='settings-section']_>_&]:mt-3 [[data-ui~='settings-section']_>_&]:mb-5">
                     Other organizations and their projects are not deleted with
                     your account.
                   </p>

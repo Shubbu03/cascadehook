@@ -1,5 +1,9 @@
 "use client";
 
+import { Input } from "@/components/input";
+
+import { Button } from "@/components/button";
+
 import { PageSkeleton, AttemptsSkeleton } from "@/features/workspace/skeletons";
 import { useAuth } from "@clerk/nextjs";
 import {
@@ -45,7 +49,7 @@ import {
   type ReplayReceipt,
 } from "./types";
 
-const resultCopy: Record<Delivery["state"], { title: string; description: string }> = {
+const resultCopy: Record<Delivery["state"], { title: string; description: string; }> = {
   pending: {
     title: "Waiting to deliver",
     description: "Queued for the next delivery attempt.",
@@ -68,7 +72,7 @@ const resultCopy: Record<Delivery["state"], { title: string; description: string
   },
 };
 
-export function DeliveryDetail({ deliveryId }: { deliveryId: string }) {
+export function DeliveryDetail({ deliveryId }: { deliveryId: string; }) {
   const { project, canManage, suspended, availabilityKnown } = useProject();
   const userId = useSessionUserId();
   const { getToken } = useAuth();
@@ -139,14 +143,14 @@ export function DeliveryDetail({ deliveryId }: { deliveryId: string }) {
       }),
       ...(detail.data
         ? [
-            client.invalidateQueries({
-              queryKey: endpointKeys.detail(
-                userId,
-                project.id,
-                detail.data.endpoint_id,
-              ),
-            }),
-          ]
+          client.invalidateQueries({
+            queryKey: endpointKeys.detail(
+              userId,
+              project.id,
+              detail.data.endpoint_id,
+            ),
+          }),
+        ]
         : []),
     ]);
   }
@@ -201,10 +205,10 @@ export function DeliveryDetail({ deliveryId }: { deliveryId: string }) {
   }
 
   return (
-    <section className="delivery-detail" aria-labelledby="delivery-title">
+    <section data-ui="delivery-detail" className="max-w-300 [container:delivery-detail/inline-size]" aria-labelledby="delivery-title">
       <Link
         href={href + "/deliveries" + (search.size ? "?" + search.toString() : "")}
-        className="text-link workspace-muted"
+        className="inline-flex items-center font-medium text-muted gap-2 [&:hover]:underline [&:hover]:underline-offset-4 in-data-[ui~='onboarding-header']:min-h-11 in-data-[ui~='onboarding-header']:text-muted in-data-[ui~='onboarding-header']:text-[13px] in-data-[ui~='switcher-error']:mt-1.25 in-data-[ui~='switcher-error']:text-[13px] in-data-[ui~='switcher-error']:text-accent text-[12px] in-data-[ui~='workspace-banner']:[font-size:inherit] in-data-[ui~='workspace-banner']:underline in-data-[ui~='notification-error']:ml-auto in-data-[ui~='notification-error']:text-[12px] [[data-ui~='dashboard-main']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='dashboard-main']_>_section_>_&:first-child]:text-[12px] [[data-ui~='project-content']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='project-content']_>_section_>_&:first-child]:text-[12px] [[data-ui~='project-content']_>_[data-ui~='delivery-detail']_>_&:first-child]:mb-3 max-[37.5rem]:in-data-[ui~='onboarding-header']:text-[12px]"
       >
         <ArrowLeftIcon size={15} aria-hidden="true" />
         Deliveries
@@ -212,11 +216,11 @@ export function DeliveryDetail({ deliveryId }: { deliveryId: string }) {
       <QueryState query={detail} loading={<PageSkeleton variant="delivery" />}>
         {detail.data && (
           <>
-            <PageHeader
+            <PageHeader variant="delivery"
               title="Delivery"
               titleId="delivery-title"
               description={
-                <div className="delivery-identifier">
+                <div data-ui="delivery-identifier" className="flex items-center min-w-0 gap-1.5 [&_>_code]:min-w-0 [&_>_code]:wrap-anywhere [&_>_code]:text-[11px]">
                   <code>{deliveryId}</code>
                   <CopyButton
                     value={deliveryId}
@@ -235,9 +239,9 @@ export function DeliveryDetail({ deliveryId }: { deliveryId: string }) {
                     refresh={refresh}
                   />
                   {canManage && replayable(detail.data) && (
-                    <button
+                    <Button
                       type="button"
-                      className="button button-small button-secondary"
+                      data-ui="button" variant="secondary" size="small" className="leading-[1.4]"
                       disabled={replay.isPending || Boolean(replayBlock)}
                       aria-describedby={
                         replayBlock ? "delivery-replay-note" : undefined
@@ -249,18 +253,18 @@ export function DeliveryDetail({ deliveryId }: { deliveryId: string }) {
                     >
                       <ArrowClockwiseIcon size={16} aria-hidden="true" />
                       {replay.isPending ? "Queuing replay…" : "Replay delivery"}
-                    </button>
+                    </Button>
                   )}
                 </>
               }
             />
             <section
-              className="delivery-result"
+              className={"[--result-color:var(--muted)] [--result-background:var(--surface-hover)] grid grid-cols-[minmax(0,1fr)_auto] items-center gap-y-5 gap-x-8 mb-4 rounded-[9px] bg-surface py-4.5 px-5 border border-solid border-border [&_h2]:text-[16px] [&_h2]:font-medium [&_h2]:tracking-[-0.02em] data-[state=\"succeeded\"]:[--result-color:var(--success)] data-[state=\"succeeded\"]:[--result-background:var(--success-subtle)] data-[state=\"failed\"]:[--result-color:var(--danger)] data-[state=\"failed\"]:[--result-background:var(--danger-subtle)] [[data-state=\"pending\"],[data-state=\"leased\"]]:[--result-color:var(--warning)] [[data-state=\"pending\"],[data-state=\"leased\"]]:[--result-background:var(--warning-subtle)] @max-[37.5rem]/delivery-detail:grid-cols-[1fr] @max-[37.5rem]/delivery-detail:gap-4"}
               data-state={detail.data.state}
               aria-labelledby="delivery-result-title"
             >
-              <div className="delivery-result-copy">
-                <span className="delivery-result-icon" aria-hidden="true">
+              <div className="flex items-start min-w-0 gap-3 [&_p]:mt-1 [&_p]:text-muted [&_p]:text-[12px] [&_p]:leading-[1.7]">
+                <span className="grid place-items-center flex-[0_0_42px] h-10.5 rounded-full text-(--result-color) bg-(--result-background)" aria-hidden="true">
                   {detail.data.state === "succeeded" ? (
                     <CheckCircleIcon size={25} />
                   ) : detail.data.state === "failed" ? (
@@ -277,13 +281,13 @@ export function DeliveryDetail({ deliveryId }: { deliveryId: string }) {
                   </h2>
                   <p>{resultCopy[detail.data.state].description}</p>
                   {detail.data.terminal_reason && (
-                    <code className="delivery-terminal-reason">
+                    <code className="block mt-1.5 text-(--result-color) text-[11px] wrap-anywhere">
                       {detail.data.terminal_reason}
                     </code>
                   )}
                 </div>
               </div>
-              <dl className="delivery-result-stats">
+              <dl className="flex pl-7 border-l [border-left-style:solid] border-l-border gap-7 m-0 [&_dt]:text-muted [&_dt]:text-[11px] [&_dd]:mt-0.75 [&_dd]:mb-0 [&_dd]:tabular-nums [&_dd]:mx-0 [&_dd]:text-2xl/tight @max-[37.5rem]/delivery-detail:pt-3 @max-[37.5rem]/delivery-detail:pb-0 @max-[37.5rem]/delivery-detail:border-t @max-[37.5rem]/delivery-detail:[border-top-style:solid] @max-[37.5rem]/delivery-detail:border-t-border @max-[37.5rem]/delivery-detail:border-l-0 @max-[37.5rem]/delivery-detail:[border-left-style:none] @max-[37.5rem]/delivery-detail:border-l-[currentColor] @max-[37.5rem]/delivery-detail:gap-7 @max-[37.5rem]/delivery-detail:px-0">
                 <div>
                   <dt>Current cycle</dt><dd>{detail.data.cycle}</dd>
                 </div>
@@ -294,7 +298,7 @@ export function DeliveryDetail({ deliveryId }: { deliveryId: string }) {
             </section>
             {canManage && replayable(detail.data) && replayBlock && (
               <div
-                className="delivery-replay-note"
+                className="flex items-center justify-between flex-wrap gap-y-2 gap-x-5 mb-4 rounded-[7px] text-muted text-[12px] leading-[1.65] py-2.5 px-3.5 border border-solid border-border"
                 id="delivery-replay-note"
                 role="status"
               >
@@ -302,7 +306,7 @@ export function DeliveryDetail({ deliveryId }: { deliveryId: string }) {
                 {endpoint.isError ? (
                   <button
                     type="button"
-                    className="text-link"
+                    className="inline-flex items-center font-medium gap-2 [&:hover]:underline [&:hover]:underline-offset-4 in-data-[ui~='onboarding-header']:min-h-11 in-data-[ui~='onboarding-header']:text-muted in-data-[ui~='onboarding-header']:text-[13px] in-data-[ui~='switcher-error']:mt-1.25 in-data-[ui~='switcher-error']:text-[13px] in-data-[ui~='switcher-error']:text-accent text-[12px] in-data-[ui~='workspace-banner']:[font-size:inherit] in-data-[ui~='workspace-banner']:underline in-data-[ui~='notification-error']:ml-auto in-data-[ui~='notification-error']:text-[12px] [[data-ui~='dashboard-main']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='dashboard-main']_>_section_>_&:first-child]:text-[12px] [[data-ui~='project-content']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='project-content']_>_section_>_&:first-child]:text-[12px] [[data-ui~='project-content']_>_[data-ui~='delivery-detail']_>_&:first-child]:mb-3 max-[37.5rem]:in-data-[ui~='onboarding-header']:text-[12px]"
                     disabled={endpoint.isFetching}
                     onClick={() => { void endpoint.refetch(); }}
                   >
@@ -311,7 +315,7 @@ export function DeliveryDetail({ deliveryId }: { deliveryId: string }) {
                   </button>
                 ) : currentEndpoint && !suspended && availabilityKnown && (
                   <Link
-                    className="text-link"
+                    className="inline-flex items-center font-medium gap-2 [&:hover]:underline [&:hover]:underline-offset-4 in-data-[ui~='onboarding-header']:min-h-11 in-data-[ui~='onboarding-header']:text-muted in-data-[ui~='onboarding-header']:text-[13px] in-data-[ui~='switcher-error']:mt-1.25 in-data-[ui~='switcher-error']:text-[13px] in-data-[ui~='switcher-error']:text-accent text-[12px] in-data-[ui~='workspace-banner']:[font-size:inherit] in-data-[ui~='workspace-banner']:underline in-data-[ui~='notification-error']:ml-auto in-data-[ui~='notification-error']:text-[12px] [[data-ui~='dashboard-main']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='dashboard-main']_>_section_>_&:first-child]:text-[12px] [[data-ui~='project-content']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='project-content']_>_section_>_&:first-child]:text-[12px] [[data-ui~='project-content']_>_[data-ui~='delivery-detail']_>_&:first-child]:mb-3 max-[37.5rem]:in-data-[ui~='onboarding-header']:text-[12px]"
                     href={href + "/endpoints/" + detail.data.endpoint_id}
                   >
                     Endpoint settings <ArrowRightIcon size={13} aria-hidden="true" />
@@ -320,14 +324,14 @@ export function DeliveryDetail({ deliveryId }: { deliveryId: string }) {
               </div>
             )}
             {replay.isError && (
-              <p className="form-error" role="alert">{replay.error.message}</p>
+              <p className="text-danger text-[13px] my-3 [[data-ui~='delivery-history']_>_&]:my-3 [[data-ui~='delivery-history']_>_&]:mx-5" role="alert">{replay.error.message}</p>
             )}
-            <div className="delivery-workspace">
+            <div className="grid grid-cols-[minmax(0,1fr)_300px] items-start gap-5 @max-[55rem]/delivery-detail:grid-cols-[1fr]">
               <section
-                className="delivery-history"
+                data-ui="delivery-history" className="min-w-0 rounded-[9px] bg-surface border border-solid border-border [&_h2]:text-[14px] [&_h2]:font-medium [&_h2]:tracking-[-0.01em]"
                 aria-labelledby="delivery-attempts-title"
               >
-                <div className="delivery-history-heading">
+                <div className="flex items-center justify-between flex-wrap gap-y-3 gap-x-5 border-b [border-bottom-style:solid] border-b-border py-4 px-5 [&_p]:mt-1 [&_p]:text-muted [&_p]:text-[11px] @max-[27.5rem]/delivery-detail:px-4">
                   <div>
                     <h2 id="delivery-attempts-title">Attempt history</h2>
                     <p>
@@ -336,12 +340,12 @@ export function DeliveryDetail({ deliveryId }: { deliveryId: string }) {
                     </p>
                   </div>
                   <form
-                    className="delivery-cycle-filter"
+                    className="flex items-center flex-wrap min-w-0 gap-2 [&_label]:text-muted [&_label]:text-[11px] @max-[37.5rem]/delivery-detail:w-full"
                     onSubmit={filterCycle}
                     noValidate
                   >
                     <label htmlFor={cycleFilterId}>Cycle</label>
-                    <input
+                    <Input className="w-27 min-w-0 min-h-9 rounded-[5px] text-foreground text-[12px] py-1.75 px-2.25 @max-[37.5rem]/delivery-detail:flex-1 @max-[27.5rem]/delivery-detail:text-[16px]"
                       id={cycleFilterId}
                       name="cycle"
                       type="text"
@@ -355,16 +359,16 @@ export function DeliveryDetail({ deliveryId }: { deliveryId: string }) {
                         validation ? cycleFilterId + "-error" : undefined
                       }
                     />
-                    <button
+                    <Button
                       type="submit"
-                      className="button button-small button-secondary"
+                      data-ui="button" variant="secondary" size="small" className="leading-[1.4]"
                     >
                       Apply
-                    </button>
+                    </Button>
                     {cycle !== undefined && (
-                      <button
+                      <Button
                         type="button"
-                        className="button button-small button-quiet"
+                        data-ui="button" variant="quiet" size="small" className="leading-[1.4]"
                         onClick={() => {
                           setCycle(undefined);
                           setCycleInput("");
@@ -372,7 +376,7 @@ export function DeliveryDetail({ deliveryId }: { deliveryId: string }) {
                         }}
                       >
                         Clear
-                      </button>
+                      </Button>
                     )}
                   </form>
                 </div>
@@ -380,13 +384,13 @@ export function DeliveryDetail({ deliveryId }: { deliveryId: string }) {
                   <p
                     id={cycleFilterId + "-error"}
                     role="alert"
-                    className="form-error"
+                    className="text-danger text-[13px] my-3 [[data-ui~='delivery-history']_>_&]:my-3 [[data-ui~='delivery-history']_>_&]:mx-5"
                   >
                     {validation}
                   </p>
                 )}
                 {detail.data.active_attempt_id && (cycle === undefined || cycle === detail.data.cycle) && (
-                  <div className="delivery-inflight" role="status">
+                  <div className="flex items-start border-b [border-bottom-style:solid] border-b-border bg-warning-subtle gap-2.5 py-4 px-5 [&_>_svg]:shrink-0 [&_>_svg]:mt-0.5 [&_>_svg]:text-warning [&_h3]:text-[13px] [&_h3]:font-medium [&_p]:mt-1 [&_p]:text-muted [&_p]:text-[11px] [&_p]:leading-[1.7]" role="status">
                     <ClockIcon size={18} aria-hidden="true" />
                     <div>
                       <h3>
@@ -403,14 +407,14 @@ export function DeliveryDetail({ deliveryId }: { deliveryId: string }) {
                   {records.length ? (
                     <DeliveryAttempts records={records} />
                   ) : (
-                    <div className="delivery-history-empty">
+                    <div className="grid justify-items-center text-center text-muted gap-2 py-9 px-5 [&_h3]:text-foreground [&_h3]:text-[14px] [&_h3]:font-medium [&_p]:text-[12px] [&_p]:leading-[1.7]">
                       <ClockIcon size={25} aria-hidden="true" />
                       <h3>
                         No completed attempts{cycle !== undefined ? " in this cycle" : " yet"}
                       </h3>
                       <p>
                         {detail.data.active_attempt_id &&
-                        (cycle === undefined || cycle === detail.data.cycle)
+                          (cycle === undefined || cycle === detail.data.cycle)
                           ? "The current request is still in progress."
                           : "Completed request results will appear here."}
                       </p>

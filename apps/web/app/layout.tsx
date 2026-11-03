@@ -4,23 +4,6 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { themeScript } from "@/lib/theme";
 import "./globals.css";
 import "./theme-transition.css";
-import "./site.css";
-import "./marketing.css";
-import "./public.css";
-import "./project.css";
-import "./endpoint-detail.css";
-import "./onboarding.css";
-import "./ambient-background.css";
-import "./workspace.css";
-import "./activity.css";
-import "./delivery-detail.css";
-import "./dashboard.css";
-import "./controls.css";
-import "./overview.css";
-import "./agent-setup.css";
-import "./skeleton.css";
-import "./notification-center.css";
-import "./invitations.css";
 
 const sans = localFont({
   src: "./fonts/ibm-plex-sans-latin.woff2",
@@ -65,7 +48,7 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body>
-        <a className="skip-link" href="#main-content">
+        <a className="fixed top-3 left-3 z-100 bg-surface transform-[translateY(-160%)] rounded-lg py-2.5 px-4 border border-solid border-accent focus:transform-[translateY(0)]" href="#main-content">
           Skip to content
         </a>
         <ThemeProvider>{children}</ThemeProvider>

@@ -59,7 +59,7 @@ export type EventSummary = {
   delivery_count: number;
   created_at: string;
 };
-export type EventDetail = EventSummary & { payload: unknown };
+export type EventDetail = EventSummary & { payload: unknown; };
 
 export function projectPath(projectId: string, resource: string) {
   return "/v1/projects/" + encodeURIComponent(projectId) + "/" + resource;
@@ -71,14 +71,14 @@ export function stateLabel(state: DeliveryState) {
     : state[0].toUpperCase() + state.slice(1);
 }
 
-export function stateClass(state: string) {
+export function stateTone(state: string) {
   return state === "succeeded" || state === "active"
-    ? "status-success"
+    ? "success"
     : state === "failed" || state === "terminal"
-      ? "status-danger"
+      ? "danger"
       : state === "pending" || state === "retryable" || state === "leased"
-        ? "status-warning"
-        : "status-neutral";
+        ? "warning"
+        : "neutral";
 }
 
 export function replayable(delivery: Pick<Delivery, "state">) {
