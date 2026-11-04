@@ -1,8 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { pageMetadata } from "@/lib/site";
 import { supportEmail } from "@/lib/support";
 
-export const metadata: Metadata = { title: "Terms of use" };
+export const metadata: Metadata = pageMetadata({
+  path: "/terms",
+  title: "Terms of use",
+  description: "The terms that govern use of Cascadehook, an independently operated webhook delivery service.",
+});
 
 export default function Page() {
   return (

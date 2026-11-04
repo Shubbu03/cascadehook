@@ -1,8 +1,13 @@
 import type { Metadata } from "next";
 import { DocsLink } from "@/components/docs-link";
+import { pageMetadata } from "@/lib/site";
 import { supportEmail } from "@/lib/support";
 
-export const metadata: Metadata = { title: "Support" };
+export const metadata: Metadata = pageMetadata({
+  path: "/support",
+  title: "Support",
+  description: "Get help with Cascadehook setup, your account, or an unsuccessful webhook delivery.",
+});
 
 export default function Page() {
   return (

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { ThemeProvider } from "@/components/theme-provider";
+import { siteName, siteURL } from "@/lib/site";
 import { themeScript } from "@/lib/theme";
 import "./globals.css";
 import "./theme-transition.css";
@@ -22,14 +23,17 @@ const mono = localFont({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(siteURL),
   title: {
     default: "Cascadehook — Webhooks, delivered.",
     template: "%s · Cascadehook",
   },
   description:
     "Reliable outbound webhooks for your application. Publish events, deliver signed requests, and understand every attempt.",
-  applicationName: "Cascadehook",
+  applicationName: siteName,
   icons: { icon: "/icon.svg" },
+  openGraph: { type: "website", siteName, locale: "en_US" },
+  twitter: { card: "summary_large_image" },
 };
 
 export default function RootLayout({

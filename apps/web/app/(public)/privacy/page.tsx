@@ -1,7 +1,12 @@
 import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/site";
 import { supportEmail } from "@/lib/support";
 
-export const metadata: Metadata = { title: "Privacy policy" };
+export const metadata: Metadata = pageMetadata({
+  path: "/privacy",
+  title: "Privacy policy",
+  description: "How Cascadehook processes account, endpoint, event, and delivery data while delivering webhooks.",
+});
 
 export default function Page() {
   return (

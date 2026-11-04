@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { RootProvider } from "fumadocs-ui/provider/next";
 import { ThemeTransitionProvider } from "@/components/theme-transition-provider";
+import { siteName, siteURL } from "@/lib/site";
 import "./globals.css";
 import "./theme-transition.css";
 
@@ -21,9 +22,12 @@ const mono = localFont({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(siteURL),
   title: { default: "Cascadehook Docs", template: "%s · Cascadehook Docs" },
   description: "Build reliable webhook integrations with Cascadehook. Guides, receiver examples, and the project API reference.",
   applicationName: "Cascadehook Docs",
+  openGraph: { type: "website", siteName, locale: "en_US" },
+  twitter: { card: "summary_large_image" },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
