@@ -1,0 +1,159 @@
+---
+title: How to send webhooks from your app
+description: The problems every webhook sender has to solve, from signing and retries to duplicates and unsafe URLs, and how Cascadehook handles each one.
+---
+
+Sending one webhook is a single HTTP `POST`. Sending them reliably to servers
+your customers run means handling signing, failures, duplicates, crashes, and
+destinations you don't control. This guide covers each problem, what a sender
+has to build, and how Cascadehook does it.
+
+## 1. Publish after your data is committed
+
+A webhook announces something that already happened, so send it only after the
+business write commits. Publishing inside a transaction that later rolls back
+tells receivers about an order that doesn't exist.
+
+Treat publishing and delivery as separate steps. Your application hands off the
+event and moves on; delivery to each endpoint happens in the background, with
+its own retries. For the strongest guarantee, write the event to an outbox table
+in the same transaction as the business data and publish from there.
+
+With Cascadehook, publication returns `202` once the event is stored, and one
+delivery is created for each enabled, verified endpoint subscribed to that event
+type.
+See [events and idempotency](/docs/concepts/events).
+
+## 2. Sign every request
+
+Receivers need to know a request came from you and wasn't changed or replayed.
+The usual answer is an HMAC signature over the body with a secret shared with
+each endpoint, plus a timestamp the receiver can check.
+
+[Standard Webhooks](https://www.standardwebhooks.com/) defines a common format:
+
+- `Webhook-Id`: a unique message ID that stays the same across retries.
+- `Webhook-Timestamp`: when the attempt was signed, in Unix seconds.
+- `Webhook-Signature`: `v1,` followed by the Base64 HMAC-SHA256 of
+  `id + "." + timestamp + "." + body`.
+
+Give every endpoint its own secret, sign each attempt with a fresh timestamp, and
+support rotation: while a secret is being replaced, sign with both the old and
+new secret so receivers can switch without dropping requests.
+
+Cascadehook signs every delivery this way and keeps the previous secret signing
+for five minutes after a rotation. See [signatures](/docs/security/signatures)
+and [rotation](/docs/security/rotation). Receivers can check a request with the
+[webhook signature verifier](https://cascadehook.com/tools/webhook-signature-verifier).
+
+## 3. Retry with backoff, and know when to stop
+
+Receivers go down, deploy, and rate-limit. Retry the failures that can succeed
+later, and stop retrying the ones that can't:
+
+- **Retry:** timeouts, connection errors, `408`, `429`, and `5xx` responses.
+- **Don't retry:** other `4xx` responses, which mean the receiver rejected the
+  request itself.
+
+Space retries out with exponential backoff and random jitter, so a receiver that
+recovers isn't hit by every queued delivery at once. Honor `Retry-After` when a
+receiver sends it, and cap both the number of attempts and the total time.
+
+Cascadehook's schedule, each delay with ±20% jitter:
+
+| Attempt | Delay after the previous attempt |
+| --- | --- |
+| 2 | 15 seconds |
+| 3 | 1 minute |
+| 4 | 5 minutes |
+| 5 | 30 minutes |
+| 6 | 2 hours |
+| 7 | 6 hours |
+| 8 | 18 hours |
+
+Each attempt has 30 seconds to respond. `Retry-After` can lengthen a delay but
+not shorten it, and no retry is scheduled past the 72-hour horizon. See
+[deliveries, retries, and replay](/docs/concepts/deliveries).
+
+## 4. Expect duplicates
+
+A response can be lost after the receiver has already processed the request, so
+you can't know whether it arrived. Webhook delivery is therefore at least once:
+a receiver may see the same message again after a timeout, a retry, or a
+manual replay.
+
+Keep the message ID stable across all of them, and tell receivers to deduplicate
+on it. Make your own publishing idempotent too, so retrying an uncertain publish
+call doesn't create a second event.
+
+Cascadehook keeps `Webhook-Id` the same across retries and replay, and requires
+an `Idempotency-Key` on every publication. Repeating a publication with the same
+key and body within 24 hours returns the original receipt instead of creating a
+second event; the same key with a different body is rejected as a conflict.
+
+## 5. Survive crashes without guessing
+
+A worker can crash in the middle of an attempt, after the request was sent but
+before the result was saved. Two shortcuts make this worse: marking the delivery
+as succeeded, which loses it, or quietly resending without recording why.
+
+Record that an attempt is starting before making the HTTP call, give each
+in-flight delivery a lease, and let a recovery process deal with leases that
+expire. Every attempt then ends up in the history with an outcome, including the
+ones whose result is unknown.
+
+Cascadehook claims a delivery with a 90-second lease and commits the attempt
+before sending. If a worker stops mid-attempt, recovery records that attempt as
+interrupted instead of inventing a success or failure.
+
+## 6. Treat customer URLs as untrusted
+
+Endpoint URLs come from your customers, and a URL can point at your own network:
+an internal service, a database admin page, or a cloud metadata address. Sending
+requests to it from your servers is a server-side request forgery risk.
+
+- Resolve the hostname and connect only to public IP addresses, checking the
+  address you actually dial.
+- Don't follow redirects, which can lead to a private address.
+- Require HTTPS, set connect and response timeouts, and read only a small part
+  of the response.
+- Before enabling an endpoint, confirm the customer controls it.
+
+Cascadehook connects only to public addresses, never follows redirects, and reads
+at most 4 KiB of each response. Endpoints prove ownership by answering a signed
+challenge, and verifying an endpoint never enables it on its own.
+
+## 7. Keep a record of every attempt
+
+Customers will ask whether you sent an event, when, and what their server
+answered. Keep every attempt with its time, status code, and duration, and let
+them resend a delivery once they've fixed their endpoint. Keep payloads, secrets,
+and response bodies out of your logs.
+
+Cascadehook stores an immutable record of each attempt, shown in the dashboard
+and the API. Replaying a delivery starts a new cycle with a fresh retry window
+and the same `Webhook-Id`.
+
+## Checklist
+
+- Publish after the business write commits, ideally from an outbox.
+- Sign every attempt with a per-endpoint secret and a fresh timestamp.
+- Support secret rotation with an overlap period.
+- Retry timeouts, `408`, `429`, and `5xx` with jittered backoff; stop on other `4xx`.
+- Cap attempts and total retry time, and honor `Retry-After`.
+- Keep message IDs stable so receivers can deduplicate.
+- Make publishing idempotent.
+- Record each attempt before sending, and recover interrupted ones explicitly.
+- Connect only to public addresses, without redirects, with timeouts.
+- Verify endpoint ownership before enabling delivery.
+- Keep a history of every attempt and support replay.
+
+## Skip building it
+
+Cascadehook does all of this behind one API call. Publish an event, and it
+signs, delivers, retries, and records every attempt.
+
+<Cards>
+  <Card title="Send your first webhook" description="Connect a receiver and confirm a successful delivery." href="/docs/quickstart" />
+  <Card title="Deliveries, retries, and replay" description="How attempts, retries, and replay cycles work." href="/docs/concepts/deliveries" />
+</Cards>
