@@ -1,11 +1,8 @@
-"use client";
+import { siteName } from "@/lib/site";
+import type { Snippet } from "../code-tabs";
+import type { VerifierContent } from "../verifier-page";
 
-import { useId, useState, type KeyboardEvent } from "react";
-import { CopyButton } from "@/components/copy-button";
-
-// Each snippet mirrors the checks the verifier performs: exact raw bytes,
-// decoded key, five-minute timestamp tolerance, and a constant-time compare.
-const snippets = [
+export const snippets: Snippet[] = [
   {
     id: "node",
     label: "Node.js",
@@ -113,42 +110,54 @@ func Verify(body []byte, header http.Header, secret string) bool {
 	return false
 }`,
   },
-] as const;
+];
 
-export function VerificationCode() {
-  const id = useId();
-  const [language, setLanguage] = useState<(typeof snippets)[number]["id"]>("node");
-  const selected = snippets.find((snippet) => snippet.id === language)!;
-
-  function navigate(event: KeyboardEvent<HTMLDivElement>) {
-    const keys = ["ArrowLeft", "ArrowRight", "Home", "End"];
-    if (!keys.includes(event.key)) return;
-    event.preventDefault();
-    const current = snippets.findIndex((snippet) => snippet.id === language);
-    const next = event.key === "Home" ? 0 : event.key === "End" ? snippets.length - 1
-      : (current + (event.key === "ArrowRight" ? 1 : -1) + snippets.length) % snippets.length;
-    setLanguage(snippets[next].id);
-    event.currentTarget.querySelector<HTMLButtonElement>(`[data-language="${snippets[next].id}"]`)?.focus();
-  }
-
-  return (
-    <div className="min-w-0 rounded-[14px] bg-surface overflow-clip border border-solid border-border">
-      <div data-ui="landing-code-header" className="flex items-center justify-between flex-wrap pr-3 pl-4 border-b [border-bottom-style:solid] border-b-border text-muted text-[12px] gap-2 py-2.5 max-[37.5rem]:px-2.5">
-        <div className="flex items-center gap-1 [&_button]:min-h-9 [&_button]:rounded-[5px] [&_button]:bg-transparent [&_button]:text-muted [&_button]:text-[12px] [&_button]:py-1.75 [&_button]:px-3 [&_button]:border-0 max-[37.5rem]:[&_button]:px-2.5 pointer-coarse:[&_button]:min-h-11 [&_button[aria-selected='true']]:bg-surface-hover [&_button[aria-selected='true']]:text-foreground" role="tablist" aria-label="Language" onKeyDown={navigate}>
-          {snippets.map((snippet) => (
-            <button key={snippet.id} type="button" role="tab" id={`${id}-${snippet.id}`} data-language={snippet.id}
-              aria-controls={`${id}-panel`} aria-selected={snippet.id === language} tabIndex={snippet.id === language ? 0 : -1}
-              onClick={() => setLanguage(snippet.id)}>
-              {snippet.label}
-            </button>
-          ))}
-        </div>
-        <CopyButton key={language} value={selected.code} label="Copy code" />
-      </div>
-      <div id={`${id}-panel`} role="tabpanel" aria-labelledby={`${id}-${language}`} tabIndex={0}>
-        <pre className="m-0 overflow-x-auto px-5 py-6 text-[12px] leading-[1.85] tab-4 max-[37.5rem]:px-3.75"><code>{selected.code}</code></pre>
-      </div>
-      <p className="border-t [border-top-style:solid] border-t-border px-5 py-3.5 text-muted text-[12px] leading-[1.6] max-[37.5rem]:px-3.75">{selected.note}</p>
-    </div>
-  );
-}
+export const standardWebhooksContent: VerifierContent = {
+  provider: "standard-webhooks",
+  path: "/tools/webhook-signature-verifier",
+  title: "Webhook signature verifier",
+  metaTitle: "Webhook Signature Verifier",
+  description:
+    "Free webhook signature verifier for Standard Webhooks (webhook-id, webhook-timestamp, webhook-signature). Paste a request to see if its HMAC-SHA256 signature is valid and why it fails. Runs entirely in your browser.",
+  intro: (
+    <>
+      Check a <a className="underline underline-offset-[3px] hover:text-foreground" href="https://www.standardwebhooks.com/" target="_blank" rel="noopener noreferrer">Standard Webhooks</a> signature and see why it fails. Works with {siteName} and any sender that follows the spec.
+    </>
+  ),
+  failures: (
+    <>
+      <h3>The body was parsed before it was verified</h3>
+      <p>
+        The most common cause. Middleware such as <code>express.json()</code> turns the body into an object, and serializing it again changes key order, spacing, or number formatting.
+        Verify the exact raw bytes first, then parse.
+      </p>
+      <h3>The secret is used as text</h3>
+      <p>Passing the <code>whsec_…</code> string straight to your HMAC function uses its characters as the key. Strip the prefix and Base64-decode it first.</p>
+      <h3>The wrong secret</h3>
+      <p>Each endpoint has its own secret. After a rotation the old one stops working once the grace period ends, so make sure your receiver loads the new one.</p>
+      <h3>The header is compared as a whole</h3>
+      <p>The header can hold more than one signature. Split it on spaces and accept the request if any <code>v1</code> entry matches.</p>
+      <h3>The timestamp is out of range</h3>
+      <p>Clock drift, or testing with a request captured earlier, fails the tolerance check even when the signature is correct. Keep your clock synced with NTP.</p>
+    </>
+  ),
+  snippets,
+  howItWorks: (
+    <>
+      <p>The sender signs every request with a secret shared with your endpoint and sends three headers:</p>
+      <ul>
+        <li><code>webhook-id</code>: a unique message ID. Retries keep it, so use it to skip duplicates.</li>
+        <li><code>webhook-timestamp</code>: when the attempt was signed, in Unix seconds.</li>
+        <li><code>webhook-signature</code>: one or more space-separated <code>v1,&lt;base64&gt;</code> signatures. There are two while the sender rotates its secret.</li>
+      </ul>
+      <p className="mt-4!">To verify a request:</p>
+      <ol>
+        <li>Remove the <code>whsec_</code> prefix and Base64-decode the rest. The decoded bytes are the HMAC key.</li>
+        <li>Build the message <code>webhook-id + &quot;.&quot; + webhook-timestamp + &quot;.&quot; + raw body</code>.</li>
+        <li>Compute HMAC-SHA256 of it and Base64-encode the result.</li>
+        <li>Compare it in constant time with each <code>v1,</code> entry. Any match is valid.</li>
+        <li>Reject timestamps more than five minutes from your clock.</li>
+      </ol>
+    </>
+  ),
+};

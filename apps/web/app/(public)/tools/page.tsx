@@ -7,7 +7,7 @@ import { pageMetadata } from "@/lib/site";
 export const metadata: Metadata = pageMetadata({
   path: "/tools",
   title: "Free Webhook Tools",
-  description: "Free tools for building and debugging webhooks, including a Standard Webhooks signature verifier that runs entirely in your browser.",
+  description: "Free tools for debugging webhooks: signature verifiers for Standard Webhooks, Stripe, GitHub, Shopify, and Slack that run entirely in your browser.",
 });
 
 export default function Page() {
