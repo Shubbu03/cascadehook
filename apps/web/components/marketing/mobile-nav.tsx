@@ -4,6 +4,7 @@ import { ListIcon } from "@phosphor-icons/react";
 import Link from "next/link";
 import { useRef } from "react";
 import { DocsLink } from "@/components/docs-link";
+import { FreeBadge } from "./free-badge";
 
 export function MobileNav({ howItWorksHref }: { howItWorksHref: string; }) {
   const details = useRef<HTMLDetailsElement>(null);
@@ -32,6 +33,9 @@ export function MobileNav({ howItWorksHref }: { howItWorksHref: string; }) {
           Docs
         </DocsLink>
         <Link href="/support" onClick={close}>Support</Link>
+        <Link href="/tools" onClick={close}>
+          Tools <FreeBadge className="ml-1.5 align-[2px]" />
+        </Link>
         <Link href="/login" onClick={close}>Get started</Link>
       </nav>
     </details>

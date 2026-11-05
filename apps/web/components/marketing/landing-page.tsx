@@ -116,6 +116,7 @@ export function LandingPage() {
             <nav className={"flex items-center flex-wrap gap-y-2 gap-x-7 max-[37.5rem]:gap-y-1 max-[37.5rem]:gap-x-5 [&_a]:relative [&_a]:inline-flex [&_a]:items-center [&_a]:min-h-11 [&_a]:text-muted [&_a]:text-[13px] [&_a]:gap-1.5 pointer-coarse:[&_a]:min-h-11 motion-safe:[&_a]:[transition:transform_180ms_ease-out,color_180ms_ease-out] [&_a:hover]:text-foreground [&_a::after]:content-[''] [&_a::after]:absolute [&_a::after]:bottom-2 [&_a::after]:h-0.5 [&_a::after]:rounded-[1px] [&_a::after]:bg-accent [&_a::after]:transform-[scaleX(0)] [&_a::after]:origin-[left_center] [&_a::after]:pointer-events-none [&_a::after]:inset-x-0 [&_a:focus-visible]:text-foreground motion-safe:[&_a::after]:[transition:transform_240ms_cubic-bezier(0.22,1,0.36,1)] motion-safe:[&_a:focus-visible]:transform-[translateY(-2px)] motion-safe:[@media(hover:_hover)_and_(pointer:_fine)]:[&_a:hover]:transform-[translateY(-2px)] [&_a:focus-visible::after]:transform-[scaleX(1)] [@media(hover:_hover)_and_(pointer:_fine)]:[&_a:hover::after]:transform-[scaleX(1)]"} aria-label="Footer navigation">
               <DocsLink path="/docs">Docs</DocsLink>
               <DocsLink path="/docs/api">API reference</DocsLink>
+              <Link href="/tools/webhook-signature-verifier">Signature verifier</Link>
               <Link href="/support">Support</Link>
               <Link href="/terms">Terms</Link>
               <Link href="/privacy">Privacy</Link>

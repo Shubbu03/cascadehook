@@ -37,6 +37,11 @@ Use the [shared receiver implementation](/docs/receivers#shared-source) as
 the executable reference for secret decoding, signed-message construction,
 signature parsing, and ownership challenges.
 
+If a check fails, paste the request into the
+[webhook signature verifier](https://cascadehook.com/tools/webhook-signature-verifier).
+It runs in your browser, tells you whether the signature is valid, and points
+out common mistakes such as a re-encoded body.
+
 ## Replay protection and deduplication
 
 The reference receiver uses a five-minute timestamp tolerance. Timestamp

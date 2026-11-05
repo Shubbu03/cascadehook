@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Brand } from "@/components/brand";
 import { DocsLink } from "@/components/docs-link";
 import { ThemeSwitcher } from "@/components/theme-switcher";
+import { FreeBadge } from "./free-badge";
 import { MobileNav } from "./mobile-nav";
 
 export function MarketingHeader({ home = false }: { home?: boolean; }) {
@@ -15,6 +16,11 @@ export function MarketingHeader({ home = false }: { home?: boolean; }) {
         <a href={howItWorksHref}>How it works</a>
         <DocsLink path="/docs">Docs</DocsLink>
         <Link href="/support">Support</Link>
+        {/* The badge sits above the link's top-right corner; the margin keeps it clear of the theme switcher. */}
+        <Link href="/tools" className="relative mr-3">
+          Tools
+          <FreeBadge className="absolute top-0.5 left-[calc(100%-4px)]" />
+        </Link>
       </nav>
       <div className="flex items-center gap-5 max-[68.75rem]:gap-3 max-[53.125rem]:gap-2.5 max-[37.5rem]:gap-1">
         <ThemeSwitcher />
