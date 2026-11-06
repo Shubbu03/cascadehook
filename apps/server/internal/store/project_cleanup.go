@@ -64,6 +64,13 @@ func cleanupProjectData(ctx context.Context, tx pgx.Tx, limit int, preview bool)
 			}
 			continue
 		}
+		if selection.table == "project_usage_months" {
+			count, err := retireProjectUsage(ctx, tx, selection.retentionSelection)
+			if err != nil || count > 0 {
+				return count, err
+			}
+			continue
+		}
 		// Table, keys, and aliases are fixed below; project/limit are bound.
 		query := `WITH candidates AS (` + selection.query + ` FOR UPDATE OF ` + selection.lockAlias + ` SKIP LOCKED) `
 		if selection.detachRotation {
@@ -82,6 +89,32 @@ func cleanupProjectData(ctx context.Context, tx pgx.Tx, limit int, preview bool)
 		}
 	}
 	return 0, nil
+}
+
+// Organization attempt totals are summed from project rows, so a deleted
+// project's counts move into retired_* in the same commit that removes them.
+// No concurrent writer can touch these project rows: the project is marked for
+// deletion and this transaction holds its row lock.
+func retireProjectUsage(ctx context.Context, tx pgx.Tx, selection retentionSelection) (int64, error) {
+	query := `WITH candidates AS (` + selection.query + ` FOR UPDATE OF u SKIP LOCKED),
+		deleted AS (DELETE FROM project_usage_months t USING candidates c
+			WHERE t.project_id = c.project_id AND t.period = c.period
+			RETURNING t.period, t.attempts, t.succeeded, t.failed),
+		folded AS (INSERT INTO organization_usage_months AS o
+			(organization_id, period, retired_attempts, retired_succeeded, retired_failed)
+			SELECT p.organization_id, d.period, d.attempts, d.succeeded, d.failed
+			FROM deleted d JOIN projects p ON p.id = $1
+			ON CONFLICT (organization_id, period) DO UPDATE SET
+			retired_attempts = o.retired_attempts + EXCLUDED.retired_attempts,
+			retired_succeeded = o.retired_succeeded + EXCLUDED.retired_succeeded,
+			retired_failed = o.retired_failed + EXCLUDED.retired_failed
+			RETURNING 1)
+		SELECT count(*) FROM deleted`
+	var count int64
+	if err := tx.QueryRow(ctx, query, selection.args...).Scan(&count); err != nil {
+		return 0, fmt.Errorf("retire project usage counters: %w", err)
+	}
+	return count, nil
 }
 
 func projectCleanupSelections(projectID uuid.UUID, limit int) []projectCleanupSelection {

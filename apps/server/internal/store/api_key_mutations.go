@@ -19,6 +19,7 @@ type CreateAPIKeyParams struct {
 	Name      string
 	Prefix    string
 	Hash      [sha256.Size]byte
+	Scope     auth.KeyScope
 	ExpiresAt *time.Time
 }
 
@@ -34,6 +35,9 @@ func (s *Store) CreateAPIKey(ctx context.Context, actor auth.Principal, params C
 		return auth.APIKey{}, err
 	}
 	params.Name = name
+	if !auth.ValidKeyScope(params.Scope) {
+		return auth.APIKey{}, auth.ErrInvalidKeyScope
+	}
 	tx, err := s.pool.BeginTx(ctx, pgx.TxOptions{IsoLevel: pgx.ReadCommitted})
 	if err != nil {
 		return auth.APIKey{}, fmt.Errorf("begin API key creation: %w", err)
@@ -96,11 +100,12 @@ func (s *Store) RevokeAPIKey(ctx context.Context, actor auth.Principal, targetID
 		return nil
 	}
 	// A human administrator can recover through their session even when every
-	// integration credential is revoked. API-key callers need a replacement.
+	// integration credential is revoked. API-key callers need a replacement
+	// that can still manage keys; a publish or read key cannot.
 	if target.Status == auth.KeyActive && actor.UserID == uuid.Nil {
 		var hasReplacement bool
 		err := tx.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM api_keys WHERE project_id = $1 AND id <> $2
-			AND revoked_at IS NULL AND revokes_at IS NULL AND (expires_at IS NULL OR expires_at > $3))`,
+			AND scope = 'full' AND revoked_at IS NULL AND revokes_at IS NULL AND (expires_at IS NULL OR expires_at > $3))`,
 			actor.ProjectID, targetID, databaseNow).Scan(&hasReplacement)
 		if err != nil {
 			return fmt.Errorf("check remaining usable API keys: %w", err)
@@ -129,7 +134,7 @@ func (s *Store) RevokeAPIKey(ctx context.Context, actor auth.Principal, targetID
 	return nil
 }
 
-// RotateAPIKey preserves environment, name, and original expiry. The supplied
+// RotateAPIKey preserves environment, scope, name, and original expiry. The supplied
 // replacement must have been generated for the target's environment.
 func (s *Store) RotateAPIKey(ctx context.Context, actor auth.Principal, targetID uuid.UUID, prefix string, hash [sha256.Size]byte) (APIKeyRotation, error) {
 	if targetID == uuid.Nil {
@@ -165,7 +170,7 @@ func (s *Store) RotateAPIKey(ctx context.Context, actor auth.Principal, targetID
 		return APIKeyRotation{}, auth.ErrInvalidKeyEnvironment
 	}
 	replacement, err := insertAPIKey(ctx, tx, actor, CreateAPIKeyParams{
-		Name: target.Name, Prefix: prefix, Hash: hash, ExpiresAt: target.ExpiresAt,
+		Name: target.Name, Prefix: prefix, Hash: hash, Scope: target.Scope, ExpiresAt: target.ExpiresAt,
 	}, databaseNow)
 	if err != nil {
 		return APIKeyRotation{}, err
@@ -207,10 +212,10 @@ func insertAPIKey(ctx context.Context, tx pgx.Tx, actor auth.Principal, params C
 	}
 	var key auth.APIKey
 	err = scanAPIKey(tx.QueryRow(ctx, `INSERT INTO api_keys AS k
-		(id, project_id, name, key_prefix, key_hash, created_at, expires_at, created_by_api_key_id, created_by_user_id)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING `+apiKeyColumns,
+		(id, project_id, name, key_prefix, key_hash, created_at, expires_at, created_by_api_key_id, created_by_user_id, scope)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING `+apiKeyColumns,
 		id, actor.ProjectID, params.Name, params.Prefix, params.Hash[:], at, params.ExpiresAt,
-		nullableUUID(actor.APIKeyID), nullableUUID(actor.UserID)), &key)
+		nullableUUID(actor.APIKeyID), nullableUUID(actor.UserID), params.Scope), &key)
 	if err != nil {
 		return auth.APIKey{}, fmt.Errorf("create API key: %w", err)
 	}
@@ -279,6 +284,11 @@ func lockAPIKeyMutation(ctx context.Context, tx pgx.Tx, actor auth.Principal, ta
 	}
 	if actor.APIKeyID != uuid.Nil && (manager.ID == uuid.Nil || manager.Status != auth.KeyActive) {
 		return auth.APIKey{}, auth.APIKey{}, time.Time{}, auth.ErrInvalidAPIKey
+	}
+	// The route check already requires full scope; recheck the locked row so a
+	// restricted key can never issue or revoke credentials.
+	if actor.APIKeyID != uuid.Nil && manager.Scope != auth.ScopeFull {
+		return auth.APIKey{}, auth.APIKey{}, time.Time{}, auth.ErrInsufficientScope
 	}
 	if targetID != uuid.Nil && target.ID == uuid.Nil {
 		return auth.APIKey{}, auth.APIKey{}, time.Time{}, auth.ErrAPIKeyNotFound

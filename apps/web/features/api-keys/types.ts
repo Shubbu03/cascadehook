@@ -1,11 +1,20 @@
 import { uuidPattern } from "@/lib/format";
 
+export type KeyScope = "full" | "publish" | "read";
+
+export const scopeLabels: Record<KeyScope, string> = {
+  full: "Full access",
+  publish: "Publish only",
+  read: "Read only",
+};
+
 export type APIKey = {
   id: string;
   project_id: string;
   name: string;
   prefix: string;
   environment: "dev" | "live";
+  scope: KeyScope;
   status: "active" | "expired" | "revoked";
   created_at: string;
   expires_at: string | null;

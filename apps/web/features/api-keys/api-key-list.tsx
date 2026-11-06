@@ -29,7 +29,12 @@ import { apiRequest } from "@/lib/api";
 import { formatTime } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { publicationExample } from "@/lib/example";
-import { validateKeyReceipt, type APIKey, type KeyReceipt } from "./types";
+import {
+  scopeLabels,
+  validateKeyReceipt,
+  type APIKey,
+  type KeyReceipt,
+} from "./types";
 
 export function APIKeyList() {
   const { project, canManage } = useProject();
@@ -100,7 +105,7 @@ function KeyManagement() {
 
   async function issue(
     options:
-      | { name: string; environment: string; expires_at?: string; }
+      | { name: string; environment: string; scope: string; expires_at?: string; }
       | { rotate: APIKey; },
   ) {
     setConfirm(null);
@@ -156,6 +161,7 @@ function KeyManagement() {
     void issue({
       name,
       environment: String(form.get("environment")),
+      scope: String(form.get("scope")),
       ...(expires ? { expires_at: new Date(expires).toISOString() } : {}),
     });
   }
@@ -206,7 +212,7 @@ function KeyManagement() {
         >
           <label data-ui="form-field" className="grid mb-4.5 gap-2 [&_>_span]:text-[13px] [&_>_span]:font-medium [&_>_label]:text-[13px] [&_>_label]:font-medium">
             <span>Name</span>
-            <Input className="[[data-ui~='workspace-create-dialog']_&]:bg-surface-hover [[data-ui~='workspace-create-dialog']_&]:border-0 [[data-ui~='workspace-create-dialog']_&]:border-none [[data-ui~='workspace-create-dialog']_&]:border-current [[data-ui~='dashboard-main']_&]:min-h-10 [[data-ui~='dashboard-main']_&]:text-[14px] [[data-ui~='dashboard-main']_&]:py-2.25 [[data-ui~='dashboard-main']_&]:px-3 [[data-ui~='workspace-create-dialog']_&]:focus-visible:outline-hidden [[data-ui~='workspace-create-dialog']_&]:focus-visible:shadow-[inset_0_-2px_var(--accent)] max-[37.5rem]:[[data-ui~='dashboard-main']_&]:text-[16px] w-full min-h-11.5 rounded-md text-foreground text-[16px] py-2.75 px-3 placeholder:text-muted"
+            <Input className="in-data-[ui~='workspace-create-dialog']:bg-surface-hover in-data-[ui~='workspace-create-dialog']:border-0 in-data-[ui~='workspace-create-dialog']:border-none in-data-[ui~='workspace-create-dialog']:border-current in-data-[ui~='dashboard-main']:min-h-10 in-data-[ui~='dashboard-main']:text-[14px] in-data-[ui~='dashboard-main']:py-2.25 in-data-[ui~='dashboard-main']:px-3 in-data-[ui~='workspace-create-dialog']:focus-visible:outline-hidden in-data-[ui~='workspace-create-dialog']:focus-visible:shadow-[inset_0_-2px_var(--accent)] max-[37.5rem]:in-data-[ui~='dashboard-main']:text-[16px] w-full min-h-11.5 rounded-md text-foreground text-[16px] py-2.75 px-3 placeholder:text-muted"
               name="name"
               placeholder="e.g. Billing production"
               required
@@ -214,18 +220,31 @@ function KeyManagement() {
             />
           </label>
           <label data-ui="filter-field" className="grid gap-1.75 [&_>_span]:text-[12px] [&_>_span]:font-medium in-data-[ui~='activity-filters']:min-w-0 in-data-[ui~='dashboard-main']:flex-[0_1_auto] in-data-[ui~='dashboard-main']:gap-1.5 max-[37.5rem]:in-data-[ui~='activity-filters']:flex-[1_1_150px] max-[37.5rem]:[[data-ui~='dashboard-main']_[data-ui~='activity-filters']_&]:flex-[1_1_140px]">
+            <span>Access</span>
+            <Select className="in-data-[ui~='dashboard-main']:w-auto in-data-[ui~='dashboard-main']:min-w-37.5 in-data-[ui~='dashboard-main']:min-h-9 in-data-[ui~='dashboard-main']:pr-10.5 in-data-[ui~='dashboard-main']:pl-3.5 in-data-[ui~='dashboard-main']:py-1.75 in-data-[ui~='dashboard-main']:text-[13px]/5 max-[37.5rem]:in-data-[ui~='dashboard-main']:w-full max-[37.5rem]:in-data-[ui~='dashboard-main']:min-w-0 max-[37.5rem]:in-data-[ui~='dashboard-main']:text-[16px] min-h-10.5 rounded-md text-foreground text-[14px] max-w-full py-2.25 px-2.75 max-[32.5rem]:text-[16px]" name="scope" defaultValue="publish" disabled={busy}>
+              <option value="publish">Publish only</option>
+              <option value="read">Read only</option>
+              <option value="full">Full access</option>
+            </Select>
+          </label>
+          <p className="text-[12px] text-muted leading-[1.7] mt-3 mb-4.5 [[data-ui~='settings-section']_>_&]:mt-3 [[data-ui~='settings-section']_>_&]:mb-5">
+            Publish only can send events and check project status. Read only can
+            view endpoints, events, and deliveries. Full access can also change
+            endpoints, replay deliveries, and manage API keys.
+          </p>
+          <label data-ui="filter-field" className="grid gap-1.75 [&_>_span]:text-[12px] [&_>_span]:font-medium in-data-[ui~='activity-filters']:min-w-0 in-data-[ui~='dashboard-main']:flex-[0_1_auto] in-data-[ui~='dashboard-main']:gap-1.5 max-[37.5rem]:in-data-[ui~='activity-filters']:flex-[1_1_150px] max-[37.5rem]:[[data-ui~='dashboard-main']_[data-ui~='activity-filters']_&]:flex-[1_1_140px]">
             <span>Environment label</span>
-            <Select className="[[data-ui~='dashboard-main']_&]:w-auto [[data-ui~='dashboard-main']_&]:min-w-37.5 [[data-ui~='dashboard-main']_&]:min-h-9 [[data-ui~='dashboard-main']_&]:pr-10.5 [[data-ui~='dashboard-main']_&]:pl-3.5 [[data-ui~='dashboard-main']_&]:py-1.75 [[data-ui~='dashboard-main']_&]:text-[13px]/5 max-[37.5rem]:[[data-ui~='dashboard-main']_&]:w-full max-[37.5rem]:[[data-ui~='dashboard-main']_&]:min-w-0 max-[37.5rem]:[[data-ui~='dashboard-main']_&]:text-[16px] min-h-10.5 rounded-md text-foreground text-[14px] max-w-full py-2.25 px-2.75 max-[32.5rem]:text-[16px]" name="environment" defaultValue="dev" disabled={busy}>
+            <Select className="in-data-[ui~='dashboard-main']:w-auto in-data-[ui~='dashboard-main']:min-w-37.5 in-data-[ui~='dashboard-main']:min-h-9 in-data-[ui~='dashboard-main']:pr-10.5 in-data-[ui~='dashboard-main']:pl-3.5 in-data-[ui~='dashboard-main']:py-1.75 in-data-[ui~='dashboard-main']:text-[13px]/5 max-[37.5rem]:in-data-[ui~='dashboard-main']:w-full max-[37.5rem]:in-data-[ui~='dashboard-main']:min-w-0 max-[37.5rem]:in-data-[ui~='dashboard-main']:text-[16px] min-h-10.5 rounded-md text-foreground text-[14px] max-w-full py-2.25 px-2.75 max-[32.5rem]:text-[16px]" name="environment" defaultValue="dev" disabled={busy}>
               <option value="dev">Development</option>
               <option value="live">Live</option>
             </Select>
           </label>
           <p className="text-[12px] text-muted leading-[1.7] mt-3 mb-4.5 [[data-ui~='settings-section']_>_&]:mt-3 [[data-ui~='settings-section']_>_&]:mb-5">
-            Both labels grant the same access to this project.
+            The label is for your reference only. Access is set above.
           </p>
           <label data-ui="form-field" className="grid mb-4.5 gap-2 [&_>_span]:text-[13px] [&_>_span]:font-medium [&_>_label]:text-[13px] [&_>_label]:font-medium">
             <span>Expiry (optional, your local time)</span>
-            <Input className="[[data-ui~='workspace-create-dialog']_&]:bg-surface-hover [[data-ui~='workspace-create-dialog']_&]:border-0 [[data-ui~='workspace-create-dialog']_&]:border-none [[data-ui~='workspace-create-dialog']_&]:border-current [[data-ui~='dashboard-main']_&]:min-h-10 [[data-ui~='dashboard-main']_&]:text-[14px] [[data-ui~='dashboard-main']_&]:py-2.25 [[data-ui~='dashboard-main']_&]:px-3 [[data-ui~='workspace-create-dialog']_&]:focus-visible:outline-hidden [[data-ui~='workspace-create-dialog']_&]:focus-visible:shadow-[inset_0_-2px_var(--accent)] max-[37.5rem]:[[data-ui~='dashboard-main']_&]:text-[16px] w-full min-h-11.5 rounded-md text-foreground text-[16px] py-2.75 px-3 placeholder:text-muted" type="datetime-local" name="expires" disabled={busy} />
+            <Input className="in-data-[ui~='workspace-create-dialog']:bg-surface-hover in-data-[ui~='workspace-create-dialog']:border-0 in-data-[ui~='workspace-create-dialog']:border-none in-data-[ui~='workspace-create-dialog']:border-current in-data-[ui~='dashboard-main']:min-h-10 in-data-[ui~='dashboard-main']:text-[14px] in-data-[ui~='dashboard-main']:py-2.25 in-data-[ui~='dashboard-main']:px-3 in-data-[ui~='workspace-create-dialog']:focus-visible:outline-hidden in-data-[ui~='workspace-create-dialog']:focus-visible:shadow-[inset_0_-2px_var(--accent)] max-[37.5rem]:in-data-[ui~='dashboard-main']:text-[16px] w-full min-h-11.5 rounded-md text-foreground text-[16px] py-2.75 px-3 placeholder:text-muted" type="datetime-local" name="expires" disabled={busy} />
           </label>
           {validation && (
             <p className="text-danger text-[13px] my-3 mb-4" role="alert">
@@ -256,7 +275,7 @@ function KeyManagement() {
       <div data-ui="activity-filters" className="flex [align-items:end] flex-wrap mt-4.5 mb-6 gap-3 in-data-[ui~='dashboard-main']:mt-0 in-data-[ui~='dashboard-main']:mb-5 in-data-[ui~='dashboard-main']:pt-0 in-data-[ui~='dashboard-main']:pb-5 in-data-[ui~='dashboard-main']:border-b in-data-[ui~='dashboard-main']:[border-bottom-style:solid] in-data-[ui~='dashboard-main']:border-b-border in-data-[ui~='dashboard-main']:gap-3 in-data-[ui~='dashboard-main']:mx-0 in-data-[ui~='dashboard-main']:px-0 max-[37.5rem]:in-data-[ui~='dashboard-main']:gap-2.5">
         <label data-ui="filter-field" className="grid gap-1.75 [&_>_span]:text-[12px] [&_>_span]:font-medium min-w-0 in-data-[ui~='dashboard-main']:flex-[0_1_auto] in-data-[ui~='dashboard-main']:gap-1.5 max-[37.5rem]:flex-[1_1_150px] max-[37.5rem]:[[data-ui~='dashboard-main']_[data-ui~='activity-filters']_&]:flex-[1_1_140px]">
           <span>Environment</span>
-          <Select className="[[data-ui~='dashboard-main']_&]:w-auto [[data-ui~='dashboard-main']_&]:min-w-37.5 [[data-ui~='dashboard-main']_&]:min-h-9 [[data-ui~='dashboard-main']_&]:pr-10.5 [[data-ui~='dashboard-main']_&]:pl-3.5 [[data-ui~='dashboard-main']_&]:py-1.75 [[data-ui~='dashboard-main']_&]:text-[13px]/5 max-[37.5rem]:[[data-ui~='dashboard-main']_&]:w-full max-[37.5rem]:[[data-ui~='dashboard-main']_&]:min-w-0 max-[37.5rem]:[[data-ui~='dashboard-main']_&]:text-[16px] max-[37.5rem]:w-full max-[37.5rem]:text-[16px] min-h-10.5 rounded-md text-foreground text-[14px] max-w-full py-2.25 px-2.75 max-[32.5rem]:text-[16px]"
+          <Select className="in-data-[ui~='dashboard-main']:w-auto in-data-[ui~='dashboard-main']:min-w-37.5 in-data-[ui~='dashboard-main']:min-h-9 in-data-[ui~='dashboard-main']:pr-10.5 in-data-[ui~='dashboard-main']:pl-3.5 in-data-[ui~='dashboard-main']:py-1.75 in-data-[ui~='dashboard-main']:text-[13px]/5 max-[37.5rem]:in-data-[ui~='dashboard-main']:w-full max-[37.5rem]:in-data-[ui~='dashboard-main']:min-w-0 max-[37.5rem]:in-data-[ui~='dashboard-main']:text-[16px] max-[37.5rem]:w-full max-[37.5rem]:text-[16px] min-h-10.5 rounded-md text-foreground text-[14px] max-w-full py-2.25 px-2.75 max-[32.5rem]:text-[16px]"
             value={environment}
             onChange={(event) => setEnvironment(event.target.value)}
           >
@@ -267,7 +286,7 @@ function KeyManagement() {
         </label>
         <label data-ui="filter-field" className="grid gap-1.75 [&_>_span]:text-[12px] [&_>_span]:font-medium min-w-0 in-data-[ui~='dashboard-main']:flex-[0_1_auto] in-data-[ui~='dashboard-main']:gap-1.5 max-[37.5rem]:flex-[1_1_150px] max-[37.5rem]:[[data-ui~='dashboard-main']_[data-ui~='activity-filters']_&]:flex-[1_1_140px]">
           <span>Status</span>
-          <Select className="[[data-ui~='dashboard-main']_&]:w-auto [[data-ui~='dashboard-main']_&]:min-w-37.5 [[data-ui~='dashboard-main']_&]:min-h-9 [[data-ui~='dashboard-main']_&]:pr-10.5 [[data-ui~='dashboard-main']_&]:pl-3.5 [[data-ui~='dashboard-main']_&]:py-1.75 [[data-ui~='dashboard-main']_&]:text-[13px]/5 max-[37.5rem]:[[data-ui~='dashboard-main']_&]:w-full max-[37.5rem]:[[data-ui~='dashboard-main']_&]:min-w-0 max-[37.5rem]:[[data-ui~='dashboard-main']_&]:text-[16px] max-[37.5rem]:w-full max-[37.5rem]:text-[16px] min-h-10.5 rounded-md text-foreground text-[14px] max-w-full py-2.25 px-2.75 max-[32.5rem]:text-[16px]"
+          <Select className="in-data-[ui~='dashboard-main']:w-auto in-data-[ui~='dashboard-main']:min-w-37.5 in-data-[ui~='dashboard-main']:min-h-9 in-data-[ui~='dashboard-main']:pr-10.5 in-data-[ui~='dashboard-main']:pl-3.5 in-data-[ui~='dashboard-main']:py-1.75 in-data-[ui~='dashboard-main']:text-[13px]/5 max-[37.5rem]:in-data-[ui~='dashboard-main']:w-full max-[37.5rem]:in-data-[ui~='dashboard-main']:min-w-0 max-[37.5rem]:in-data-[ui~='dashboard-main']:text-[16px] max-[37.5rem]:w-full max-[37.5rem]:text-[16px] min-h-10.5 rounded-md text-foreground text-[14px] max-w-full py-2.25 px-2.75 max-[32.5rem]:text-[16px]"
             value={status}
             onChange={(event) => setStatus(event.target.value)}
           >
@@ -299,6 +318,8 @@ function KeyManagement() {
                       <code className="block mt-1 text-[11px] text-muted">{key.prefix}…</code>
                       <span className="block mt-1 text-[11px] text-muted">
                         {key.environment === "dev" ? "Development" : "Live"}
+                        {" · "}
+                        {scopeLabels[key.scope] ?? key.scope}
                       </span>
                     </td>
                     <td>
@@ -397,7 +418,7 @@ function KeyManagement() {
           <p>{confirm.key.name}</p>
           <p>
             {confirm.action === "rotate"
-              ? "Save the replacement immediately. The previous key remains valid for five minutes."
+              ? "Save the replacement immediately. It keeps the same access, and the previous key remains valid for five minutes."
               : "Integrations using this key will lose access immediately."}
           </p>
         </ConfirmDialog>

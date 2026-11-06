@@ -90,8 +90,9 @@ func (s *Store) releaseDeliveryBatch(ctx context.Context, ownerID uuid.UUID, lim
 	if len(jobs) == 0 {
 		return 0, nil
 	}
-	// Recovery can finalize several tenants in one transaction. Acquire their
-	// shared accounting rows in a consistent tenant order to avoid mutual waits.
+	// Recovery can finalize several tenants in one transaction. Acquire project
+	// usage rows and endpoint incident rows in one global organization, project,
+	// endpoint order (shared with pending expiry) to avoid mutual waits.
 	projectIDs := make([]uuid.UUID, 0, len(jobs))
 	for _, job := range jobs {
 		projectIDs = append(projectIDs, job.ProjectID)
@@ -114,10 +115,13 @@ func (s *Store) releaseDeliveryBatch(ctx context.Context, ownerID uuid.UUID, lim
 	}
 	parents.Close()
 	sort.SliceStable(jobs, func(i, j int) bool {
-		if organizations[jobs[i].ProjectID] == organizations[jobs[j].ProjectID] {
-			return jobs[i].EndpointID.String() < jobs[j].EndpointID.String()
+		if organizations[jobs[i].ProjectID] != organizations[jobs[j].ProjectID] {
+			return organizations[jobs[i].ProjectID] < organizations[jobs[j].ProjectID]
 		}
-		return organizations[jobs[i].ProjectID] < organizations[jobs[j].ProjectID]
+		if jobs[i].ProjectID != jobs[j].ProjectID {
+			return jobs[i].ProjectID.String() < jobs[j].ProjectID.String()
+		}
+		return jobs[i].EndpointID.String() < jobs[j].EndpointID.String()
 	})
 	var databaseNow time.Time
 	if err := tx.QueryRow(ctx, `SELECT clock_timestamp()`).Scan(&databaseNow); err != nil {
@@ -187,12 +191,15 @@ func (s *Store) ExpirePendingDeliveries(ctx context.Context, limit int) (int64, 
 	if err != nil {
 		return 0, fmt.Errorf("read expired notification deliveries: %w", err)
 	}
-	// Match recovery's tenant/endpoint order when locking grouped incident rows.
+	// Match recovery's organization, project, endpoint order for incident rows.
 	sort.Slice(items, func(i, j int) bool {
-		if items[i].organizationID == items[j].organizationID {
-			return items[i].held.EndpointID.String() < items[j].held.EndpointID.String()
+		if items[i].organizationID != items[j].organizationID {
+			return items[i].organizationID.String() < items[j].organizationID.String()
 		}
-		return items[i].organizationID.String() < items[j].organizationID.String()
+		if items[i].held.ProjectID != items[j].held.ProjectID {
+			return items[i].held.ProjectID.String() < items[j].held.ProjectID.String()
+		}
+		return items[i].held.EndpointID.String() < items[j].held.EndpointID.String()
 	})
 	for _, item := range items {
 		if err := notifyDeliveryCompletion(ctx, tx, item.held, deliveries.Completion{State: item.state}); err != nil {

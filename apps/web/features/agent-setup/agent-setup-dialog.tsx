@@ -59,8 +59,9 @@ export function AgentSetupDialog({ siteOrigin, onClose }: {
             of chat and source control.
           </p>
           <p className="text-[12px] text-muted leading-[1.7] in-data-[ui~='agent-prompt']:mt-2 in-data-[ui~='agent-prompt']:text-[12px]">
-            Keys grant project-wide access. Development and Live labels have
-            the same permissions. Only share a key with an agent you trust.
+            The agent needs a Full access key to register endpoints. Give
+            your deployed application a separate Publish only key. Only share
+            a key with an agent you trust.
           </p>
         </li>
         <li>

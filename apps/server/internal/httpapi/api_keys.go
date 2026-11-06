@@ -44,6 +44,7 @@ func (api *api) createAPIKey(w http.ResponseWriter, r *http.Request, principal a
 	var body struct {
 		Name        string              `json:"name"`
 		Environment auth.KeyEnvironment `json:"environment"`
+		Scope       *auth.KeyScope      `json:"scope"`
 		ExpiresAt   *time.Time          `json:"expires_at"`
 	}
 	if err := readJSON(w, r, &body); err != nil {
@@ -55,13 +56,22 @@ func (api *api) createAPIKey(w http.ResponseWriter, r *http.Request, principal a
 		api.apiKeyProblem(w, r, err)
 		return
 	}
+	// Omitting scope keeps the original full-access behavior for existing clients.
+	scope := auth.ScopeFull
+	if body.Scope != nil {
+		scope = *body.Scope
+	}
+	if !auth.ValidKeyScope(scope) {
+		api.apiKeyProblem(w, r, auth.ErrInvalidKeyScope)
+		return
+	}
 	credential, err := auth.NewAPIKey(body.Environment)
 	if err != nil {
 		api.apiKeyProblem(w, r, err)
 		return
 	}
 	key, err := api.db.CreateAPIKey(r.Context(), principal, store.CreateAPIKeyParams{
-		Name: name, Prefix: credential.Prefix, Hash: credential.Hash, ExpiresAt: body.ExpiresAt,
+		Name: name, Prefix: credential.Prefix, Hash: credential.Hash, Scope: scope, ExpiresAt: body.ExpiresAt,
 	})
 	if err != nil {
 		api.apiKeyProblem(w, r, err)
@@ -73,6 +83,8 @@ func (api *api) createAPIKey(w http.ResponseWriter, r *http.Request, principal a
 		principal.ProjectID,
 		"api_key_id",
 		key.ID,
+		"scope",
+		key.Scope,
 		"actor_api_key_id",
 		principal.APIKeyID,
 		"actor_user_id",
@@ -307,6 +319,15 @@ func (api *api) apiKeyProblem(w http.ResponseWriter, r *http.Request, err error)
 			http.StatusUnprocessableEntity,
 			"invalid_api_key_environment",
 		)
+	case errors.Is(err, auth.ErrInvalidKeyScope):
+		writeProblem(
+			w,
+			r,
+			http.StatusUnprocessableEntity,
+			"invalid_api_key_scope",
+		)
+	case errors.Is(err, auth.ErrInsufficientScope):
+		insufficientScope(w, r)
 	case errors.Is(err, auth.ErrInvalidKeyExpiry):
 		writeProblem(
 			w,

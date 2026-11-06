@@ -3,7 +3,7 @@
   "info": {
     "title": "Cascadehook project API",
     "version": "1.0.0",
-    "description": "Project API for application integration after human signup, organization and project creation. Authenticate with the selected project API key; compare GET /v1/project-status project_id before mutations. The WEB origin hosting this document can differ from the API server origin. Project API keys have broad project access; dev/live labels have identical permissions. All JSON request bodies require application/json. Management JSON bodies are capped at 64 KiB; event bodies at 256 KiB. Errors are application/problem+json. Observe Retry-After, use bounded retries, and inspect state after uncertain mutations. A 202 receipt never confirms delivery. See /docs/agents.md on this document host for the full workflow and receiver protocol."
+    "description": "Project API for application integration after human signup, organization and project creation. Authenticate with the selected project API key; compare GET /v1/project-status project_id before mutations. The WEB origin hosting this document can differ from the API server origin. Each project API key has a scope: full allows every route; publish allows POST /v1/events and GET /v1/project-status; read allows GET routes except /v1/api-keys. Requests outside the key's scope return 403 insufficient_scope. dev/live labels do not affect access. All JSON request bodies require application/json. Management JSON bodies are capped at 64 KiB; event bodies at 256 KiB. Errors are application/problem+json. Observe Retry-After, use bounded retries, and inspect state after uncertain mutations. A 202 receipt never confirms delivery. See /docs/agents.md on this document host for the full workflow and receiver protocol."
   },
   "security": [
     {
@@ -57,7 +57,8 @@
             "$ref": "#/components/responses/Problem"
           }
         },
-        "description": "Call before mutations and compare project_id with the selected project. Query parameters are rejected. A suspended project can be inspected but only an operator can resume it."
+        "description": "Any key scope. Call before mutations and compare project_id with the selected project. Query parameters are rejected. A suspended project can be inspected but only an operator can resume it.",
+        "x-required-scope": "any"
       },
       "head": {
         "operationId": "getProjectStatusHead",
@@ -73,7 +74,8 @@
             "$ref": "#/components/responses/Problem"
           }
         },
-        "description": "Call before mutations and compare project_id with the selected project. Query parameters are rejected. A suspended project can be inspected but only an operator can resume it."
+        "description": "Any key scope. Call before mutations and compare project_id with the selected project. Query parameters are rejected. A suspended project can be inspected but only an operator can resume it.",
+        "x-required-scope": "any"
       }
     },
     "/v1/endpoints": {
@@ -98,7 +100,7 @@
             "$ref": "#/components/responses/Problem"
           }
         },
-        "description": "Returns newest-first retained data. Unknown or repeated query parameters are rejected. Follow next_cursor until null; preserve filters. Omit cursor on the first page.",
+        "description": "Requires a read or full scope key. Returns newest-first retained data. Unknown or repeated query parameters are rejected. Follow next_cursor until null; preserve filters. Omit cursor on the first page.",
         "parameters": [
           {
             "$ref": "#/components/parameters/limit"
@@ -120,7 +122,8 @@
               "$ref": "#/components/schemas/EventType"
             }
           }
-        ]
+        ],
+        "x-required-scope": "read"
       },
       "head": {
         "operationId": "listEndpointsHead",
@@ -136,7 +139,7 @@
             "$ref": "#/components/responses/Problem"
           }
         },
-        "description": "Returns newest-first retained data. Unknown or repeated query parameters are rejected. Follow next_cursor until null; preserve filters. Omit cursor on the first page.",
+        "description": "Requires a read or full scope key. Returns newest-first retained data. Unknown or repeated query parameters are rejected. Follow next_cursor until null; preserve filters. Omit cursor on the first page.",
         "parameters": [
           {
             "$ref": "#/components/parameters/limit"
@@ -158,7 +161,8 @@
               "$ref": "#/components/schemas/EventType"
             }
           }
-        ]
+        ],
+        "x-required-scope": "read"
       },
       "post": {
         "operationId": "createEndpoint",
@@ -194,7 +198,7 @@
             "$ref": "#/components/responses/Problem"
           }
         },
-        "description": "Registration does not perform a network request. Reuse matching endpoints before creating one; creation is not idempotent.",
+        "description": "Requires a full scope key. Registration does not perform a network request. Reuse matching endpoints before creating one; creation is not idempotent.",
         "requestBody": {
           "required": true,
           "content": {
@@ -210,7 +214,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-scope": "full"
       }
     },
     "/v1/endpoints/{endpoint_id}": {
@@ -239,7 +244,9 @@
           "default": {
             "$ref": "#/components/responses/Problem"
           }
-        }
+        },
+        "x-required-scope": "read",
+        "description": "Requires a read or full scope key."
       },
       "head": {
         "operationId": "getEndpointHead",
@@ -254,7 +261,9 @@
           "default": {
             "$ref": "#/components/responses/Problem"
           }
-        }
+        },
+        "x-required-scope": "read",
+        "description": "Requires a read or full scope key."
       },
       "patch": {
         "operationId": "updateEndpoint",
@@ -277,7 +286,7 @@
             "$ref": "#/components/responses/Problem"
           }
         },
-        "description": "URL changes clear verification and disable delivery. Enabling requires verification and a signing secret. Replacing subscriptions changes future fan-out. Ask before modifying existing receiver configuration.",
+        "description": "Requires a full scope key. URL changes clear verification and disable delivery. Enabling requires verification and a signing secret. Replacing subscriptions changes future fan-out. Ask before modifying existing receiver configuration.",
         "requestBody": {
           "required": true,
           "content": {
@@ -290,7 +299,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-scope": "full"
       },
       "delete": {
         "operationId": "deleteEndpoint",
@@ -306,7 +316,8 @@
             "$ref": "#/components/responses/Problem"
           }
         },
-        "description": "Destructive. Requires explicit human approval."
+        "description": "Requires a full scope key. Destructive. Requires explicit human approval.",
+        "x-required-scope": "full"
       }
     },
     "/v1/endpoints/{endpoint_id}/signing-secret": {
@@ -336,7 +347,8 @@
             "$ref": "#/components/responses/Problem"
           }
         },
-        "description": "EMPTY BODY required: do not send {}. Also rotates an existing secret; ask for explicit approval before rotation. Not idempotent. Previous secret has a five-minute grace period; overlapping rotation returns 409 signing_secret_rotation_in_progress. Does not disable an already active endpoint or clear verified_at. Inspect state after a lost response."
+        "description": "Requires a full scope key. EMPTY BODY required: do not send {}. Also rotates an existing secret; ask for explicit approval before rotation. Not idempotent. Previous secret has a five-minute grace period; overlapping rotation returns 409 signing_secret_rotation_in_progress. Does not disable an already active endpoint or clear verified_at. Inspect state after a lost response.",
+        "x-required-scope": "full"
       }
     },
     "/v1/endpoints/{endpoint_id}/verify": {
@@ -366,7 +378,8 @@
             "$ref": "#/components/responses/Problem"
           }
         },
-        "description": "EMPTY BODY required: do not send {}. Install the current secret on a running public HTTPS receiver first. Receiver must verify the raw signed request and return exactly {\"proof\":\"<base64 HMAC-SHA256>\"}, using message cascadehook.verify.v1.<Webhook-Id>.<data.challenge>. One attempt per 30 seconds; respect Retry-After. Plain empty 200 is insufficient. Errors include endpoint_verification_failed (502), invalid_verification_proof (422), unsafe_endpoint_destination (422), endpoint_verification_rate_limited (429), and endpoint_verification_changed (409)."
+        "description": "Requires a full scope key. EMPTY BODY required: do not send {}. Install the current secret on a running public HTTPS receiver first. Receiver must verify the raw signed request and return exactly {\"proof\":\"<base64 HMAC-SHA256>\"}, using message cascadehook.verify.v1.<Webhook-Id>.<data.challenge>. One attempt per 30 seconds; respect Retry-After. Plain empty 200 is insufficient. Errors include endpoint_verification_failed (502), invalid_verification_proof (422), unsafe_endpoint_destination (422), endpoint_verification_rate_limited (429), and endpoint_verification_changed (409).",
+        "x-required-scope": "full"
       }
     },
     "/v1/events": {
@@ -391,7 +404,7 @@
             "$ref": "#/components/responses/Problem"
           }
         },
-        "description": "Returns newest-first retained data. Unknown or repeated query parameters are rejected. Follow next_cursor until null; preserve filters. Omit cursor on the first page.",
+        "description": "Requires a read or full scope key. Returns newest-first retained data. Unknown or repeated query parameters are rejected. Follow next_cursor until null; preserve filters. Omit cursor on the first page.",
         "parameters": [
           {
             "$ref": "#/components/parameters/limit"
@@ -406,7 +419,8 @@
               "$ref": "#/components/schemas/EventType"
             }
           }
-        ]
+        ],
+        "x-required-scope": "read"
       },
       "head": {
         "operationId": "listEventsHead",
@@ -422,7 +436,7 @@
             "$ref": "#/components/responses/Problem"
           }
         },
-        "description": "Returns newest-first retained data. Unknown or repeated query parameters are rejected. Follow next_cursor until null; preserve filters. Omit cursor on the first page.",
+        "description": "Requires a read or full scope key. Returns newest-first retained data. Unknown or repeated query parameters are rejected. Follow next_cursor until null; preserve filters. Omit cursor on the first page.",
         "parameters": [
           {
             "$ref": "#/components/parameters/limit"
@@ -437,7 +451,8 @@
               "$ref": "#/components/schemas/EventType"
             }
           }
-        ]
+        ],
+        "x-required-scope": "read"
       },
       "post": {
         "operationId": "publishEvent",
@@ -477,7 +492,7 @@
             "$ref": "#/components/responses/Problem"
           }
         },
-        "description": "Maximum 256 KiB envelope; exactly type and data. Same key/exact bytes within 24 hours returns the original receipt without fan-out again. Different bytes return 409 idempotency_conflict. Keys remain project-wide regardless of dev/live label; use only agreed test data.",
+        "description": "Requires a publish or full scope key. Maximum 256 KiB envelope; exactly type and data. Same key/exact bytes within 24 hours returns the original receipt without fan-out again. Different bytes return 409 idempotency_conflict. dev/live labels do not separate data; use only agreed test data.",
         "requestBody": {
           "required": true,
           "content": {
@@ -498,7 +513,8 @@
           {
             "$ref": "#/components/parameters/idempotencyKey"
           }
-        ]
+        ],
+        "x-required-scope": "publish"
       }
     },
     "/v1/events/{event_id}": {
@@ -527,7 +543,9 @@
           "default": {
             "$ref": "#/components/responses/Problem"
           }
-        }
+        },
+        "x-required-scope": "read",
+        "description": "Requires a read or full scope key."
       },
       "head": {
         "operationId": "getEventHead",
@@ -542,7 +560,9 @@
           "default": {
             "$ref": "#/components/responses/Problem"
           }
-        }
+        },
+        "x-required-scope": "read",
+        "description": "Requires a read or full scope key."
       }
     },
     "/v1/deliveries": {
@@ -567,7 +587,7 @@
             "$ref": "#/components/responses/Problem"
           }
         },
-        "description": "Returns newest-first retained data. Unknown or repeated query parameters are rejected. Follow next_cursor until null; preserve filters. Omit cursor on the first page. To confirm a test, filter by BOTH the accepted event ID and the chosen endpoint ID. Poll at intervals of at least five seconds for at most 60 seconds; honor Retry-After.",
+        "description": "Requires a read or full scope key. Returns newest-first retained data. Unknown or repeated query parameters are rejected. Follow next_cursor until null; preserve filters. Omit cursor on the first page. To confirm a test, filter by BOTH the accepted event ID and the chosen endpoint ID. Poll at intervals of at least five seconds for at most 60 seconds; honor Retry-After.",
         "parameters": [
           {
             "$ref": "#/components/parameters/limit"
@@ -598,7 +618,8 @@
               "$ref": "#/components/schemas/DeliveryState"
             }
           }
-        ]
+        ],
+        "x-required-scope": "read"
       },
       "head": {
         "operationId": "listDeliveriesHead",
@@ -614,7 +635,7 @@
             "$ref": "#/components/responses/Problem"
           }
         },
-        "description": "Returns newest-first retained data. Unknown or repeated query parameters are rejected. Follow next_cursor until null; preserve filters. Omit cursor on the first page. To confirm a test, filter by BOTH the accepted event ID and the chosen endpoint ID. Poll at intervals of at least five seconds for at most 60 seconds; honor Retry-After.",
+        "description": "Requires a read or full scope key. Returns newest-first retained data. Unknown or repeated query parameters are rejected. Follow next_cursor until null; preserve filters. Omit cursor on the first page. To confirm a test, filter by BOTH the accepted event ID and the chosen endpoint ID. Poll at intervals of at least five seconds for at most 60 seconds; honor Retry-After.",
         "parameters": [
           {
             "$ref": "#/components/parameters/limit"
@@ -645,7 +666,8 @@
               "$ref": "#/components/schemas/DeliveryState"
             }
           }
-        ]
+        ],
+        "x-required-scope": "read"
       }
     },
     "/v1/deliveries/{delivery_id}": {
@@ -675,7 +697,8 @@
             "$ref": "#/components/responses/Problem"
           }
         },
-        "description": "succeeded confirms receiver acknowledgement, not downstream business completion. pending/leased are not terminal. Inspect attempts and terminal_reason for failures."
+        "description": "Requires a read or full scope key. succeeded confirms receiver acknowledgement, not downstream business completion. pending/leased are not terminal. Inspect attempts and terminal_reason for failures.",
+        "x-required-scope": "read"
       },
       "head": {
         "operationId": "getDeliveryHead",
@@ -691,7 +714,8 @@
             "$ref": "#/components/responses/Problem"
           }
         },
-        "description": "succeeded confirms receiver acknowledgement, not downstream business completion. pending/leased are not terminal. Inspect attempts and terminal_reason for failures."
+        "description": "Requires a read or full scope key. succeeded confirms receiver acknowledgement, not downstream business completion. pending/leased are not terminal. Inspect attempts and terminal_reason for failures.",
+        "x-required-scope": "read"
       }
     },
     "/v1/deliveries/{delivery_id}/attempts": {
@@ -721,7 +745,7 @@
             "$ref": "#/components/responses/Problem"
           }
         },
-        "description": "Newest logical attempt first; cursor is bound to its delivery and cycle filter. Response bodies and sensitive headers are never exposed. Unknown or repeated query parameters are rejected.",
+        "description": "Requires a read or full scope key. Newest logical attempt first; cursor is bound to its delivery and cycle filter. Response bodies and sensitive headers are never exposed. Unknown or repeated query parameters are rejected.",
         "parameters": [
           {
             "$ref": "#/components/parameters/limit"
@@ -738,7 +762,8 @@
               "maximum": 2147483647
             }
           }
-        ]
+        ],
+        "x-required-scope": "read"
       },
       "head": {
         "operationId": "listDeliveryAttemptsHead",
@@ -754,7 +779,7 @@
             "$ref": "#/components/responses/Problem"
           }
         },
-        "description": "Newest logical attempt first; cursor is bound to its delivery and cycle filter. Response bodies and sensitive headers are never exposed. Unknown or repeated query parameters are rejected.",
+        "description": "Requires a read or full scope key. Newest logical attempt first; cursor is bound to its delivery and cycle filter. Response bodies and sensitive headers are never exposed. Unknown or repeated query parameters are rejected.",
         "parameters": [
           {
             "$ref": "#/components/parameters/limit"
@@ -771,7 +796,8 @@
               "maximum": 2147483647
             }
           }
-        ]
+        ],
+        "x-required-scope": "read"
       }
     },
     "/v1/deliveries/{delivery_id}/replay": {
@@ -818,7 +844,7 @@
             "$ref": "#/components/responses/Problem"
           }
         },
-        "description": "Explicit human approval required. Query parameters are rejected. Only succeeded/failed deliveries with a ready endpoint can be replayed. expected_cycle is the current delivery cycle. Same delivery/from-cycle returns its first receipt; stale cycle conflicts. Preserves Webhook-Id, so receiver deduplication may skip business work.",
+        "description": "Requires a full scope key. Explicit human approval required. Query parameters are rejected. Only succeeded/failed deliveries with a ready endpoint can be replayed. expected_cycle is the current delivery cycle. Same delivery/from-cycle returns its first receipt; stale cycle conflicts. Preserves Webhook-Id, so receiver deduplication may skip business work.",
         "requestBody": {
           "required": true,
           "content": {
@@ -831,7 +857,8 @@
               }
             }
           }
-        }
+        },
+        "x-required-scope": "full"
       }
     },
     "/v1/api-keys": {
@@ -856,7 +883,7 @@
             "$ref": "#/components/responses/Problem"
           }
         },
-        "description": "Returns newest-first retained data. Unknown or repeated query parameters are rejected. Follow next_cursor until null; preserve filters. Omit cursor on the first page. Metadata excludes complete credentials.",
+        "description": "Requires a full scope key. Returns newest-first retained data. Unknown or repeated query parameters are rejected. Follow next_cursor until null; preserve filters. Omit cursor on the first page. Metadata excludes complete credentials.",
         "parameters": [
           {
             "$ref": "#/components/parameters/limit"
@@ -887,7 +914,8 @@
               ]
             }
           }
-        ]
+        ],
+        "x-required-scope": "full"
       },
       "head": {
         "operationId": "listAPIKeysHead",
@@ -903,7 +931,7 @@
             "$ref": "#/components/responses/Problem"
           }
         },
-        "description": "Returns newest-first retained data. Unknown or repeated query parameters are rejected. Follow next_cursor until null; preserve filters. Omit cursor on the first page. Metadata excludes complete credentials.",
+        "description": "Requires a full scope key. Returns newest-first retained data. Unknown or repeated query parameters are rejected. Follow next_cursor until null; preserve filters. Omit cursor on the first page. Metadata excludes complete credentials.",
         "parameters": [
           {
             "$ref": "#/components/parameters/limit"
@@ -934,7 +962,8 @@
               ]
             }
           }
-        ]
+        ],
+        "x-required-scope": "full"
       },
       "post": {
         "operationId": "createAPIKey",
@@ -965,7 +994,7 @@
             "$ref": "#/components/responses/Problem"
           }
         },
-        "description": "Requires explicit human approval. Query parameters are rejected. dev/live labels grant the same project scope; neither is a sandbox or a restricted agent credential. Human setup should use the dashboard to obtain the initial key.",
+        "description": "Requires a full scope key. Requires explicit human approval. Query parameters are rejected. scope defaults to full when omitted; issue publish keys for application runtime. dev/live labels do not change access; neither is a sandbox. Human setup should use the dashboard to obtain the initial key.",
         "requestBody": {
           "required": true,
           "content": {
@@ -976,11 +1005,13 @@
               "example": {
                 "name": "Application integration",
                 "environment": "dev",
+                "scope": "publish",
                 "expires_at": null
               }
             }
           }
-        }
+        },
+        "x-required-scope": "full"
       }
     },
     "/v1/api-keys/{api_key_id}": {
@@ -1010,7 +1041,8 @@
             "$ref": "#/components/responses/Problem"
           }
         },
-        "description": "Query parameters are rejected. Does not return the complete credential."
+        "description": "Requires a full scope key. Query parameters are rejected. Does not return the complete credential.",
+        "x-required-scope": "full"
       },
       "head": {
         "operationId": "getAPIKeyHead",
@@ -1026,7 +1058,8 @@
             "$ref": "#/components/responses/Problem"
           }
         },
-        "description": "Query parameters are rejected. Does not return the complete credential."
+        "description": "Requires a full scope key. Query parameters are rejected. Does not return the complete credential.",
+        "x-required-scope": "full"
       },
       "delete": {
         "operationId": "revokeAPIKey",
@@ -1042,7 +1075,8 @@
             "$ref": "#/components/responses/Problem"
           }
         },
-        "description": "EMPTY BODY, no query parameters. Requires explicit human approval. Cannot revoke the last usable key without a replacement."
+        "description": "Requires a full scope key. EMPTY BODY, no query parameters. Requires explicit human approval. Cannot revoke the last usable full scope key without a full scope replacement.",
+        "x-required-scope": "full"
       }
     },
     "/v1/api-keys/{api_key_id}/rotate": {
@@ -1080,7 +1114,8 @@
             "$ref": "#/components/responses/Problem"
           }
         },
-        "description": "EMPTY BODY, no query parameters. Requires explicit human approval. Existing replacement/inactive key conflicts; never rotate automatically on an ambiguous response."
+        "description": "Requires a full scope key. EMPTY BODY, no query parameters. Requires explicit human approval. Existing replacement/inactive key conflicts; never rotate automatically on an ambiguous response. The replacement keeps the original scope, environment, name, and expiry.",
+        "x-required-scope": "full"
       }
     }
   },
@@ -1090,7 +1125,7 @@
         "type": "http",
         "scheme": "bearer",
         "bearerFormat": "ch_dev_ or ch_live_ project API key",
-        "description": "Read CASCADEHOOK_API_KEY from the local environment. Never print keys or headers. Scope is the project selected when the key was created."
+        "description": "Read CASCADEHOOK_API_KEY from the local environment. Never print keys or headers. Scope is the project selected when the key was created. The key's scope (full, publish, or read) limits which routes it can call."
       }
     },
     "parameters": {
@@ -1249,6 +1284,10 @@
           "version": {
             "type": "integer",
             "minimum": 0
+          },
+          "api_key_scope": {
+            "$ref": "#/components/schemas/APIKeyScope",
+            "description": "Scope of the calling API key. Omitted for dashboard sessions."
           }
         },
         "required": [
@@ -1716,6 +1755,15 @@
         ],
         "additionalProperties": false
       },
+      "APIKeyScope": {
+        "type": "string",
+        "enum": [
+          "full",
+          "publish",
+          "read"
+        ],
+        "description": "full: every route. publish: POST /v1/events and GET /v1/project-status. read: GET routes except /v1/api-keys. Immutable; rotation keeps it."
+      },
       "APIKey": {
         "type": "object",
         "properties": {
@@ -1739,6 +1787,9 @@
               "dev",
               "live"
             ]
+          },
+          "scope": {
+            "$ref": "#/components/schemas/APIKeyScope"
           },
           "status": {
             "type": "string",
@@ -1815,6 +1866,7 @@
           "name",
           "prefix",
           "environment",
+          "scope",
           "status",
           "created_at",
           "expires_at",
@@ -1843,6 +1895,10 @@
               "dev",
               "live"
             ]
+          },
+          "scope": {
+            "$ref": "#/components/schemas/APIKeyScope",
+            "description": "Optional; omitted means full. Use publish for application runtime credentials."
           },
           "expires_at": {
             "type": [

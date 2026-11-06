@@ -36,7 +36,8 @@ const contentSecurityPolicy = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https://img.clerk.com",
   "font-src 'self'",
-  ["connect-src 'self'", apiOrigin, clerkOrigin, isDev && "ws:"],
+  // Clerk development instances send SDK telemetry to clerk-telemetry.com.
+  ["connect-src 'self'", apiOrigin, clerkOrigin, "https://clerk-telemetry.com", isDev && "ws:"],
   `frame-src ${turnstileOrigin}`,
   "worker-src 'self' blob:",
   "object-src 'none'",
@@ -51,10 +52,8 @@ const securityHeaders = [
   // Covers subdomains too (api., clerk.); all of them are HTTPS-only.
   // Add `preload` only once we are sure no subdomain will ever need plain HTTP.
   { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains" },
-  // Report-only until the browser console shows no violations on the landing
-  // page, sign-in/sign-up, and dashboard; then rename to Content-Security-Policy.
-  { key: "Content-Security-Policy-Report-Only", value: contentSecurityPolicy },
-  // Enforced clickjacking guard while the CSP (and its frame-ancestors) is report-only.
+  { key: "Content-Security-Policy", value: contentSecurityPolicy },
+  // Legacy clickjacking guard for browsers that ignore frame-ancestors.
   { key: "X-Frame-Options", value: "DENY" },
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },

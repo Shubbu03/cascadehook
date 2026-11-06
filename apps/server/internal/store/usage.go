@@ -34,35 +34,36 @@ func recordUsage(ctx context.Context, tx pgx.Tx, projectID uuid.UUID, delta usag
 	if err != nil {
 		return fmt.Errorf("read usage admission limits: %w", err)
 	}
-	result, err := tx.Exec(
-		ctx,
-		`INSERT INTO organization_usage_months AS u
-		(organization_id, period, events, deliveries, payload_bytes, attempts, replays, succeeded, failed)
-		SELECT $1, $11::date, $2,$3,$4,$5,$6,$7,$8
-		WHERE $2::bigint <= $9 AND $3::bigint <= $10
-		ON CONFLICT (organization_id, period) DO UPDATE SET events = u.events + EXCLUDED.events,
-		deliveries = u.deliveries + EXCLUDED.deliveries, payload_bytes = u.payload_bytes + EXCLUDED.payload_bytes,
-		attempts = u.attempts + EXCLUDED.attempts, replays = u.replays + EXCLUDED.replays,
-		succeeded = u.succeeded + EXCLUDED.succeeded, failed = u.failed + EXCLUDED.failed
-		WHERE (EXCLUDED.events = 0 OR u.events + EXCLUDED.events <= $9)
-		AND (EXCLUDED.deliveries = 0 OR u.deliveries + EXCLUDED.deliveries <= $10)`,
-		organizationID,
-		delta.events,
-		delta.jobs,
-		delta.bytes,
-		delta.attempts,
-		delta.replays,
-		delta.succeeded,
-		delta.failed,
-		eventLimit,
-		jobLimit,
-		period,
-	)
-	if err != nil {
-		return fmt.Errorf("record organization usage: %w", err)
-	}
-	if result.RowsAffected() == 0 {
-		return &accounts.QuotaError{Resource: "monthly_events_or_deliveries"}
+	// Attempt outcomes only touch the project row. Organization attempt totals
+	// are summed from project rows at read time, so dispatch never contends on
+	// the shared organization row that publication uses for quota admission.
+	if delta.events != 0 || delta.jobs != 0 || delta.bytes != 0 || delta.replays != 0 {
+		result, err := tx.Exec(
+			ctx,
+			`INSERT INTO organization_usage_months AS u
+			(organization_id, period, events, deliveries, payload_bytes, replays)
+			SELECT $1, $8::date, $2,$3,$4,$5
+			WHERE $2::bigint <= $6 AND $3::bigint <= $7
+			ON CONFLICT (organization_id, period) DO UPDATE SET events = u.events + EXCLUDED.events,
+			deliveries = u.deliveries + EXCLUDED.deliveries, payload_bytes = u.payload_bytes + EXCLUDED.payload_bytes,
+			replays = u.replays + EXCLUDED.replays
+			WHERE (EXCLUDED.events = 0 OR u.events + EXCLUDED.events <= $6)
+			AND (EXCLUDED.deliveries = 0 OR u.deliveries + EXCLUDED.deliveries <= $7)`,
+			organizationID,
+			delta.events,
+			delta.jobs,
+			delta.bytes,
+			delta.replays,
+			eventLimit,
+			jobLimit,
+			period,
+		)
+		if err != nil {
+			return fmt.Errorf("record organization usage: %w", err)
+		}
+		if result.RowsAffected() == 0 {
+			return &accounts.QuotaError{Resource: "monthly_events_or_deliveries"}
+		}
 	}
 	_, err = tx.Exec(
 		ctx,

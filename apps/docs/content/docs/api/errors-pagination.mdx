@@ -11,7 +11,7 @@ Handle the code and HTTP status together rather than matching display text.
 | Status | Typical response |
 | --- | --- |
 | `401` | Check the configured credential |
-| `403` | Check project availability and permissions |
+| `403` | Check project availability, permissions, and the key's scope |
 | `404` / `410` | Refresh the resource's current state |
 | `409` | Resolve the documented state or idempotency conflict |
 | `422` | Correct the input described by the problem code |
