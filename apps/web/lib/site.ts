@@ -11,22 +11,32 @@ const socialImage = { url: "/opengraph-image", width: 1200, height: 630, alt: "C
 
 // Page titles are expanded by the root layout's template, but social cards don't
 // use that template, so they get the full title spelled out.
+// Served by app/md through middleware.ts.
+export function markdownPath(path: string) {
+  return path === "/" ? "/index.md" : path + ".md";
+}
+
 export function pageMetadata({
   path,
   title,
   description,
   absoluteTitle = false,
+  markdown = false,
 }: {
   path: string;
   title: string;
   description: string;
   absoluteTitle?: boolean;
+  markdown?: boolean;
 }): Metadata {
   const fullTitle = absoluteTitle ? title : `${title} · ${siteName}`;
   return {
     title: absoluteTitle ? { absolute: title } : title,
     description,
-    alternates: { canonical: path },
+    alternates: {
+      canonical: path,
+      ...(markdown && { types: { "text/markdown": markdownPath(path) } }),
+    },
     openGraph: { type: "website", siteName, url: path, title: fullTitle, description, images: socialImage },
     twitter: { card: "summary_large_image", title: fullTitle, description, images: socialImage },
   };

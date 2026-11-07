@@ -12,6 +12,7 @@ export const metadata: Metadata = pageMetadata({
   title: "Cascadehook — Webhooks, taken care of.",
   description,
   absoluteTitle: true,
+  markdown: true,
 });
 
 const organizationID = siteURL + "/#organization";

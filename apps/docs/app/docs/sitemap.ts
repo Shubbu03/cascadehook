@@ -7,6 +7,7 @@ import { source } from "@/lib/source";
 export default function sitemap(): MetadataRoute.Sitemap {
   return source.getPages().map((page) => ({
     url: siteURL + page.url,
+    lastModified: page.type === "docs" ? page.data.lastModified : undefined,
     priority: page.type === "openapi" ? 0.5 : 0.8,
   }));
 }

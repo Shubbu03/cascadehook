@@ -3,6 +3,11 @@ title: Deliveries, retries, and replay
 description: Follow a webhook from queueing through its attempts and final outcome.
 ---
 
+Each event creates one delivery per subscribed endpoint, and delivery is at
+least once. A failing delivery gets up to eight attempts within 72 hours, with
+jittered backoff from about 15 seconds to 18 hours. Every attempt is recorded,
+and a finished delivery can be replayed.
+
 ## Events and deliveries
 
 An event records what happened. A delivery tracks sending that event to one

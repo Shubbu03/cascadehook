@@ -1,13 +1,14 @@
-import { ArrowRightIcon, SealCheckIcon } from "@phosphor-icons/react/dist/ssr";
+import { ArrowRightIcon, SealCheckIcon, TableIcon } from "@phosphor-icons/react/dist/ssr";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { tools } from "@/features/tools/catalog";
+import { references, tools } from "@/features/tools/catalog";
 import { pageMetadata } from "@/lib/site";
 
 export const metadata: Metadata = pageMetadata({
   path: "/tools",
   title: "Free Webhook Tools",
   description: "Free tools for debugging webhooks: signature verifiers for Standard Webhooks, Stripe, GitHub, Shopify, and Slack that run entirely in your browser.",
+  markdown: true,
 });
 
 export default function Page() {
@@ -43,6 +44,27 @@ export default function Page() {
           </li>
         ))}
       </ul>
+      <section aria-labelledby="reference-heading" className="mt-12">
+        <h2 id="reference-heading" className="text-[13px] font-medium text-muted">Reference</h2>
+        <ul className="mt-3 grid grid-cols-3 gap-5 max-[68.75rem]:grid-cols-2 max-[53.125rem]:grid-cols-1">
+          {references.map((reference) => (
+            <li key={reference.href}>
+              <Link
+                href={reference.href}
+                className="group flex h-full items-start gap-4 rounded-[14px] border border-solid border-border p-5 transition-colors duration-150 hover:border-input-border hover:bg-surface-hover focus-visible:border-accent motion-reduce:transition-none"
+              >
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-[9px] bg-accent-subtle text-accent">
+                  <TableIcon size={20} aria-hidden="true" />
+                </span>
+                <span>
+                  <span className="block text-[16px] font-medium leading-[1.4]">{reference.title}</span>
+                  <span className="mt-1.5 block text-muted text-[13px] leading-[1.7]">{reference.description}</span>
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </section>
     </div>
   );
 }

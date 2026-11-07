@@ -4,6 +4,7 @@ import { getBreadcrumbItems } from "fumadocs-core/breadcrumb";
 import { DocsBody, DocsDescription, DocsPage, DocsTitle } from "fumadocs-ui/layouts/docs/page";
 import { OpenAPIPage } from "@/components/api-page";
 import { JsonLd } from "@/components/json-ld";
+import { markdownPath } from "@/lib/markdown";
 import { siteName, siteURL } from "@/lib/site";
 import { source } from "@/lib/source";
 import { getMDXComponents } from "@/mdx-components";
@@ -15,7 +16,7 @@ export default async function DocumentationPage({ params }: Props) {
   if (!page) notFound();
   return (
     <DocsPage toc={page.data.toc} full={page.type === "openapi" || page.data.full}>
-      <JsonLd data={structuredData(page.url, page.data.title, page.data.description)} />
+      <JsonLd data={structuredData(page.url, page.data.title, page.data.description, page.type === "docs" ? page.data.lastModified : undefined)} />
       <DocsTitle>{page.data.title}</DocsTitle>
       <DocsDescription>{page.data.description}</DocsDescription>
       <DocsBody>
@@ -42,7 +43,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title,
     description,
-    alternates: { canonical: page.url },
+    alternates: { canonical: page.url, types: { "text/markdown": markdownPath(page.url) } },
     openGraph: { type: "article", siteName, url: page.url, title: fullTitle, description, images: socialImage },
     twitter: { card: "summary_large_image", title: fullTitle, description, images: socialImage },
   };
@@ -57,7 +58,7 @@ const socialImage = {
   alt: "Cascadehook Docs — guides, receiver examples, and the API reference",
 };
 
-function structuredData(url: string, title: string | undefined, description: string | undefined) {
+function structuredData(url: string, title: string | undefined, description: string | undefined, lastModified: Date | undefined) {
   // Folders without an index page have no URL, and every breadcrumb entry needs one.
   const trail = getBreadcrumbItems(url, source.getPageTree(), { includePage: true })
     .filter((item): item is { name: string; url: string } => typeof item.name === "string" && !!item.url && item.url !== "/docs");
@@ -68,6 +69,7 @@ function structuredData(url: string, title: string | undefined, description: str
       headline: title,
       description,
       url: siteURL + url,
+      dateModified: lastModified?.toISOString(),
       inLanguage: "en",
       isPartOf: { "@type": "WebSite", name: siteName, url: siteURL },
       publisher: { "@type": "Organization", "@id": siteURL + "/#organization", name: siteName, url: siteURL },

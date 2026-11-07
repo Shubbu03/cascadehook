@@ -27,7 +27,7 @@ const prose = "max-w-185 [&_h3]:text-[15px] [&_h3]:font-medium [&_h3:not(:first-
 const textLink = "text-foreground underline underline-offset-[3px]";
 
 export function verifierMetadata(content: VerifierContent): Metadata {
-  return pageMetadata({ path: content.path, title: content.metaTitle, description: content.description });
+  return pageMetadata({ path: content.path, title: content.metaTitle, description: content.description, markdown: true });
 }
 
 export function VerifierPage({ content }: { content: VerifierContent }) {
@@ -103,7 +103,7 @@ export function VerifierPage({ content }: { content: VerifierContent }) {
       </p>
       {content.trademark && (
         <p className="mt-3 text-muted text-[12px] leading-[1.6]">
-          {content.trademark.name} is a trademark of {content.trademark.owner}. {siteName} isn&apos;t affiliated with or endorsed by {content.trademark.name}.
+          {content.trademark.name} is a trademark of {content.trademark.owner.replace(/\.$/, "")}. {siteName} isn&apos;t affiliated with or endorsed by {content.trademark.name}.
         </p>
       )}
     </div>
