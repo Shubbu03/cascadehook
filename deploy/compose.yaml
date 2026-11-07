@@ -7,7 +7,7 @@ x-logging: &logging
     max-file: "3"
 
 x-app: &app
-  image: cascadehook-server:local
+  image: ${CASCADEHOOK_SERVER_IMAGE:-cascadehook-server:local}
   platform: linux/amd64
   build:
     context: ../apps/server

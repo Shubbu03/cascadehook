@@ -28,6 +28,7 @@
     "build:go": "cd apps/server && go build ./...",
     "fmt:go": "cd apps/server && go fmt ./...",
     "vet:go": "cd apps/server && go vet ./...",
+    "vuln:go": "cd apps/server && go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./...",
     "check": "bun run lint:web && bun run typecheck:web && bun run lint:docs && bun run typecheck:docs && bun run vet:go && bun run build:go"
   },
   "devDependencies": {

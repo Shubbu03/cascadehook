@@ -22,6 +22,12 @@ received-events.ndjson
 !.env.*.example
 *.pem
 
+# Deployment recovery files
+cascadehook-backups/
+*.dump
+database.contents
+server-files.tar.gz
+
 # Go build output
 /apps/server/bin/
 
