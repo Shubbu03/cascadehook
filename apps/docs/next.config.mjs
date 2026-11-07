@@ -15,16 +15,17 @@ function originOf(value) {
 
 // The OpenAPI playground sends requests to the API from the browser.
 const apiOrigin = originOf(process.env.NEXT_PUBLIC_API_BASE_URL);
+const analyticsOrigin = "https://datafa.st";
 
 // Docs share cascadehook.com with the dashboard but run as a separate worker,
 // so they need their own copy of the dashboard's headers (minus Clerk).
 const contentSecurityPolicy = [
   "default-src 'self'",
-  ["script-src 'self' 'unsafe-inline'", isDev && "'unsafe-eval'"],
+  ["script-src 'self' 'unsafe-inline'", isDev && "'unsafe-eval'", analyticsOrigin],
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob:",
   "font-src 'self'",
-  ["connect-src 'self'", apiOrigin, isDev && "ws:"],
+  ["connect-src 'self'", apiOrigin, analyticsOrigin, isDev && "ws:"],
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",

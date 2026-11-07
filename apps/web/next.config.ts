@@ -27,17 +27,18 @@ const apiOrigin = originOf(process.env.NEXT_PUBLIC_API_BASE_URL);
 const clerkOrigin = clerkFrontendOrigin();
 // Clerk's bot protection renders a Cloudflare Turnstile challenge on sign-up.
 const turnstileOrigin = "https://challenges.cloudflare.com";
+const analyticsOrigin = "https://datafa.st";
 
 // No nonces: cacheComponents prerenders static shells, which cannot carry a
 // per-request nonce, so inline scripts need 'unsafe-inline'.
 const contentSecurityPolicy = [
   "default-src 'self'",
-  ["script-src 'self' 'unsafe-inline'", isDev && "'unsafe-eval'", clerkOrigin, turnstileOrigin],
+  ["script-src 'self' 'unsafe-inline'", isDev && "'unsafe-eval'", clerkOrigin, turnstileOrigin, analyticsOrigin],
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https://img.clerk.com",
   "font-src 'self'",
   // Clerk development instances send SDK telemetry to clerk-telemetry.com.
-  ["connect-src 'self'", apiOrigin, clerkOrigin, "https://clerk-telemetry.com", isDev && "ws:"],
+  ["connect-src 'self'", apiOrigin, clerkOrigin, "https://clerk-telemetry.com", analyticsOrigin, isDev && "ws:"],
   `frame-src ${turnstileOrigin}`,
   "worker-src 'self' blob:",
   "object-src 'none'",
