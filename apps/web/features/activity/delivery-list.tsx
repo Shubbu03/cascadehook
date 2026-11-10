@@ -19,7 +19,7 @@ import { useProject, projectHref } from "@/features/projects/project-workspace";
 import { useSessionUserId } from "@/features/workspace/session";
 import type { Page } from "@/features/workspace/types";
 import { apiRequest } from "@/lib/api";
-import { formatTime } from "@/lib/format";
+import { useFormatTime } from "@/lib/display-preferences";
 import {
   deliveryFilters,
   deliveryStates,
@@ -30,6 +30,7 @@ import {
 } from "./types";
 
 export function DeliveryList() {
+  const formatTime = useFormatTime();
   const { project } = useProject();
   const userId = useSessionUserId();
   const { getToken } = useAuth();

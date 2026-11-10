@@ -22,7 +22,7 @@ import type {
   Page,
 } from "@/features/workspace/types";
 import { apiRequest } from "@/lib/api";
-import { formatTime } from "@/lib/format";
+import { useFormatTime } from "@/lib/display-preferences";
 import { notify } from "@/lib/notify";
 import type { Membership } from "./types";
 
@@ -31,6 +31,7 @@ type MemberAction =
   | { member: Membership; remove: true; };
 
 export function Members({ organization }: { organization: Organization; }) {
+  const formatTime = useFormatTime();
   const userId = useSessionUserId();
   const { getToken, sessionId } = useAuth();
   const clerk = useClerk();
@@ -83,7 +84,7 @@ export function Members({ organization }: { organization: Organization; }) {
   const items = members.data?.pages.flatMap((page) => page.data) ?? [];
 
   return (
-    <section data-ui="settings-section" className="mt-9 pt-7 border-t [border-top-style:solid] border-t-border [&_>_h3]:text-[19px] [&_>_h3]:mb-4 [&_>_h2]:mb-4 [&_>_h2]:text-[19px] in-data-[ui~='dashboard-main']:mt-7.5 in-data-[ui~='dashboard-main']:pt-6 [[data-ui~='dashboard-main']_&_>_h3]:text-[17px]">
+    <section data-ui="settings-section" className="mb-8">
       <div className="flex items-start justify-between mb-5.5 gap-5 [&_h2]:text-[23px] [&_h2]:tracking-[-0.03em] [&_h2]:wrap-anywhere [&_p]:text-muted [&_p]:text-[13px] [&_p]:mt-2 [[data-ui~='dashboard-main']_&_h2]:text-[17px] max-[37.5rem]:flex-wrap max-[37.5rem]:gap-4">
         <h2>Members</h2>
         <RefreshButton pending={members.isFetching} refresh={members.refetch} />

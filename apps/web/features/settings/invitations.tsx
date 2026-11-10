@@ -17,7 +17,7 @@ import { useSessionUserId } from "@/features/workspace/session";
 import { TableSkeleton } from "@/features/workspace/skeletons";
 import type { Organization, Page } from "@/features/workspace/types";
 import { apiRequest } from "@/lib/api";
-import { formatTime } from "@/lib/format";
+import { useFormatTime } from "@/lib/display-preferences";
 import { notify } from "@/lib/notify";
 import { invitationStatus, type Invitation, type InvitationReceipt } from "./types";
 
@@ -34,6 +34,7 @@ const emailLabels: Record<Invitation["email_status"], string> = {
 };
 
 export function InvitationManagement({ organization }: { organization: Organization; }) {
+  const formatTime = useFormatTime();
   const userId = useSessionUserId();
   const { getToken } = useAuth();
   const client = useQueryClient();
@@ -87,7 +88,7 @@ export function InvitationManagement({ organization }: { organization: Organizat
   }
 
   return (
-    <section data-ui="settings-section" className="mt-9 pt-7 border-t [border-top-style:solid] border-t-border [&_>_h3]:text-[19px] [&_>_h3]:mb-4 [&_>_h2]:mb-4 [&_>_h2]:text-[19px] in-data-[ui~='dashboard-main']:mt-7.5 in-data-[ui~='dashboard-main']:pt-6 [[data-ui~='dashboard-main']_&_>_h3]:text-[17px]">
+    <section data-ui="settings-section" className="mb-8">
       <div className="flex items-start justify-between mb-5.5 gap-5 [&_h2]:text-[23px] [&_h2]:tracking-[-0.03em] [&_h2]:wrap-anywhere [&_p]:text-muted [&_p]:text-[13px] [&_p]:mt-2 [[data-ui~='dashboard-main']_&_h2]:text-[17px] max-[37.5rem]:flex-wrap max-[37.5rem]:gap-4">
         <div><h2>Invitations</h2><p className="text-[12px] text-muted leading-[1.7] [[data-ui~='settings-section']_>_&]:mt-3 [[data-ui~='settings-section']_>_&]:mb-5 in-data-[ui~='invitation-dialog']:text-[12px] in-data-[ui~='invitation-dialog']:leading-[1.6] in-data-[ui~='invitation-dialog']:m-0">Invite teammates by email. New members can create their account from the invitation.</p></div>
         <div className="flex items-center flex-wrap shrink-0 gap-2.5 max-[37.5rem]:gap-2">

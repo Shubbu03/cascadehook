@@ -27,7 +27,8 @@ const notificationJoins = ` FROM notification_recipients r
 	JOIN organizations o ON o.id = m.organization_id
 	LEFT JOIN projects p ON p.id = n.project_id AND p.organization_id = n.organization_id `
 
-const notificationVisibility = `r.user_id = $1 AND r.organization_id = $2
+// A requested test email is a mail job, not an update; it never enters the inbox.
+const notificationVisibility = `r.user_id = $1 AND r.organization_id = $2 AND n.type <> 'email_test'
 	AND u.deletion_requested_at IS NULL AND o.deletion_requested_at IS NULL
 	AND (n.project_id IS NULL OR (p.id IS NOT NULL AND p.deletion_requested_at IS NULL))
 	AND (r.required_role = 'member' OR m.role = 'owner' OR (r.required_role = 'manager' AND m.role = 'admin'))`
@@ -82,8 +83,12 @@ func (s *Store) NotificationUnreadCount(ctx context.Context, userID, organizatio
 }
 
 func (s *Store) UpdateNotification(ctx context.Context, userID, organizationID, id uuid.UUID, update notifications.Update) (notifications.Notification, error) {
-	if update.Read == nil && update.Archived == nil {
-		return notifications.Notification{}, fmt.Errorf("notification update is empty")
+	if !update.Valid() {
+		return notifications.Notification{}, fmt.Errorf("invalid notification update")
+	}
+	completed := update.Read
+	if completed == nil {
+		completed = update.Archived
 	}
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
@@ -96,11 +101,11 @@ func (s *Store) UpdateNotification(ctx context.Context, userID, organizationID, 
 	// Source membership changes take the exclusive organization lock. Keep the
 	// access check and the personal state mutation in the same transaction.
 	result, err := tx.Exec(ctx, `UPDATE notification_recipients recipient SET
-		read_at = CASE WHEN $4::boolean IS NULL THEN recipient.read_at WHEN $4 THEN coalesce(recipient.read_at,clock_timestamp()) ELSE NULL END,
-		archived_at = CASE WHEN $5::boolean IS NULL THEN recipient.archived_at WHEN $5 THEN coalesce(recipient.archived_at,clock_timestamp()) ELSE NULL END
+		read_at = CASE WHEN $4 THEN coalesce(recipient.read_at,clock_timestamp()) ELSE NULL END,
+		archived_at = CASE WHEN $4 THEN coalesce(recipient.archived_at,clock_timestamp()) ELSE NULL END
 		WHERE recipient.user_id = $1 AND recipient.organization_id = $2 AND recipient.notification_id = $3
 		AND EXISTS (SELECT 1`+notificationJoins+` WHERE `+notificationVisibility+` AND n.id = $3)`,
-		userID, organizationID, id, update.Read, update.Archived)
+		userID, organizationID, id, completed)
 	if err != nil {
 		return notifications.Notification{}, fmt.Errorf("update notification state: %w", err)
 	}
@@ -139,7 +144,7 @@ func (s *Store) ReadAllNotifications(ctx context.Context, userID, organizationID
 	query = filterNotifications(query, &args, filters)
 	// One statement snapshot: uncommitted/new arrivals are not accidentally read.
 	result, err := tx.Exec(ctx, `WITH visible AS (`+query+`)
-		UPDATE notification_recipients r SET read_at = clock_timestamp()
+		UPDATE notification_recipients r SET read_at = clock_timestamp(),archived_at = clock_timestamp()
 		WHERE r.user_id = $1 AND r.organization_id = $2 AND r.read_at IS NULL
 		AND r.notification_id IN (SELECT id FROM visible)`, args...)
 	if err != nil {

@@ -18,7 +18,6 @@ export function NotificationBell({ organization }: { organization: Organization;
   const client = useQueryClient();
   const count = useQuery(notificationCountQuery(userId, organization.id, getToken));
   const [open, setOpen] = useState(false);
-  const [state, setState] = useState<"all" | "unread">("all");
   const id = useId();
   const panel = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
@@ -55,15 +54,11 @@ export function NotificationBell({ organization }: { organization: Organization;
           <div><h2 id={id + "-heading"}>Notifications</h2><p id={id + "-organization"}>{organization.name}</p></div>
           <button type="button" className="inline-flex items-center justify-center shrink-0 rounded-md bg-transparent text-muted p-0 size-8.5 border-0 border-none border-current [&:hover]:bg-surface-hover [&:hover]:text-foreground pointer-coarse:size-11" aria-label="Close notifications" onClick={close}><XIcon size={18} aria-hidden="true" /></button>
         </header>
-        <div className={"flex items-center shrink-0 w-fit rounded-[7px] bg-background mt-0 mb-2.5 gap-1 p-0.75 mx-4.5 border border-solid border-border [&_button]:min-h-7.5 [&_button]:rounded-sm [&_button]:bg-transparent [&_button]:text-muted [&_button]:text-[12px] [&_button]:font-medium [&_button]:whitespace-nowrap [&_button]:py-1 [&_button]:px-3 [&_button]:border-0 [&_button]:border-none [&_button]:border-current [&_button:hover]:text-foreground [&_button[aria-pressed=\"true\"]]:bg-surface-hover [&_button[aria-pressed=\"true\"]]:text-foreground pointer-coarse:[&_button]:min-h-10"} role="group" aria-label="Recent notification filter">
-          <button type="button" aria-pressed={state === "all"} onClick={() => setState("all")}>All</button>
-          <button type="button" aria-pressed={state === "unread"} onClick={() => setState("unread")}>Unread</button>
-        </div>
         {open && <div className="min-h-0 overflow-y-auto overscroll-contain">
-          <NotificationFeed key={state} organizationId={organization.id} filters={{ state }} compact onNavigate={close} />
+          <NotificationFeed organizationId={organization.id} filters={{ state: "unread" }} compact onNavigate={close} />
         </div>}
         <Link className="flex items-center justify-between shrink-0 border-t [border-top-style:solid] border-t-border text-accent text-[13px] font-medium gap-3 py-3.25 px-4.5 [&:hover]:bg-surface-hover" href={notificationInboxHref(organization.id)} onNavigate={close}>
-          View all notifications<ArrowRightIcon size={16} aria-hidden="true" />
+          Manage notifications<ArrowRightIcon size={16} aria-hidden="true" />
         </Link>
       </div>
     </>

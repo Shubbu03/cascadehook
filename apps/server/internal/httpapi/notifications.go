@@ -105,6 +105,10 @@ func (api *api) notificationResource(w http.ResponseWriter, r *http.Request, use
 	if body.Archived.Set {
 		update.Archived = &body.Archived.Value
 	}
+	if !update.Valid() {
+		writeProblem(w, r, http.StatusBadRequest, "invalid_notification_update")
+		return
+	}
 	item, err := api.db.UpdateNotification(r.Context(), user.ID, organizationID, id, update)
 	if err != nil {
 		api.notificationProblem(w, r, err)

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/google/uuid"
@@ -172,17 +173,27 @@ func (s *Store) UpdateEndpoint(ctx context.Context, actor auth.Principal, id uui
 		}
 		endpoint.Enabled = *input.Enabled
 	}
-	if input.EventTypes != nil {
+	// Read after taking the endpoint lock so a concurrent subscription
+	// update that just committed cannot leave the response on an old snapshot.
+	if err := tx.QueryRow(ctx, `SELECT ARRAY(SELECT event_type FROM endpoint_subscriptions
+		WHERE endpoint_id = $1 ORDER BY event_type)`, id).Scan(&endpoint.EventTypes); err != nil {
+		return endpoints.Endpoint{}, fmt.Errorf("read endpoint subscriptions: %w", err)
+	}
+	// Both lists are sorted. Re-saving the same subscriptions is not a change.
+	if input.EventTypes != nil && !slices.Equal(endpoint.EventTypes, *input.EventTypes) {
 		if err := replaceSubscriptions(ctx, tx, id, *input.EventTypes); err != nil {
 			return endpoints.Endpoint{}, err
 		}
 		endpoint.EventTypes = *input.EventTypes
-	} else {
-		// Read after taking the endpoint lock so a concurrent subscription
-		// update that just committed cannot leave the response on an old snapshot.
-		if err := tx.QueryRow(ctx, `SELECT ARRAY(SELECT event_type FROM endpoint_subscriptions
-			WHERE endpoint_id = $1 ORDER BY event_type)`, id).Scan(&endpoint.EventTypes); err != nil {
-			return endpoints.Endpoint{}, fmt.Errorf("read endpoint subscriptions: %w", err)
+		auditID, err := uuid.NewV7()
+		if err != nil {
+			return endpoints.Endpoint{}, fmt.Errorf("generate audit entry ID: %w", err)
+		}
+		_, err = tx.Exec(ctx, `INSERT INTO audit_entries(id,organization_id,project_id,actor_user_id,actor_api_key_id,action,target_type,target_id,changed_fields)
+			SELECT $5,organization_id,id,$2,$3,'endpoint.updated','endpoint',$4,ARRAY['event_types'] FROM projects WHERE id=$1`,
+			actor.ProjectID, nullableUUID(actor.UserID), nullableUUID(actor.APIKeyID), id, auditID)
+		if err != nil {
+			return endpoints.Endpoint{}, fmt.Errorf("record endpoint subscription audit: %w", err)
 		}
 	}
 	err = tx.QueryRow(ctx, `UPDATE endpoints SET url = $3, enabled = $4, verified_at = $5, updated_at = now(),

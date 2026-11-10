@@ -11,12 +11,13 @@ import (
 
 	"cascadehook/internal/accounts"
 	"cascadehook/internal/auth"
+	"cascadehook/internal/notifications"
 	"cascadehook/internal/pagination"
 )
 
 func (s *Store) GetProject(ctx context.Context, userID, id uuid.UUID) (accounts.Project, error) {
 	var project accounts.Project
-	err := scanProject(s.pool.QueryRow(ctx, `SELECT p.id, p.organization_id, p.name, m.role, p.created_at, p.updated_at
+	err := scanProject(s.pool.QueryRow(ctx, `SELECT p.id, p.organization_id, p.name, m.role, p.created_at, p.updated_at, p.description, p.environment
 		FROM projects p JOIN memberships m ON m.organization_id = p.organization_id
 		JOIN organizations o ON o.id = p.organization_id JOIN users u ON u.id = m.user_id
 		WHERE p.id = $1 AND m.user_id = $2 AND p.deletion_requested_at IS NULL
@@ -41,7 +42,7 @@ func (s *Store) ListProjects(
 	if _, err := s.GetOrganization(ctx, userID, organizationID); err != nil {
 		return nil, err
 	}
-	query := `SELECT p.id, p.organization_id, p.name, m.role, p.created_at, p.updated_at
+	query := `SELECT p.id, p.organization_id, p.name, m.role, p.created_at, p.updated_at, p.description, p.environment
 		FROM projects p JOIN memberships m ON m.organization_id = p.organization_id
 		JOIN organizations o ON o.id = p.organization_id JOIN users u ON u.id = m.user_id
 		WHERE p.organization_id = $1 AND m.user_id = $2 AND p.deletion_requested_at IS NULL
@@ -119,6 +120,14 @@ func (s *Store) CreateProject(
 	if err := completeOnboarding(ctx, tx, userID); err != nil {
 		return accounts.Project{}, err
 	}
+	if _, err := emitNotification(ctx, tx, notificationEvent{
+		OrganizationID: params.OrganizationID, ProjectID: id, ActorID: userID,
+		Type: "project_created", Category: notifications.Project, Severity: "info", Audience: "manager",
+		Title: "A project was created", Body: fmt.Sprintf("The project “%s” was created in your organization.", name),
+		ResourceType: "project", ResourceID: id, SourceKey: "project:" + id.String() + ":created",
+	}); err != nil {
+		return accounts.Project{}, err
+	}
 	if err := tx.Commit(ctx); err != nil {
 		return accounts.Project{}, fmt.Errorf("commit project creation: %w", err)
 	}
@@ -140,18 +149,37 @@ func (s *Store) RenameProject(ctx context.Context, userID, id uuid.UUID, name st
 		return accounts.Project{}, err
 	}
 	project := accounts.Project{Role: role}
-	err = tx.QueryRow(ctx, `UPDATE projects SET name = $2, updated_at = clock_timestamp()
-		WHERE id = $1 AND deletion_requested_at IS NULL
-		RETURNING id, organization_id, name, created_at, updated_at`, id, name,
-	).Scan(&project.ID, &project.OrganizationID, &project.Name, &project.CreatedAt, &project.UpdatedAt)
+	// Read under the same project lock as the rename. Retrying an accepted
+	// request or re-saving the current name must not emit another notification.
+	err = tx.QueryRow(ctx, `SELECT id, organization_id, name, created_at, updated_at, description, environment
+		FROM projects WHERE id = $1 AND deletion_requested_at IS NULL FOR UPDATE`, id,
+	).Scan(&project.ID, &project.OrganizationID, &project.Name, &project.CreatedAt, &project.UpdatedAt, &project.Description, &project.Environment)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return accounts.Project{}, accounts.ErrNotFound
 	}
+	if err != nil {
+		return accounts.Project{}, fmt.Errorf("lock project for rename: %w", err)
+	}
+	if project.Name == name {
+		return project, nil
+	}
+	previousName := project.Name
+	err = tx.QueryRow(ctx, `UPDATE projects SET name = $2, updated_at = clock_timestamp()
+		WHERE id = $1 RETURNING updated_at`, id, name).Scan(&project.UpdatedAt)
 	if err != nil {
 		if projectNameConflict(err) {
 			return accounts.Project{}, accounts.ErrProjectNameTaken
 		}
 		return accounts.Project{}, fmt.Errorf("rename project: %w", err)
+	}
+	project.Name = name
+	if _, err := emitNotification(ctx, tx, notificationEvent{
+		OrganizationID: project.OrganizationID, ProjectID: id, ActorID: userID,
+		Type: "project_renamed", Category: notifications.Project, Severity: "info", Audience: "manager",
+		Title: "A project was renamed", Body: fmt.Sprintf("The project “%s” is now named “%s”.", previousName, name),
+		ResourceType: "project", ResourceID: id,
+	}); err != nil {
+		return accounts.Project{}, err
 	}
 	if err := tx.Commit(ctx); err != nil {
 		return accounts.Project{}, fmt.Errorf("commit project update: %w", err)
@@ -171,6 +199,9 @@ func projectNameConflict(err error) bool {
 // or child locks. Account deletion and membership changes take the exclusive
 // counterparts, preventing a removed/deleted actor from passing the recheck.
 func lockHumanProjectAccess(ctx context.Context, tx pgx.Tx, actor auth.Principal) (accounts.Role, error) {
+	if err := setAuditActor(ctx, tx, actor); err != nil {
+		return "", err
+	}
 	if !actor.Valid() || actor.UserID == uuid.Nil {
 		return "", accounts.ErrForbidden
 	}
@@ -215,5 +246,7 @@ func scanProject(row pgx.Row, project *accounts.Project) error {
 		&project.Role,
 		&project.CreatedAt,
 		&project.UpdatedAt,
+		&project.Description,
+		&project.Environment,
 	)
 }

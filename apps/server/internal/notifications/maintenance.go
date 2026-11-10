@@ -6,13 +6,14 @@ import (
 	"time"
 )
 
-type ExpirySource interface {
+type MaintenanceSource interface {
 	GenerateKeyExpiryNotifications(context.Context, int) (int, error)
+	GenerateDeliveryRetryWarnings(context.Context, int) (int, error)
 }
 
 // RunMaintenance is owned by the worker process and stops with its service.
 // Failures are retried on the next tick; they never block delivery dispatch.
-func RunMaintenance(ctx context.Context, source ExpirySource, logger *slog.Logger) {
+func RunMaintenance(ctx context.Context, source MaintenanceSource, logger *slog.Logger) {
 	ticker := time.NewTicker(time.Minute)
 	defer ticker.Stop()
 	for ctx.Err() == nil {
@@ -23,6 +24,14 @@ func RunMaintenance(ctx context.Context, source ExpirySource, logger *slog.Logge
 			logger.Warn("notification expiry maintenance failed", "error", err)
 		} else if created > 0 {
 			logger.Info("key expiry notifications created", "count", created)
+		}
+		opCtx, cancel = context.WithTimeout(ctx, 10*time.Second)
+		created, err = source.GenerateDeliveryRetryWarnings(opCtx, 100)
+		cancel()
+		if err != nil && ctx.Err() == nil {
+			logger.Warn("delivery retry warning maintenance failed", "error", err)
+		} else if created > 0 {
+			logger.Info("delivery retry warnings created", "count", created)
 		}
 		select {
 		case <-ctx.Done():

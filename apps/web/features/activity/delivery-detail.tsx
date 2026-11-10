@@ -37,7 +37,7 @@ import { useProject, projectHref } from "@/features/projects/project-workspace";
 import { useSessionUserId } from "@/features/workspace/session";
 import type { Page } from "@/features/workspace/types";
 import { apiRequest } from "@/lib/api";
-import { formatTime } from "@/lib/format";
+import { useFormatTime } from "@/lib/display-preferences";
 import { notify } from "@/lib/notify";
 import { DeliveryAttempts } from "./delivery-attempts";
 import { DeliveryContext } from "./delivery-context";
@@ -73,6 +73,7 @@ const resultCopy: Record<Delivery["state"], { title: string; description: string
 };
 
 export function DeliveryDetail({ deliveryId }: { deliveryId: string; }) {
+  const formatTime = useFormatTime();
   const { project, canManage, suspended, availabilityKnown } = useProject();
   const userId = useSessionUserId();
   const { getToken } = useAuth();

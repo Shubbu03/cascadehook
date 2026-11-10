@@ -18,11 +18,12 @@ import { useProject, projectHref } from "@/features/projects/project-workspace";
 import { useSessionUserId } from "@/features/workspace/session";
 import type { Page } from "@/features/workspace/types";
 import { apiRequest } from "@/lib/api";
-import { formatTime } from "@/lib/format";
+import { useFormatTime } from "@/lib/display-preferences";
 import { projectPath, type EventSummary } from "./types";
 import { PublishEventDialog } from "./publish-event-dialog";
 
 export function EventList() {
+  const formatTime = useFormatTime();
   const { project, canManage, availabilityKnown, suspended } = useProject();
   const userId = useSessionUserId();
   const { getToken } = useAuth();

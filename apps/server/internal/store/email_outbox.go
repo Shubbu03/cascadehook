@@ -50,7 +50,17 @@ func (s *Store) ClaimEmail(ctx context.Context, dailyLimit int) (*mailoutbox.Job
 		&job.ExpiresAt, &job.Attempts, &job.FirstAttemptAt, &job.Payload, &job.ClerkInvitationID,
 	)
 	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, nil
+		// Alerts never spend the last fifth of the shared daily budget, so a
+		// burst of them cannot block invitation emails until the next UTC day.
+		if used >= dailyLimit-dailyLimit/5 {
+			return nil, nil
+		}
+		notificationJob, notificationErr := claimNotificationEmail(ctx, tx)
+		if notificationErr != nil || notificationJob == nil {
+			return nil, notificationErr
+		}
+		job = *notificationJob
+		err = nil
 	}
 	if err != nil {
 		return nil, fmt.Errorf("claim email: %w", err)
@@ -75,6 +85,9 @@ func (s *Store) ClaimEmail(ctx context.Context, dailyLimit int) (*mailoutbox.Job
 }
 
 func (s *Store) EmailActive(ctx context.Context, job mailoutbox.Job) (bool, error) {
+	if job.NotificationID != uuid.Nil {
+		return s.notificationEmailActive(ctx, job)
+	}
 	var active bool
 	err := s.pool.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM email_outbox e
 		JOIN organization_invitations i ON i.id=e.invitation_id JOIN organizations o ON o.id=i.organization_id
@@ -180,6 +193,14 @@ func emailFailed(state string) bool {
 }
 
 func notifyEmailFailure(ctx context.Context, tx pgx.Tx, jobID, orgID uuid.UUID) error {
+	// Only invitation emails have an owner who can act on a failed send.
+	var invitation bool
+	if err := tx.QueryRow(ctx, `SELECT invitation_id IS NOT NULL FROM email_outbox WHERE id=$1`, jobID).Scan(&invitation); err != nil {
+		return fmt.Errorf("read failed email source: %w", err)
+	}
+	if !invitation {
+		return nil
+	}
 	_, err := emitNotification(ctx, tx, notificationEvent{
 		OrganizationID: orgID, Type: "invitation_email_failed", Category: "team", Severity: "warning", Audience: "owner",
 		Title: "An invitation email could not be delivered", Body: "Review pending invitations and resend the email or correct the recipient address.",
@@ -217,7 +238,15 @@ func (s *Store) FinishEmailRevocation(ctx context.Context, id uuid.UUID) error {
 }
 
 func (s *Store) CleanEmailOutbox(ctx context.Context) error {
-	_, err := s.pool.Exec(ctx, `UPDATE email_outbox e SET state=CASE WHEN e.state IN ('queued','sending')
+	_, err := s.pool.Exec(ctx, `UPDATE email_outbox e SET state='cancelled',payload_ciphertext=NULL,
+		lease_id=NULL,leased_until=NULL,updated_at=clock_timestamp()
+		WHERE e.id IN (SELECT x.id FROM email_outbox x WHERE x.notification_id IS NOT NULL
+		AND x.state IN ('queued','sending') AND NOT EXISTS(SELECT 1`+notificationEmailJoins+`
+		WHERE e.id=x.id AND `+notificationEmailEligible+`) ORDER BY x.id LIMIT 500)`)
+	if err != nil {
+		return fmt.Errorf("cancel ineligible notification emails: %w", err)
+	}
+	_, err = s.pool.Exec(ctx, `UPDATE email_outbox e SET state=CASE WHEN e.state IN ('queued','sending')
 		THEN 'cancelled' ELSE e.state END,payload_ciphertext=NULL,updated_at=clock_timestamp()
 		WHERE e.id IN (SELECT x.id FROM email_outbox x JOIN organization_invitations i ON i.id=x.invitation_id
 		JOIN organizations o ON o.id=i.organization_id WHERE (x.state IN ('queued','sending') OR x.payload_ciphertext IS NOT NULL)

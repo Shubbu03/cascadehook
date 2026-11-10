@@ -90,6 +90,13 @@ type Update struct {
 	Archived *bool
 }
 
+func (update Update) Valid() bool {
+	if update.Read == nil && update.Archived == nil {
+		return false
+	}
+	return update.Read == nil || update.Archived == nil || *update.Read == *update.Archived
+}
+
 // Cursor binds pagination to the organization and the exact list filters.
 type Cursor struct {
 	pagination.Cursor

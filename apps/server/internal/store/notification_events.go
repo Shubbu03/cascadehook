@@ -72,5 +72,39 @@ func emitNotification(ctx context.Context, tx pgx.Tx, event notificationEvent) (
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("create notification recipients: %w", err)
 	}
+	// Opt-in is checked at creation and again before sending. Existing inbox
+	// history is never mailed when a user first enables email notifications.
+	rows, err := tx.Query(ctx, `SELECT r.user_id
+		FROM notification_recipients r JOIN notification_preferences prefs ON prefs.user_id=r.user_id
+		LEFT JOIN organization_notification_preferences op ON op.user_id=r.user_id AND op.organization_id=r.organization_id
+		LEFT JOIN project_notification_preferences pp ON pp.user_id=r.user_id AND pp.project_id=$3
+		WHERE r.notification_id=$1 AND prefs.email_enabled AND $2=ANY(prefs.email_categories)
+		AND coalesce(pp.email_enabled,true) AND coalesce(op.email_enabled,true)
+		AND $4=ANY(prefs.email_severities) AND $5::text `+notificationEmailTypeFilter,
+		id, event.Category, nullableUUID(event.ProjectID), event.Severity, event.Type)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("select notification email recipients: %w", err)
+	}
+	recipients, err := pgx.CollectRows(rows, pgx.RowTo[uuid.UUID])
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("read notification email recipients: %w", err)
+	}
+	if len(recipients) == 0 {
+		return id, nil
+	}
+	jobIDs := make([]uuid.UUID, len(recipients))
+	for i := range jobIDs {
+		if jobIDs[i], err = uuid.NewV7(); err != nil {
+			return uuid.Nil, fmt.Errorf("generate notification email ID: %w", err)
+		}
+	}
+	_, err = tx.Exec(ctx, `INSERT INTO email_outbox
+		(id,organization_id,created_by_user_id,notification_id,recipient_user_id)
+		SELECT jobs.id,$1,jobs.user_id,$2,jobs.user_id
+		FROM unnest($3::uuid[],$4::uuid[]) AS jobs(id,user_id)`,
+		event.OrganizationID, id, jobIDs, recipients)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("queue notification emails: %w", err)
+	}
 	return id, nil
 }

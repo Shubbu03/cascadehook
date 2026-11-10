@@ -244,7 +244,7 @@ function ProjectSwitcher({ selection }: { selection: Selection; }) {
             <SwitcherItem
               key={item.id}
               href={"/dashboard/projects/" + encodeURIComponent(item.id)}
-              name={item.name}
+              name={item.environment ? `${item.name} · ${item.environment}` : item.name}
               selected={item.id === projectId}
               icon={
                 <span className="grid place-items-center shrink-0 rounded-[7px] bg-surface-hover text-muted text-[12px] font-medium size-7 in-data-[ui~='dashboard-topbar']:rounded-[5px] in-data-[ui~='dashboard-topbar']:text-[11px] in-data-[ui~='dashboard-topbar']:size-6">

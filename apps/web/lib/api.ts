@@ -147,6 +147,12 @@ function problemMessage(status: number, code?: string) {
       "This notification is no longer available. Refresh your inbox to see the latest updates.",
     invalid_notification_update:
       "This notification couldn't be updated. Refresh your inbox and try again.",
+    invalid_project_details: "Use a description of up to 500 characters and a valid environment.",
+    invalid_delivery_policy: "Use 1–8 attempts, a timeout of 1–30 seconds, and increasing retry delays of 1–64,800 seconds.",
+    email_not_configured: "Email delivery isn’t configured for this installation.",
+    email_test_rate_limited: "Wait one minute before requesting another test email.",
+    invalid_notification_preferences:
+      "These notification preferences couldn't be saved. Refresh the page and try again.",
     empty_update: "Change at least one setting before saving.",
     invalid_json: "The request couldn't be read. Refresh the page and try again.",
     unsupported_media_type:

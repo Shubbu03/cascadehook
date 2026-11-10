@@ -1,21 +1,14 @@
 "use client";
 
-import { Input } from "@/components/input";
-
-import { Button } from "@/components/button";
-
 import { useAuth } from "@clerk/nextjs";
 import { useMutation } from "@tanstack/react-query";
 import { useId, useState, type SubmitEvent } from "react";
+import { Button } from "@/components/button";
+import { Input } from "@/components/input";
 import { ApiError, apiRequest } from "@/lib/api";
 import { notify } from "@/lib/notify";
 
-export function RenameForm({
-  kind,
-  name,
-  path,
-  saved,
-}: {
+export function RenameForm({ kind, name, path, saved }: {
   kind: string;
   name: string;
   path: string;
@@ -23,66 +16,43 @@ export function RenameForm({
 }) {
   const { getToken } = useAuth();
   const id = useId();
+  const [value, setValue] = useState(name);
   const [validation, setValidation] = useState("");
   const rename = useMutation({
-    mutationFn: (name: string) =>
-      apiRequest<unknown>(path, getToken, { method: "PATCH", data: { name } }),
-    onSuccess: () => notify("Name updated.", "success"),
-    onSettled: saved,
+    mutationFn: (name: string) => apiRequest<unknown>(path, getToken, { method: "PATCH", data: { name } }),
+    onSuccess: async () => {
+      notify("Name updated.", "success");
+      await saved();
+    },
   });
   function submit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
-    const value = String(
-      new FormData(event.currentTarget).get("name") ?? "",
-    ).trim();
-    if (!value || [...value].length > 100 || /\p{Cc}/u.test(value)) {
-      setValidation(
-        "Enter a name with 1–100 characters and no control characters.",
-      );
+    const next = value.trim();
+    if (!next || [...next].length > 100 || /\p{Cc}/u.test(next)) {
+      setValidation("Enter a name with 1–100 characters and no control characters.");
       return;
     }
     setValidation("");
-    rename.mutate(value);
+    if (next !== name && !rename.isPending) rename.mutate(next);
   }
   const message = validation || rename.error?.message;
-  const invalidName =
-    Boolean(validation) ||
-    (rename.error instanceof ApiError &&
-      (rename.error.code === "invalid_name" ||
-        rename.error.code === "project_name_exists"));
-
+  const invalidName = Boolean(validation) || (rename.error instanceof ApiError &&
+    (rename.error.code === "invalid_name" || rename.error.code === "project_name_exists"));
   return (
-    <form
-      data-ui="settings-form" className="max-w-125 rounded-[9px] bg-surface p-5.5 my-6 border border-solid border-border in-data-[ui~='dashboard-main']:max-w-140 in-data-[ui~='dashboard-main']:rounded-none in-data-[ui~='dashboard-main']:bg-transparent in-data-[ui~='dashboard-main']:p-0 in-data-[ui~='dashboard-main']:my-6 in-data-[ui~='dashboard-main']:border-0 in-data-[ui~='dashboard-main']:border-none in-data-[ui~='dashboard-main']:border-current"
-      onSubmit={submit}
-      aria-busy={rename.isPending}
-    >
-      <div data-ui="rename-row" className="flex items-end gap-3">
-        <label data-ui="form-field" className="grid gap-2 [&_>_span]:text-[13px] [&_>_span]:font-medium [&_>_label]:text-[13px] [&_>_label]:font-medium in-data-[ui~='danger-zone']:max-w-115 flex-1 min-w-0 mb-0">
-          <span>{kind} name</span>
-          <Input className="[[data-ui~='workspace-create-dialog']_&]:bg-surface-hover [[data-ui~='workspace-create-dialog']_&]:border-0 [[data-ui~='workspace-create-dialog']_&]:border-none [[data-ui~='workspace-create-dialog']_&]:border-current [[data-ui~='dashboard-main']_&]:min-h-10 [[data-ui~='dashboard-main']_&]:text-[14px] [[data-ui~='dashboard-main']_&]:py-2.25 [[data-ui~='dashboard-main']_&]:px-3 [[data-ui~='workspace-create-dialog']_&]:focus-visible:outline-hidden [[data-ui~='workspace-create-dialog']_&]:focus-visible:shadow-[inset_0_-2px_var(--accent)] max-[37.5rem]:[[data-ui~='dashboard-main']_&]:text-[16px] w-full min-h-11.5 rounded-md text-foreground text-[16px] py-2.75 px-3 placeholder:text-muted"
-            id={id}
-            name="name"
-            defaultValue={name}
-            required
-            disabled={rename.isPending}
-            aria-invalid={invalidName}
-            aria-describedby={message ? id + "-error" : undefined}
-          />
+    <form onSubmit={submit} aria-busy={rename.isPending} className="border-b border-border py-5">
+      <div className="flex max-w-180 flex-wrap items-end gap-3">
+        <label className="grid min-w-0 flex-1 basis-60 gap-2 text-[13px] font-medium" htmlFor={id}>
+          {kind} name
+          <Input id={id} name="name" value={value} required disabled={rename.isPending}
+            className="min-h-10 w-full rounded-md px-3 py-2.5 text-[14px] font-normal max-[37.5rem]:text-[16px]"
+            onChange={(event) => { setValue(event.target.value); setValidation(""); rename.reset(); }}
+            aria-invalid={invalidName} aria-describedby={message ? id + "-error" : undefined} />
         </label>
-        <Button
-          type="submit"
-          data-ui="button" size="small" className="leading-[1.4] shrink-0 min-h-10 whitespace-nowrap"
-          disabled={rename.isPending}
-        >
-          {rename.isPending ? "Saving…" : "Save name"}
+        <Button type="submit" size="small" disabled={rename.isPending || value.trim() === name}>
+          {rename.isPending ? "Saving…" : "Save changes"}
         </Button>
       </div>
-      {message && (
-        <p id={id + "-error"} role="alert" className="text-danger text-[13px] my-3 mb-4">
-          {message}
-        </p>
-      )}
+      {message && <p id={id + "-error"} role="alert" className="mt-3 text-[13px] text-danger">{message}</p>}
     </form>
   );
 }

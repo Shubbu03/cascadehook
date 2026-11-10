@@ -15,6 +15,7 @@ import (
 
 	"cascadehook/internal/auth"
 	"cascadehook/internal/controls"
+	"cascadehook/internal/deliveries"
 	"cascadehook/internal/events"
 )
 
@@ -206,15 +207,19 @@ func fanOutEvent(ctx context.Context, tx pgx.Tx, projectID, eventID uuid.UUID, e
 		}
 		deliveryIDs[i] = pgtype.UUID{Bytes: [16]byte(id), Valid: true}
 	}
+	fallback := deliveries.DefaultPolicy()
 	result, err := tx.Exec(
 		ctx,
-		`INSERT INTO deliveries (id, project_id, event_id, endpoint_id)
-		SELECT jobs.id, $1, $2, jobs.endpoint_id
-		FROM unnest($3::uuid[], $4::uuid[]) AS jobs(id, endpoint_id)`,
+		`INSERT INTO deliveries (id, project_id, event_id, endpoint_id,max_attempts,timeout_seconds,retry_delays_seconds)
+		SELECT jobs.id, $1, $2, jobs.endpoint_id,coalesce(policy.max_attempts,$5),
+			coalesce(policy.timeout_seconds,$6),coalesce(policy.retry_delays_seconds,$7::integer[])
+		FROM unnest($3::uuid[], $4::uuid[]) AS jobs(id, endpoint_id)
+		LEFT JOIN project_delivery_policies policy ON policy.project_id = $1`,
 		projectID,
 		eventID,
 		deliveryIDs,
 		endpointIDs,
+		fallback.MaxAttempts, fallback.TimeoutSeconds, fallback.RetryDelaysSeconds,
 	)
 	if err != nil {
 		return 0, fmt.Errorf("create event deliveries: %w", err)

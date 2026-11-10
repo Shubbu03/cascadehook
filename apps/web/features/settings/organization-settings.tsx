@@ -1,114 +1,76 @@
 "use client";
 
-import { buttonStyles } from "@/components/button";
-
-import { PageSkeleton } from "@/features/workspace/skeletons";
 import { useAuth } from "@clerk/nextjs";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { buttonStyles } from "@/components/button";
+import { CopyButton } from "@/components/copy-button";
 import { PageHeader } from "@/components/page-header";
 import { QueryState } from "@/components/query-state";
-import {
-  organizationHref,
-  organizationQuery,
-} from "@/features/workspace/queries";
+import { organizationHref, organizationQuery } from "@/features/workspace/queries";
 import { useSessionUserId } from "@/features/workspace/session";
+import { PageSkeleton } from "@/features/workspace/skeletons";
+import { useFormatTime } from "@/lib/display-preferences";
+import { OrganizationNotificationPreferences } from "./notification-preferences";
+import { AuditHistory } from "./audit-history";
+import { RetentionSettings } from "./retention-settings";
 import { InvitationManagement } from "./invitations";
 import { Members } from "./members";
 import { RenameForm } from "./rename-form";
 import { DeleteOrganization } from "./delete-organization";
 import { LeaveOrganization } from "./leave-organization";
+import { SettingsRow, SettingsSection, SettingsTabs } from "./settings-layout";
 
-export function OrganizationSettings({
-  organizationId,
-}: {
-  organizationId: string;
-}) {
+export function OrganizationSettings({ organizationId }: { organizationId: string }) {
+  const formatTime = useFormatTime();
   const userId = useSessionUserId();
   const { getToken } = useAuth();
   const client = useQueryClient();
-  const returnTo =
-    useSearchParams().get("returnTo") === "account" ? "/account" : "/dashboard";
-  const organization = useQuery(
-    organizationQuery(userId, organizationId, getToken),
-  );
+  const returnTo = useSearchParams().get("returnTo") === "account" ? "/account?section=account" : "/dashboard";
+  const organization = useQuery(organizationQuery(userId, organizationId, getToken));
   const path = "/v1/organizations/" + encodeURIComponent(organizationId);
   return (
-    <main id="main-content" data-ui="dashboard-main organization-settings" className="w-full min-w-0 min-h-[calc(100svh-var(--topbar-height,60px))] pt-7 pb-16 m-0 px-8 max-[56.25rem]:pt-6 max-[56.25rem]:pb-12 max-[56.25rem]:px-6 max-[37.5rem]:pt-5.5 max-[37.5rem]:pb-10 max-[37.5rem]:px-4.5">
-      <Link
-        className="inline-flex items-center text-[13px] font-medium text-muted gap-2 [&:hover]:underline [&:hover]:underline-offset-4 in-data-[ui~='switcher-error']:mt-1.25 in-data-[ui~='switcher-error']:text-[13px] in-data-[ui~='switcher-error']:text-accent [[data-ui~='settings-section']_>_&]:text-[14px] in-data-[ui~='notification-error']:ml-auto in-data-[ui~='notification-error']:text-[12px] [[data-ui~='organization-settings']_>_&:first-child]:mb-4.5 [[data-ui~='organization-settings']_>_&:first-child]:text-[12px] [[data-ui~='dashboard-main']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='dashboard-main']_>_section_>_&:first-child]:text-[12px]"
-        href={
-          returnTo === "/account"
-            ? "/account"
-            : organizationHref(organizationId)
-        }
-      >
-        {returnTo === "/account" ? "← Account settings" : "← Projects"}
+    <main id="main-content" data-ui="dashboard-main organization-settings" className="m-0 min-h-[calc(100svh-var(--topbar-height,60px))] w-full min-w-0 px-8 pt-7 pb-16 max-[56.25rem]:px-6 max-[37.5rem]:px-4.5">
+      <Link className="mb-5 inline-flex min-h-9 items-center text-[12px] font-medium text-muted hover:text-foreground"
+        href={returnTo !== "/dashboard" ? returnTo : organizationHref(organizationId)}>
+        {returnTo !== "/dashboard" ? "← Account settings" : "← Projects"}
       </Link>
       <QueryState query={organization} loading={<PageSkeleton variant="settings" />}>
-        {organization.data && (
-          <>
-            <PageHeader
-              title="Organization settings"
-              actions={
-                organization.data.role !== "member" && (
-                  <Link
-                    data-ui="button" className={buttonStyles({ variant: "secondary", size: "small", className: "leading-[1.4]" })}
-                    href={
-                      "/dashboard/organizations/" +
-                      encodeURIComponent(organizationId) +
-                      "/usage"
-                    }
-                  >
-                    View usage
-                  </Link>
-                )
-              }
-            />
-            {organization.data.role === "owner" && (
-              <RenameForm
-                kind="Organization"
-                name={organization.data.name}
-                path={path}
-                saved={() =>
-                  Promise.all([
-                    client.invalidateQueries({
-                      queryKey: ["organization", userId, organizationId],
-                    }),
-                    client.invalidateQueries({
-                      queryKey: ["organizations", userId],
-                    }),
-                  ])
-                }
-              />
-            )}
-            <Members organization={organization.data} />
-            {organization.data.role === "owner" && (
-              <InvitationManagement organization={organization.data} />
-            )}
-            <section
-              data-ui="settings-section danger-zone organization-danger-zone" className="border-t [border-top-style:solid] border-t-border [&_>_h3]:mb-4 [&_>_h2]:mb-4 [&_>_h2]:text-[19px] [&_>_p]:max-w-145 [&_>_p]:mb-5 [&_>_p]:text-muted [&_>_p]:text-[13px] [&_>_p]:leading-[1.8] mt-7.5 pt-6 max-w-none [&_>_h3]:text-[17px]"
-              aria-labelledby="organization-danger-heading"
-            >
-              <h2 id="organization-danger-heading">Danger Zone</h2>
-              <div className="rounded-[9px] bg-surface border border-solid border-danger-subtle">
-                <DeleteOrganization
-                  key={
-                    organization.data.id +
-                    ":" +
-                    organization.data.name +
-                    ":" +
-                    organization.data.role
-                  }
-                  organization={organization.data}
-                  returnTo={returnTo}
-                />
+        {organization.data && <>
+          <PageHeader title="Organization settings" description={<>Manage <strong>{organization.data.name}</strong>, its members, and your notification preferences.</>} />
+          <SettingsTabs sections={[
+            { id: "general", label: "General", content: <SettingsSection title="Organization details" description="Your shared workspace for projects, team access, and usage.">
+              {organization.data.role === "owner" ? <RenameForm key={organization.data.name} kind="Organization" name={organization.data.name} path={path}
+                saved={() => Promise.all([
+                  client.invalidateQueries({ queryKey: ["organization", userId, organizationId] }),
+                  client.invalidateQueries({ queryKey: ["organizations", userId] }),
+                ])} /> : <SettingsRow title="Organization name" description="An owner can rename this organization."><span className="text-[13px]">{organization.data.name}</span></SettingsRow>}
+              <SettingsRow title="Organization ID" description="Use this identifier when contacting support.">
+                <div className="flex flex-wrap items-center gap-2 text-[12px]"><code className="break-all">{organizationId}</code><CopyButton value={organizationId} label="Copy ID" /></div>
+              </SettingsRow>
+              <SettingsRow title="Your role"><span className="text-[12px] capitalize">{organization.data.role}</span></SettingsRow>
+              <SettingsRow title="Created"><span className="text-[12px] text-muted">{formatTime(organization.data.created_at)}</span></SettingsRow>
+              {organization.data.role !== "member" && <SettingsRow title="Usage & limits" description="Review shared event quotas and usage across the organization’s projects.">
+                <Link className={buttonStyles({ variant: "secondary", size: "small" })} href={"/dashboard/organizations/" + encodeURIComponent(organizationId) + "/usage"}>View usage →</Link>
+              </SettingsRow>}
+            </SettingsSection> },
+            { id: "team", label: "Team", content: <>
+              <Members organization={organization.data} />
+              {organization.data.role === "owner" && <InvitationManagement organization={organization.data} />}
+            </> },
+            { id: "notifications", label: "Notifications", content: <OrganizationNotificationPreferences organizationId={organizationId} /> },
+            { id: "retention", label: "Data retention", content: <RetentionSettings /> },
+            ...(organization.data.role !== "member" ? [{ id: "audit", label: "Audit history", content: <AuditHistory organizationId={organizationId} /> }] : []),
+            { id: "danger", label: "Danger zone", content: <SettingsSection title="Membership & deletion" description="Leave this organization or permanently delete it if you’re an owner." danger>
+              <div data-ui="organization-danger-zone">
+                <DeleteOrganization key={organization.data.id + ":" + organization.data.name + ":" + organization.data.role}
+                  organization={organization.data} returnTo={returnTo} />
                 <LeaveOrganization organization={organization.data} />
               </div>
-            </section>
-          </>
-        )}
+            </SettingsSection> },
+          ]} />
+        </>}
       </QueryState>
     </main>
   );

@@ -15,6 +15,7 @@ import { ProjectCardsSkeleton } from "./skeletons";
 import { projectsQuery } from "./queries";
 import { useWorkspaceCreation } from "./workspace-creation";
 import type { Organization } from "./types";
+import { ProjectEnvironment } from "@/features/projects/project-environment";
 import { PageHeader } from "@/components/page-header";
 
 export function Projects({
@@ -89,7 +90,8 @@ export function Projects({
                   <FolderSimpleIcon size={22} />
                 </span>
                 <div>
-                  <h2>{project.name}</h2>
+                  <div className="flex flex-wrap items-center gap-2"><h2>{project.name}</h2><ProjectEnvironment environment={project.environment} /></div>
+                  {project.description && <p className="mt-2 line-clamp-2 text-[12px]/6 text-muted">{project.description}</p>}
                   <span>{project.role}</span>
                 </div>
                 <ArrowUpRightIcon size={18} aria-hidden="true" />

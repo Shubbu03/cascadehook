@@ -26,7 +26,7 @@ import { AccessRedirect } from "@/features/workspace/access-redirect";
 import { useSessionUserId } from "@/features/workspace/session";
 import type { Page } from "@/features/workspace/types";
 import { apiRequest } from "@/lib/api";
-import { formatTime } from "@/lib/format";
+import { useFormatTime } from "@/lib/display-preferences";
 import { notify } from "@/lib/notify";
 import { publicationExample } from "@/lib/example";
 import {
@@ -46,6 +46,7 @@ export function APIKeyList() {
 }
 
 function KeyManagement() {
+  const formatTime = useFormatTime();
   const { project, availabilityKnown, suspended } = useProject();
   const { getToken } = useAuth();
   const userId = useSessionUserId();

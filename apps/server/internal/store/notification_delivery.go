@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -12,11 +13,18 @@ import (
 	"cascadehook/internal/notifications"
 )
 
-// Only terminal failed cycles open/increment an incident. Automatic retries do
-// not create inbox noise. Read/archive state is independent of incident state.
+// Terminal incidents and matured retry warnings share an endpoint gate, so a
+// concurrent success cannot race a warning into an already recovered incident.
 func notifyDeliveryCompletion(ctx context.Context, tx pgx.Tx, held lockedDelivery, completion deliveries.Completion) error {
 	if held.Deleted {
 		return nil
+	}
+	terminal := completion.State == deliveries.Failed || completion.State == deliveries.Succeeded
+	if !terminal {
+		return nil
+	}
+	if err := lockDeliveryNotificationState(ctx, tx, held.EndpointID); err != nil {
+		return err
 	}
 	switch completion.State {
 	case deliveries.Failed:
@@ -66,24 +74,49 @@ func notifyDeliveryRecovery(ctx context.Context, tx pgx.Tx, held lockedDelivery)
 	if held.StartedAt == nil {
 		return nil
 	}
-	var id uuid.UUID
-	err := tx.QueryRow(ctx, `UPDATE notification_delivery_state SET recovered_at = $3
-		WHERE endpoint_id = $1 AND recovered_at IS NULL AND last_failure_at < $2
-		RETURNING notification_id`, held.EndpointID, *held.StartedAt, held.Now).Scan(&id)
-	if errors.Is(err, pgx.ErrNoRows) {
+	var lastFailure *time.Time
+	err := tx.QueryRow(ctx, `SELECT greatest(
+		(SELECT last_failure_at FROM notification_delivery_state WHERE endpoint_id=$1),
+		(SELECT last_failure_at FROM notification_delivery_retry_state WHERE endpoint_id=$1))`,
+		held.EndpointID).Scan(&lastFailure)
+	if err != nil {
+		return fmt.Errorf("read latest delivery notification failure: %w", err)
+	}
+	if lastFailure != nil && !held.StartedAt.After(*lastFailure) {
 		return nil
 	}
-	if err != nil {
+	resolvedIDs := []uuid.UUID{}
+	var id uuid.UUID
+	err = tx.QueryRow(ctx, `UPDATE notification_delivery_state SET recovered_at = $3
+		WHERE endpoint_id = $1 AND recovered_at IS NULL AND last_failure_at < $2
+		RETURNING notification_id`, held.EndpointID, *held.StartedAt, held.Now).Scan(&id)
+	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 		return fmt.Errorf("record delivery notification recovery: %w", err)
 	}
-	if _, err := tx.Exec(ctx, `UPDATE notifications SET resolved_at = $2 WHERE id = $1`, id, held.Now); err != nil {
+	if err == nil {
+		resolvedIDs = append(resolvedIDs, id)
+	}
+	var warnedAt *time.Time
+	err = tx.QueryRow(ctx, `UPDATE notification_delivery_retry_state SET recovered_at=$3
+		WHERE endpoint_id=$1 AND recovered_at IS NULL AND last_failure_at<$2
+		RETURNING notification_id,warned_at`, held.EndpointID, *held.StartedAt, held.Now).Scan(&id, &warnedAt)
+	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+		return fmt.Errorf("record delivery retry recovery: %w", err)
+	}
+	if err == nil && warnedAt != nil {
+		resolvedIDs = append(resolvedIDs, id)
+	}
+	if len(resolvedIDs) == 0 {
+		return nil
+	}
+	if _, err := tx.Exec(ctx, `UPDATE notifications SET resolved_at=$2 WHERE id=ANY($1::uuid[])`, resolvedIDs, held.Now); err != nil {
 		return fmt.Errorf("resolve delivery notification: %w", err)
 	}
 	_, err = emitNotification(ctx, tx, notificationEvent{
 		ProjectID: held.ProjectID, Type: "delivery_recovered", Category: notifications.Delivery,
 		Severity: "success", Audience: "manager", Title: "A receiver accepted delivery again",
 		Body:         "A request started after the latest recorded failure succeeded. Earlier failed deliveries may still need attention.",
-		ResourceType: "endpoint", ResourceID: held.EndpointID, SourceKey: "delivery:incident:" + id.String() + ":recovered",
+		ResourceType: "endpoint", ResourceID: held.EndpointID, SourceKey: "delivery:incident:" + resolvedIDs[0].String() + ":recovered",
 	})
 	return err
 }

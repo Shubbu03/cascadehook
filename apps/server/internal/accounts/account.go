@@ -74,6 +74,8 @@ type MemberProfile struct {
 }
 
 type Project struct {
+	Description    string    `json:"description"`
+	Environment    string    `json:"environment"`
 	ID             uuid.UUID `json:"id"`
 	OrganizationID uuid.UUID `json:"organization_id"`
 	Name           string    `json:"name"`

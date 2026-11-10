@@ -12,7 +12,7 @@ export function DeleteOrganization({
   returnTo,
 }: {
   organization: Organization;
-  returnTo: "/dashboard" | "/account";
+  returnTo: "/dashboard" | "/account" | "/account?section=account";
 }) {
   const { sessionId } = useAuth();
   const clerk = useClerk();

@@ -11,6 +11,10 @@ import (
 func cleanupMetadata(ctx context.Context, tx pgx.Tx, reference time.Time, limit int, preview bool) (int64, error) {
 	selections := []lifecycleCleanupSelection{
 		{retentionSelection: retentionSelection{
+			query: `SELECT a.id FROM audit_entries a WHERE a.created_at<$1 ORDER BY a.created_at,a.id LIMIT $2`,
+			table: "audit_entries", lockAlias: "a", match: `t.id=c.id`, args: []any{reference.Add(-AuditRetentionDays * 24 * time.Hour), limit},
+		}},
+		{retentionSelection: retentionSelection{
 			query: `SELECT r.message_hash FROM identity_webhook_receipts r
 				WHERE r.received_at < $1 ORDER BY r.received_at LIMIT $2`,
 			table: "identity_webhook_receipts", lockAlias: "r", match: `t.message_hash = c.message_hash`,

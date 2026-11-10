@@ -1,3 +1,5 @@
+"use client";
+
 
 import { Status } from "@/components/status";
 import { ArrowRightIcon } from "@phosphor-icons/react";
@@ -5,7 +7,7 @@ import Link from "next/link";
 import { CopyButton } from "@/components/copy-button";
 import { Skeleton, SkeletonRegion } from "@/components/skeleton";
 import { endpointState, type Endpoint } from "@/features/endpoints/types";
-import { formatTime } from "@/lib/format";
+import { useFormatTime } from "@/lib/display-preferences";
 import type { Delivery } from "./types";
 
 export function DeliveryContext({
@@ -21,6 +23,7 @@ export function DeliveryContext({
   loading: boolean;
   href: string;
 }) {
+  const formatTime = useFormatTime();
   const timing = [
     ["Created", delivery.created_at],
     ["Cycle started", delivery.cycle_started_at],

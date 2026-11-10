@@ -228,6 +228,9 @@ func insertAPIKey(ctx context.Context, tx pgx.Tx, actor auth.Principal, params C
 // revocations cannot both succeed, and a revoked caller cannot create new keys.
 // Human actors first hold and recheck organization access independently.
 func lockAPIKeyMutation(ctx context.Context, tx pgx.Tx, actor auth.Principal, targetID uuid.UUID) (auth.APIKey, auth.APIKey, time.Time, error) {
+	if err := setAuditActor(ctx, tx, actor); err != nil {
+		return auth.APIKey{}, auth.APIKey{}, time.Time{}, err
+	}
 	if !actor.Valid() {
 		return auth.APIKey{}, auth.APIKey{}, time.Time{}, auth.ErrInvalidAPIKey
 	}

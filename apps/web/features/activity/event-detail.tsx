@@ -13,10 +13,11 @@ import { QueryState } from "@/components/query-state";
 import { useProject, projectHref } from "@/features/projects/project-workspace";
 import { useSessionUserId } from "@/features/workspace/session";
 import { apiRequest } from "@/lib/api";
-import { formatTime } from "@/lib/format";
+import { useFormatTime } from "@/lib/display-preferences";
 import { projectPath, type EventDetail as EventRecord } from "./types";
 
 export function EventDetail({ eventId }: { eventId: string; }) {
+  const formatTime = useFormatTime();
   const { project } = useProject();
   const userId = useSessionUserId();
   const { getToken } = useAuth();

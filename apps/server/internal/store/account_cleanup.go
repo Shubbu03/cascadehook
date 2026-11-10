@@ -71,6 +71,7 @@ func cleanupOrganizationData(ctx context.Context, tx pgx.Tx, limit int, preview 
 				AND NOT EXISTS (SELECT 1 FROM organization_usage_months u WHERE u.organization_id = o.id)
 				AND NOT EXISTS (SELECT 1 FROM organization_ownership_actions a WHERE a.organization_id = o.id)
 				AND NOT EXISTS (SELECT 1 FROM organization_quota_actions a WHERE a.organization_id = o.id)
+				AND NOT EXISTS (SELECT 1 FROM audit_entries a WHERE a.organization_id=o.id)
 				AND NOT EXISTS (SELECT 1 FROM notifications n WHERE n.organization_id = o.id)
 				AND NOT EXISTS (SELECT 1 FROM notification_recipients r WHERE r.organization_id = o.id)
 				AND NOT EXISTS (SELECT 1 FROM notification_delivery_state s WHERE s.organization_id = o.id) LIMIT $2`,

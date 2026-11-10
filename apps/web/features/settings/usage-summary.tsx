@@ -1,7 +1,11 @@
-import { formatBytes, formatTime } from "@/lib/format";
+"use client";
+
+import { useFormatTime } from "@/lib/display-preferences";
+import { formatBytes } from "@/lib/format";
 import type { Usage } from "./types";
 
 export function OrganizationUsageSummary({ usage }: { usage: Usage; }) {
+  const formatTime = useFormatTime();
   return (
     <>
       <p className="mt-3 mb-4.5 text-muted text-[14px] leading-[1.8] max-w-162.5 in-data-[ui~='dashboard-main']:text-[13px]">

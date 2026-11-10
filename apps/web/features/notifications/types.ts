@@ -45,7 +45,7 @@ export function notificationTarget(item: InboxNotification) {
     : null;
   switch (item.target.type) {
     case "members":
-      return organization + "/settings";
+      return organization + "/settings?section=team";
     case "project":
       return project;
     case "api_key":

@@ -7,6 +7,7 @@ import { useAuth } from "@clerk/nextjs";
 import { PlusIcon, TerminalWindowIcon } from "@phosphor-icons/react";
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { ProjectEnvironment } from "@/features/projects/project-environment";
 import { PageHeader } from "@/components/page-header";
 import { LoadMore, QueryState, RefreshButton } from "@/components/query-state";
 import { PublishEventDialog } from "@/features/activity/publish-event-dialog";
@@ -58,7 +59,7 @@ export function ProjectOverview() {
       <PageHeader
         title="Overview"
         titleId="overview-heading"
-        description="Delivery activity and receiver readiness across your project."
+        description={<span className="flex flex-wrap items-center gap-2">{project.description || "Delivery activity and receiver readiness across your project."}<ProjectEnvironment environment={project.environment} /></span>}
         actions={
           <>
             <RefreshButton

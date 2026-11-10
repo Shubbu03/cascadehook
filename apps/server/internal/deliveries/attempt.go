@@ -20,12 +20,13 @@ const (
 // released after eligibility changed and no network attempt should be made.
 type Attempt struct {
 	Lease
-	ID                uuid.UUID
-	Number            int
-	Cycle             int
-	StartedAt         time.Time
-	Timeout           time.Duration
-	UsePreviousSecret bool
+	ID                 uuid.UUID
+	Number             int
+	Cycle              int
+	StartedAt          time.Time
+	RetryDelaysSeconds []int
+	Timeout            time.Duration
+	UsePreviousSecret  bool
 }
 
 // Result contains only bounded metadata. Payloads, destination URLs, raw error

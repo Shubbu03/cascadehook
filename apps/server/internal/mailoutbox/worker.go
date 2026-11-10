@@ -2,10 +2,13 @@ package mailoutbox
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"log/slog"
 	"net/url"
 	"time"
+
+	"github.com/google/uuid"
 
 	"cascadehook/internal/clerk"
 )
@@ -75,11 +78,33 @@ func deliver(ctx context.Context, cfg Config, db Repository, identity *clerk.Cli
 	if !active {
 		return Completion{Cancelled: true}
 	}
+	if job.NotificationID != uuid.Nil {
+		if identity == nil {
+			return Completion{ErrorCode: "identity_configuration_error"}
+		}
+		profiles, lookupErr := identity.MemberProfiles(ctx, []string{job.RecipientSubject})
+		if lookupErr != nil {
+			return retry(job, "recipient_lookup_unavailable", time.Minute)
+		}
+		job.Email = profiles[job.RecipientSubject].Email
+		if job.Email == "" {
+			return Completion{Cancelled: true}
+		}
+	}
 	var body []byte
 	if len(job.Payload) > 0 {
 		body, err = vault.Decrypt(job)
 		if err != nil {
 			return Completion{ErrorCode: "email_payload_unavailable"}
+		}
+	} else if job.NotificationID != uuid.Nil {
+		body, err = notificationMessage(cfg, job)
+		if err != nil {
+			return Completion{ErrorCode: "email_render_failed"}
+		}
+		if err := db.SaveEmailPayload(ctx, job, vault.Encrypt(job, body), ""); err != nil {
+			clear(body)
+			return retry(job, "email_payload_not_saved", time.Minute)
 		}
 	} else {
 		destination := cfg.InvitationURL + "?invitation=" + url.QueryEscape(job.InvitationID.String())
@@ -105,6 +130,14 @@ func deliver(ctx context.Context, cfg Config, db Repository, identity *clerk.Cli
 		}
 	}
 	defer clear(body)
+	if job.NotificationID != uuid.Nil {
+		// A retried message keeps its immutable idempotency payload, but must
+		// never be sent to a primary address that is no longer verified.
+		var message Message
+		if json.Unmarshal(body, &message) != nil || len(message.To) != 1 || message.To[0] != job.Email {
+			return Completion{Cancelled: true}
+		}
+	}
 	active, err = db.EmailActive(ctx, job)
 	if err != nil {
 		return retry(job, "database_unavailable", time.Minute)

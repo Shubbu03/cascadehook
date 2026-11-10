@@ -14,6 +14,7 @@ import (
 )
 
 type lockedDelivery struct {
+	deliveries.Policy
 	deliveries.Lease
 	ProjectID, EventID, EndpointID uuid.UUID
 	Count, Cycle                   int
@@ -27,7 +28,7 @@ type lockedDelivery struct {
 
 const lockedDeliveryColumns = `d.id, d.lease_owner, d.lease_token, d.project_id, d.event_id, d.endpoint_id,
 	d.attempt_count, d.cycle, d.active_attempt_id, d.active_attempt_started_at, d.lease_expires_at,
-	d.retry_deadline, e.url, e.verification_version, e.enabled, e.verified_at IS NOT NULL, e.deleted_at IS NOT NULL`
+	d.retry_deadline, e.url, e.verification_version, e.enabled, e.verified_at IS NOT NULL, e.deleted_at IS NOT NULL,d.max_attempts,d.timeout_seconds,d.retry_delays_seconds`
 
 const deliveryJoins = ` FROM deliveries d
 	JOIN endpoints e ON e.project_id = d.project_id AND e.id = d.endpoint_id `
@@ -62,7 +63,8 @@ func lockDeliveryProject(ctx context.Context, tx pgx.Tx, deliveryID uuid.UUID) e
 func scanLockedDelivery(row pgx.Row, held *lockedDelivery) error {
 	return row.Scan(&held.DeliveryID, &held.OwnerID, &held.Token, &held.ProjectID, &held.EventID, &held.EndpointID,
 		&held.Count, &held.Cycle, &held.ActiveID, &held.StartedAt, &held.ExpiresAt, &held.RetryDeadline,
-		&held.URL, &held.ConfigurationVersion, &held.Enabled, &held.Verified, &held.Deleted)
+		&held.URL, &held.ConfigurationVersion, &held.Enabled, &held.Verified, &held.Deleted,
+		&held.MaxAttempts, &held.TimeoutSeconds, &held.RetryDelaysSeconds)
 }
 
 // Endpoint-before-delivery ordering coordinates with configuration changes and
@@ -137,8 +139,9 @@ func (s *Store) BeginDeliveryAttempt(ctx context.Context, job deliveries.Job) (d
 	}
 	endpointUnavailable := held.Deleted || !held.Enabled || !held.Verified
 	configurationChanged := held.ConfigurationVersion != job.ConfigurationVersion || held.URL != job.URL
-	retryBudgetExhausted := held.Count >= deliveries.MaxAttempts || !held.RetryDeadline.After(held.Now)
-	shortLease := held.ExpiresAt.Sub(held.Now) <= deliveries.AttemptTimeout+10*time.Second
+	retryBudgetExhausted := held.Count >= held.MaxAttempts || !held.RetryDeadline.After(held.Now)
+	timeout := time.Duration(held.TimeoutSeconds) * time.Second
+	shortLease := held.ExpiresAt.Sub(held.Now) <= timeout+10*time.Second
 	if suspended || endpointUnavailable || configurationChanged || retryBudgetExhausted || shortLease {
 		completion := deliveryCompletion(held, deliveries.Result{Outcome: deliveries.OutcomeInterrupted})
 		if err := updateDeliveryLease(ctx, tx, held, completion); err != nil {
@@ -157,8 +160,8 @@ func (s *Store) BeginDeliveryAttempt(ctx context.Context, job deliveries.Job) (d
 		AND d.lease_expires_at > clock_timestamp() + $6::interval
 		AND d.retry_deadline > clock_timestamp()
 		RETURNING attempt_count, active_attempt_started_at`,
-		job.DeliveryID, job.OwnerID, job.Token, id, deliveries.MaxAttempts,
-		deliveryInterval(deliveries.AttemptTimeout+10*time.Second),
+		job.DeliveryID, job.OwnerID, job.Token, id, held.MaxAttempts,
+		deliveryInterval(timeout+10*time.Second),
 	).Scan(&attempt.Number, &attempt.StartedAt)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return deliveries.Attempt{}, deliveries.ErrLeaseLost
@@ -166,7 +169,8 @@ func (s *Store) BeginDeliveryAttempt(ctx context.Context, job deliveries.Job) (d
 	if err != nil {
 		return deliveries.Attempt{}, fmt.Errorf("reserve delivery attempt: %w", err)
 	}
-	attempt.Timeout = min(deliveries.AttemptTimeout, held.RetryDeadline.Sub(attempt.StartedAt))
+	attempt.RetryDelaysSeconds = held.RetryDelaysSeconds
+	attempt.Timeout = min(timeout, held.RetryDeadline.Sub(attempt.StartedAt))
 	attempt.UsePreviousSecret = len(job.PreviousSigningSecret) > 0 && job.PreviousSecretExpiresAt != nil && job.PreviousSecretExpiresAt.After(attempt.StartedAt)
 	if err := recordUsage(
 		ctx,
@@ -221,6 +225,11 @@ func (s *Store) CompleteDelivery(ctx context.Context, attempt deliveries.Attempt
 	if err := appendDeliveryAttempt(ctx, tx, held, result, completion); err != nil {
 		return deliveries.Completion{}, err
 	}
+	if completion.State == deliveries.Pending && result.Outcome == deliveries.OutcomeRetryable {
+		if err := recordDeliveryRetryFailure(ctx, tx, held); err != nil {
+			return deliveries.Completion{}, err
+		}
+	}
 	if err := updateDeliveryLease(ctx, tx, held, completion); err != nil {
 		return deliveries.Completion{}, err
 	}
@@ -259,7 +268,7 @@ func deliveryCompletion(held lockedDelivery, result deliveries.Result) deliverie
 	if held.Deleted {
 		return deliveries.Completion{State: deliveries.Canceled}
 	}
-	if held.Count >= deliveries.MaxAttempts {
+	if held.Count >= held.MaxAttempts {
 		return deliveries.Completion{State: deliveries.Failed, TerminalReason: "max_attempts"}
 	}
 	at := result.RetryAt(held.Now)

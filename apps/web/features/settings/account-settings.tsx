@@ -1,23 +1,23 @@
 "use client";
 
-import { Button } from "@/components/button";
-
-import { SettingsSkeleton } from "@/features/workspace/skeletons";
-import { useAuth, useClerk } from "@clerk/nextjs";
+import { useAuth, useClerk, useUser } from "@clerk/nextjs";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useState } from "react";
+import { Button } from "@/components/button";
+import { CopyButton } from "@/components/copy-button";
 import { PageHeader } from "@/components/page-header";
-import { QueryState, RefreshButton } from "@/components/query-state";
+import { QueryState } from "@/components/query-state";
+import { SettingsSkeleton } from "@/features/workspace/skeletons";
 import { useSessionUserId } from "@/features/workspace/session";
 import type { Account } from "@/features/workspace/types";
 import { apiRequest, ApiError } from "@/lib/api";
+import { useFormatTime } from "@/lib/display-preferences";
 import { DeleteAction } from "./delete-action";
-import {
-  deletionToken,
-  ownedOrganizations,
-  requestAccountDeletion,
-} from "./deletion";
+import { deletionToken, ownedOrganizations, requestAccountDeletion } from "./deletion";
+import { TimezoneSettings } from "./timezone-settings";
+import { AccountNotificationPreferences } from "./notification-preferences";
+import { SettingsRow, SettingsSection, SettingsTabs } from "./settings-layout";
 
 export function AccountSettings() {
   const { getToken, sessionId } = useAuth();
@@ -55,105 +55,86 @@ export function AccountSettings() {
       setSigningOut(false);
     }
   }
-  const unavailable =
-    details.error instanceof ApiError &&
-    details.error.code === "account_deleted";
+  const unavailable = details.error instanceof ApiError && details.error.code === "account_deleted";
   const accountId = details.data?.account.id;
   return (
-    <main id="main-content" data-ui="dashboard-main account-settings" className="w-full min-w-0 min-h-[calc(100svh-var(--topbar-height,60px))] pt-7 pb-16 m-0 px-8 max-[56.25rem]:pt-6 max-[56.25rem]:pb-12 max-[56.25rem]:px-6 max-[37.5rem]:pt-5.5 max-[37.5rem]:pb-10 max-[37.5rem]:px-4.5">
-      <PageHeader
-        title="Account settings"
-        actions={
-          <>
-            {!accepted && !unavailable && (
-              <RefreshButton
-                pending={details.isFetching}
-                refresh={details.refetch}
-              />
-            )}
-            <Button
-              type="button"
-              data-ui="button" variant="secondary" size="small" className="leading-[1.4]"
-              onClick={() => {
-                void finishSignOut();
-              }}
-              disabled={signingOut}
-            >
-              {signingOut ? "Signing out…" : "Sign out"}
-            </Button>
-          </>
-        }
-      />
-      {signOutError && (
-        <p className="text-danger text-[13px] my-3" role="alert">
-          {signOutError}
-        </p>
-      )}
+    <main id="main-content" data-ui="dashboard-main account-settings" className="m-0 min-h-[calc(100svh-var(--topbar-height,60px))] w-full min-w-0 px-8 pt-7 pb-16 max-[56.25rem]:px-6 max-[37.5rem]:px-4.5">
+      <PageHeader title="Account settings" description="Your profile, sign-in security, and personal notification preferences." />
+      {signOutError && <p className="my-3 text-[13px] text-danger" role="alert">{signOutError}</p>}
       {accepted || unavailable ? (
-        <div data-ui="notice" className="rounded-lg bg-surface text-muted text-[13px] leading-[1.7] my-4 py-3.5 px-4.25 border border-solid border-border [&_h2]:text-[18px] [&_h2]:mb-3" role="status">
-          <h2>
-            {accepted ? "Account deletion requested" : "Account unavailable"}
-          </h2>
-          <p>
-            {accepted
-              ? "Your access has ended. Data and sign-in account cleanup continues in the background."
-              : "This account is no longer available. Sign out to continue."}
-          </p>
+        <div className="max-w-180 rounded-lg border border-border bg-surface p-5 text-[13px]/7" role="status">
+          <h2 className="mb-2 text-[17px]">{accepted ? "Account deletion requested" : "Account unavailable"}</h2>
+          <p className="mb-4 text-muted">{accepted
+            ? "Your access has ended. Data and sign-in account cleanup continues in the background."
+            : "This account is no longer available. Sign out to continue."}</p>
+          <Button type="button" variant="secondary" onClick={() => { void finishSignOut(); }} disabled={signingOut}>
+            {signingOut ? "Signing out…" : "Sign out"}
+          </Button>
         </div>
       ) : (
         <QueryState query={details} loading={<SettingsSkeleton />}>
-          {details.data && accountId && (
-            <>
-              {details.data.organizations.length ? (
-                <section data-ui="settings-section account-ownership" className="border-t [border-top-style:solid] border-t-border [&_>_h3]:mb-4 [&_>_h2]:mb-4 [&_>_h2]:text-[19px] [&_ul]:grid [&_ul]:list-none [&_ul]:gap-3 [&_ul]:p-0 [&_ul]:my-5.5 mt-7.5 pt-6 [&_>_h3]:text-[17px]">
-                  <h2>Organization ownership</h2>
-                  <p className="mt-3 mb-4.5 text-muted max-w-162.5 text-[13px]">
-                    Before deleting your account, delete each organization you
-                    own or promote another owner and change your own role.
-                  </p>
-                  <ul>
-                    {details.data.organizations.map((organization) => (
-                      <li key={organization.id}>
-                        <Link
-                          className="inline-flex items-center font-medium gap-2 [&:hover]:underline [&:hover]:underline-offset-4 in-data-[ui~='notice']:[font-size:inherit] in-data-[ui~='notice']:underline in-data-[ui~='notice']:underline-offset-[3px] in-data-[ui~='notice']:ml-1.25 in-data-[ui~='switcher-error']:mt-1.25 in-data-[ui~='switcher-error']:text-[13px] in-data-[ui~='switcher-error']:text-accent text-accent text-[14px] wrap-anywhere [[data-ui~='settings-section']_>_&]:text-[14px] in-data-[ui~='notification-error']:ml-auto in-data-[ui~='notification-error']:text-[12px] [[data-ui~='dashboard-main']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='dashboard-main']_>_section_>_&:first-child]:text-[12px]"
-                          href={
-                            "/dashboard/organizations/" +
-                            encodeURIComponent(organization.id) +
-                            "/settings?returnTo=account"
-                          }
-                        >
-                          {organization.name} →
-                        </Link>
-                      </li>
-                    ))}
+          {details.data && accountId && <SettingsTabs sections={[
+            { id: "profile", label: "Profile & security", content: <ProfileSettings account={details.data.account} /> },
+            { id: "notifications", label: "Notifications", content: <AccountNotificationPreferences /> },
+            { id: "account", label: "Account", content: <>
+              <SettingsSection title="Current session" description="Sign out of Cascadehook on this device.">
+                <SettingsRow title="Sign out" description="You can sign back in to access your organizations and projects.">
+                  <Button type="button" variant="secondary" onClick={() => { void finishSignOut(); }} disabled={signingOut}>
+                    {signingOut ? "Signing out…" : "Sign out"}
+                  </Button>
+                </SettingsRow>
+              </SettingsSection>
+              <SettingsSection title="Account deletion" description="Permanently remove your account and organization memberships." danger>
+                {details.data.organizations.length > 0 ? <div className="py-5">
+                  <h3 className="text-[13px] font-medium">Transfer organization ownership first</h3>
+                  <p className="mt-2 max-w-170 text-[13px]/7 text-muted">You own the organizations below. Promote another owner and change your own role, or delete the organization, before deleting your account.</p>
+                  <ul className="my-4 grid list-none gap-2 p-0">
+                    {details.data.organizations.map((organization) => <li key={organization.id}>
+                      <Link className="inline-flex min-h-9 items-center text-[13px] font-medium text-accent hover:underline"
+                        href={"/dashboard/organizations/" + encodeURIComponent(organization.id) + "/settings?section=team&returnTo=account"}>
+                        {organization.name} →
+                      </Link>
+                    </li>)}
                   </ul>
-                  <p className="text-[12px] text-muted leading-[1.7] [[data-ui~='settings-section']_>_&]:mt-3 [[data-ui~='settings-section']_>_&]:mb-5">
-                    Other organizations and their projects are not deleted with
-                    your account.
-                  </p>
-                </section>
-              ) : (
-                <DeleteAction
-                  title="Delete account"
-                  confirmationText="DELETE"
+                  <Button type="button" variant="secondary" className="text-danger" disabled>Delete account</Button>
+                </div> : <DeleteAction grouped title="Delete account" confirmationText="DELETE"
                   description="Permanently removes your Cascadehook account and its memberships. Other organizations and their projects remain. Access ends when the request is accepted; account and sign-in identity cleanup runs in the background."
-                  onDelete={(confirmation) =>
-                    requestAccountDeletion(
-                      accountId,
-                      confirmation,
-                      deletionToken(clerk.session, sessionId, userId),
-                    )
-                  }
-                  onDeleted={() => {
-                    setAccepted(true);
-                    void finishSignOut();
-                  }}
-                />
-              )}
-            </>
-          )}
+                  onDelete={(confirmation) => requestAccountDeletion(accountId, confirmation, deletionToken(clerk.session, sessionId, userId))}
+                  onDeleted={() => { setAccepted(true); void finishSignOut(); }} />}
+              </SettingsSection>
+            </> },
+          ]} />}
         </QueryState>
       )}
     </main>
+  );
+}
+
+function ProfileSettings({ account }: { account: Account }) {
+  const formatTime = useFormatTime();
+  const { user, isLoaded } = useUser();
+  const clerk = useClerk();
+  if (!isLoaded || !user) return <SettingsSkeleton />;
+  return (
+    <>
+      <SettingsSection title="Profile" description="Your personal identity is shared across your organizations.">
+        <SettingsRow title="Name" description={user.fullName || user.username || "No display name added"}>
+          <Button type="button" variant="secondary" size="small" onClick={() => clerk.openUserProfile()}>Manage profile</Button>
+        </SettingsRow>
+        <SettingsRow title="Primary email" description={user.primaryEmailAddress?.emailAddress || "No primary email added"}>
+          <span className="text-[12px] text-muted">{user.primaryEmailAddress?.verification.status === "verified" ? "Verified" : "Not verified"}</span>
+        </SettingsRow>
+        <SettingsRow title="Account ID" description="Use this ID when contacting support.">
+          <div className="flex flex-wrap items-center gap-2 text-[12px]"><code className="break-all">{account.id}</code><CopyButton value={account.id} label="Copy ID" /></div>
+        </SettingsRow>
+        <SettingsRow title="Member since"><span className="text-[12px] text-muted">{formatTime(account.created_at)}</span></SettingsRow>
+      </SettingsSection>
+      <SettingsSection title="Sign-in & security" description="Manage your sign-in methods, connected accounts, and active sessions.">
+        <SettingsRow title="Account security" description="Review your security settings and devices with access to your account.">
+          <Button type="button" variant="secondary" size="small" onClick={() => clerk.openUserProfile({ __experimental_startPath: "/security" })}>Manage security</Button>
+        </SettingsRow>
+      </SettingsSection>
+      <TimezoneSettings />
+    </>
   );
 }

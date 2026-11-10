@@ -13,14 +13,11 @@ import (
 	"cascadehook/internal/deliveries"
 )
 
-// Eight total attempts have seven retry intervals. Retry-After can extend an
-// interval, but cannot make it shorter than this jittered backoff.
-var retrySchedule = [...]time.Duration{
-	15 * time.Second, time.Minute, 5 * time.Minute, 30 * time.Minute,
-	2 * time.Hour, 6 * time.Hour, 18 * time.Hour,
+func Classify(response Response, err error, attemptNumber int, elapsed time.Duration) deliveries.Result {
+	return ClassifyWithDelays(response, err, attemptNumber, elapsed, deliveries.DefaultPolicy().RetryDelaysSeconds)
 }
 
-func Classify(response Response, err error, attemptNumber int, elapsed time.Duration) deliveries.Result {
+func ClassifyWithDelays(response Response, err error, attemptNumber int, elapsed time.Duration, delays []int) deliveries.Result {
 	result := deliveries.Result{
 		StatusCode: response.StatusCode, Duration: max(elapsed, 0),
 		ResponseTruncated: response.Truncated,
@@ -49,8 +46,8 @@ func Classify(response Response, err error, attemptNumber int, elapsed time.Dura
 		}
 	}
 	if result.Outcome == deliveries.OutcomeRetryable {
-		index := min(max(attemptNumber-1, 0), len(retrySchedule)-1)
-		base := retrySchedule[index]
+		index := min(max(attemptNumber-1, 0), len(delays)-1)
+		base := time.Duration(delays[index]) * time.Second
 		spread := base / 5
 		// #nosec G404 -- Retry jitter is scheduling noise, never a credential or security decision.
 		result.RetryDelay = base - spread + time.Duration(rand.Int64N(int64(2*spread)+1))

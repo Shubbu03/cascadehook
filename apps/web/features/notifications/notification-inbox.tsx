@@ -1,6 +1,8 @@
 "use client";
 
-import { Button } from "@/components/button";
+import { Button, buttonStyles } from "@/components/button";
+import { GearSixIcon } from "@phosphor-icons/react";
+import Link from "next/link";
 
 import { useAuth } from "@clerk/nextjs";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
@@ -29,14 +31,13 @@ export function NotificationInbox({ organizationId }: { organizationId: string; 
 }
 
 const states: { value: NotificationState; label: string; }[] = [
-  { value: "all", label: "All" }, { value: "unread", label: "Unread" },
-  { value: "read", label: "Read" }, { value: "archived", label: "Archived" },
+  { value: "unread", label: "Inbox" }, { value: "archived", label: "Archived" },
 ];
 
 function InboxContent({ organization }: { organization: Organization; }) {
   const userId = useSessionUserId();
   const { getToken } = useAuth();
-  const [state, setState] = useState<NotificationState>("all");
+  const [state, setState] = useState<NotificationState>("unread");
   const [category, setCategory] = useState<NotificationCategory | "">("");
   const [projectId, setProjectId] = useState("");
   const projects = useInfiniteQuery(projectsQuery(userId, organization.id, getToken));
@@ -46,7 +47,10 @@ function InboxContent({ organization }: { organization: Organization; }) {
   return (
     <div className="max-w-280">
       <PageHeader title="Notifications"
-        description={<>Your updates across <strong>{organization.name}</strong>. Read and archive states are personal to you.</>} />
+        description={<>Your updates across <strong>{organization.name}</strong>. Marking an update as read moves it to your archive.</>}
+        actions={<Link href={"/dashboard/organizations/" + encodeURIComponent(organization.id) + "/settings?section=notifications"} className={buttonStyles({ variant: "secondary", size: "small" })}>
+          <GearSixIcon size={16} aria-hidden="true" />Notification preferences
+        </Link>} />
       <div className="flex items-end justify-between flex-wrap mb-5 gap-4 max-[37.5rem]:items-stretch">
         <div className={"flex items-center shrink-0 w-fit rounded-[7px] bg-background gap-1 p-0.75 border border-solid border-border [&_button]:min-h-7.5 [&_button]:rounded-sm [&_button]:bg-transparent [&_button]:text-muted [&_button]:text-[12px] [&_button]:font-medium [&_button]:whitespace-nowrap [&_button]:py-1 [&_button]:px-3 [&_button]:border-0 [&_button]:border-none [&_button]:border-current [&_button:hover]:text-foreground [&_button[aria-pressed=\"true\"]]:bg-surface-hover [&_button[aria-pressed=\"true\"]]:text-foreground pointer-coarse:[&_button]:min-h-10"} role="group" aria-label="Notification state">
           {states.map((tab) => <button key={tab.value} type="button" aria-pressed={state === tab.value}

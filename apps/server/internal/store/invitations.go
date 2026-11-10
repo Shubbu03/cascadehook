@@ -11,6 +11,7 @@ import (
 	"github.com/jackc/pgx/v5"
 
 	"cascadehook/internal/accounts"
+	"cascadehook/internal/auth"
 	"cascadehook/internal/notifications"
 	"cascadehook/internal/pagination"
 )
@@ -303,6 +304,9 @@ func (s *Store) AcceptInvitation(
 		return accounts.Membership{}, fmt.Errorf("begin invitation acceptance: %w", err)
 	}
 	defer rollbackTransaction(tx)
+	if err := setAuditActor(ctx, tx, auth.Principal{UserID: userID}); err != nil {
+		return accounts.Membership{}, err
+	}
 	if err := lockActiveUsers(
 		ctx,
 		tx,

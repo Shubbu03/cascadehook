@@ -67,6 +67,12 @@ func run() error {
 		accountDeleter = client
 	}
 	started := time.Now()
+	if !*dryRun {
+		// The report only feeds the settings page; cleanup must not depend on it.
+		if err := db.RecordRetentionPolicy(ctx, cfg.Retention); err != nil {
+			logger.Warn("retention policy report failed", "error", err)
+		}
+	}
 	report, cleanupErr := retention.Run(
 		ctx,
 		db,

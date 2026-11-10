@@ -100,12 +100,18 @@ func (s *Store) ReplayDelivery(ctx context.Context, principal auth.Principal, de
 	}
 	receipt := deliveries.Replay{ID: id, DeliveryID: deliveryID, FromCycle: cycle, Cycle: cycle + 1,
 		CreatedAt: databaseNow, RetryDeadline: databaseNow.Add(deliveries.RetryHorizon)}
+	policy, err := readDeliveryPolicy(ctx, tx, principal.ProjectID)
+	if err != nil {
+		return deliveries.Replay{}, err
+	}
 	result, err := tx.Exec(ctx, `UPDATE deliveries SET state = 'pending', cycle = cycle + 1, attempt_count = 0,
 		cycle_started_at = $4, retry_deadline = $5, next_attempt_at = $4, terminal_reason = NULL,
 		lease_owner = NULL, lease_token = NULL, lease_expires_at = NULL,
-		active_attempt_id = NULL, active_attempt_started_at = NULL, updated_at = $4
+		active_attempt_id = NULL, active_attempt_started_at = NULL, updated_at = $4,
+		max_attempts=$6,timeout_seconds=$7,retry_delays_seconds=$8
 		WHERE project_id = $1 AND id = $2 AND cycle = $3 AND state IN ('succeeded', 'failed')`,
-		principal.ProjectID, deliveryID, expectedCycle, receipt.CreatedAt, receipt.RetryDeadline)
+		principal.ProjectID, deliveryID, expectedCycle, receipt.CreatedAt, receipt.RetryDeadline,
+		policy.MaxAttempts, policy.TimeoutSeconds, policy.RetryDelaysSeconds)
 	if err != nil {
 		return deliveries.Replay{}, fmt.Errorf("requeue delivery for replay: %w", err)
 	}

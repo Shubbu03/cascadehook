@@ -53,7 +53,7 @@ export function NotificationFeed({ organizationId, filters, compact = false, pro
             : unread === undefined ? "Your updates" : unread.toLocaleString("en-US") + " unread"}
         </span>
         <div className="flex items-center flex-wrap gap-2">
-          {filters.state !== "archived" && filters.state !== "read" && (
+          {!compact && filters.state !== "archived" && filters.state !== "read" && (
             <Button type="button" data-ui="button" variant="quiet" size="small" className="leading-[1.4]"
               disabled={busy || !unread || inaccessible}
               title={filters.projectId || filters.category ? "Mark all unread notifications matching these filters as read" : "Mark all unread notifications in this organization as read"}
@@ -78,12 +78,13 @@ export function NotificationFeed({ organizationId, filters, compact = false, pro
         </div>
       )}
       <span className="sr-only" role="status">
-        {actions.readAll.isSuccess ? actions.readAll.data.updated + " notifications marked as read." : ""}
+        {actions.update.isSuccess ? actions.update.data.archived_at ? "Notification marked as read and moved to archive." : "Notification moved to inbox." : ""}
+        {actions.readAll.isSuccess ? actions.readAll.data.updated + " notifications marked as read and moved to archive." : ""}
       </span>
       {inaccessible ? null : feed.isPending ? <NotificationListSkeleton rows={compact ? 3 : 6} /> : feed.data && (
         <>
           {items.length ? (
-            <ul className="list-none m-0 p-0" aria-label={compact ? "Recent notifications" : "Notifications"}>
+            <ul className="list-none m-0 p-0" aria-label={compact ? "Unread notifications" : "Notifications"}>
               {items.map((item) => <NotificationItem key={item.id} item={item} actions={actions}
                 projectName={item.project_id ? projectNames?.get(item.project_id) : undefined} onNavigate={onNavigate} />)}
             </ul>
@@ -92,9 +93,9 @@ export function NotificationFeed({ organizationId, filters, compact = false, pro
               <EmptyIcon size={28} weight="light" aria-hidden="true" />
               <h3>{emptyTitle}</h3>
               <p>{filters.projectId || filters.category ? "No updates match these filters. Try another category or project."
-                : filters.state === "archived" ? "Notifications you archive will appear here."
+                : filters.state === "archived" ? "Notifications marked as read appear here. Move one back to the inbox to follow up."
                   : filters.state === "unread" ? "New updates for this organization will appear here."
-                    : filters.state === "read" ? "Opening or marking an update as read moves it here."
+                    : filters.state === "read" ? "Notifications marked as read are saved in your archive."
                       : "Delivery alerts, team changes, and other organization updates will appear here."}</p>
             </div>
           )}

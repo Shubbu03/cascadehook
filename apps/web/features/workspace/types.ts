@@ -15,6 +15,8 @@ export type Organization = {
 };
 
 export type Project = {
+  description: string;
+  environment: "" | "production" | "staging" | "development";
   id: string;
   organization_id: string;
   name: string;

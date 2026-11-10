@@ -1,3 +1,5 @@
+"use client";
+
 
 import { Status } from "@/components/status";
 import {
@@ -6,10 +8,11 @@ import {
   WarningCircleIcon,
 } from "@phosphor-icons/react";
 import { CopyButton } from "@/components/copy-button";
-import { formatTime } from "@/lib/format";
+import { useFormatTime } from "@/lib/display-preferences";
 import { stateTone, stateLabel, type Attempt } from "./types";
 
 export function DeliveryAttempts({ records }: { records: Attempt[]; }) {
+  const formatTime = useFormatTime();
   return (
     <ol className="list-none m-0 p-0 [&_>_li]:py-4 [&_>_li]:px-5 [&_>_li+li]:border-t [&_>_li+li]:[border-top-style:solid] [&_>_li+li]:border-t-border @max-[27.5rem]/delivery-detail:[&_>_li]:px-4" role="list">
       {records.map((attempt) => (

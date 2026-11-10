@@ -40,6 +40,10 @@ func cleanupNotifications(ctx context.Context, tx pgx.Tx, cutoff time.Time, limi
 func organizationNotificationCleanup(id uuid.UUID, limit int) []lifecycleCleanupSelection {
 	return []lifecycleCleanupSelection{
 		{retentionSelection: retentionSelection{
+			query: `SELECT a.id FROM audit_entries a WHERE a.organization_id=$1 ORDER BY a.id LIMIT $2`,
+			table: "audit_entries", lockAlias: "a", match: `t.id=c.id`, args: []any{id, limit},
+		}},
+		{retentionSelection: retentionSelection{
 			query: `SELECT r.notification_id,r.user_id FROM notification_recipients r
 				WHERE r.organization_id = $1 ORDER BY r.notification_id,r.user_id LIMIT $2`,
 			table: "notification_recipients", lockAlias: "r",

@@ -12,11 +12,12 @@ import { QueryState } from "@/components/query-state";
 import { stateTone, stateLabel } from "@/features/activity/types";
 import type { Endpoint } from "@/features/endpoints/types";
 import { useSessionUserId } from "@/features/workspace/session";
-import { formatTime } from "@/lib/format";
+import { useFormatTime } from "@/lib/display-preferences";
 import { projectHref, useProject } from "../project-workspace";
 import { overviewDeliveriesQuery, overviewEventsQuery } from "./queries";
 
 export function OverviewActivity({ endpoints }: { endpoints: Endpoint[]; }) {
+  const formatTime = useFormatTime();
   const { project } = useProject();
   const userId = useSessionUserId();
   const { getToken } = useAuth();

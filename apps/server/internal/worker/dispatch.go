@@ -87,11 +87,12 @@ func processDelivery(
 	}
 	elapsed := time.Since(started)
 	requestCancel()
-	result := delivery.Classify(
+	result := delivery.ClassifyWithDelays(
 		response,
 		requestErr,
 		attempt.Number,
 		elapsed,
+		attempt.RetryDelaysSeconds,
 	)
 	// Preserve a received 2xx even when shutdown interrupts response-body reads.
 	if ctx.Err() != nil && result.StatusCode == 0 {

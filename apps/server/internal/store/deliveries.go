@@ -45,11 +45,11 @@ func (s *Store) ClaimDeliveries(ctx context.Context, ownerID uuid.UUID, limit in
 		AND o.deletion_requested_at IS NULL
 		AND v.purge_started_at IS NULL
 		AND e.enabled AND e.verified_at IS NOT NULL AND e.deleted_at IS NULL AND e.signing_secret IS NOT NULL
-		AND d.attempt_count < $2 AND d.retry_deadline > now()
-		AND NOT (d.endpoint_id = ANY($3::uuid[]))
+		AND d.attempt_count < d.max_attempts AND d.retry_deadline > now()
+		AND NOT (d.endpoint_id = ANY($2::uuid[]))
 		ORDER BY d.next_attempt_at, d.id LIMIT $1
 		FOR UPDATE OF d SKIP LOCKED FOR SHARE OF o, p, e SKIP LOCKED`,
-		limit, deliveries.MaxAttempts, excludedIDs)
+		limit, excludedIDs)
 	if err != nil {
 		return nil, fmt.Errorf("select due deliveries: %w", err)
 	}

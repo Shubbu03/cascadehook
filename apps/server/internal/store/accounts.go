@@ -147,6 +147,9 @@ func (s *Store) CreateOrganization(ctx context.Context, userID uuid.UUID, name s
 		return accounts.Organization{}, fmt.Errorf("begin organization creation: %w", err)
 	}
 	defer rollbackTransaction(tx)
+	if err := setAuditActor(ctx, tx, auth.Principal{UserID: userID}); err != nil {
+		return accounts.Organization{}, err
+	}
 	if err := lockActiveUsers(ctx, tx, userID); err != nil {
 		return accounts.Organization{}, err
 	}
@@ -211,6 +214,9 @@ func lockOrganizationAccess(
 	tx pgx.Tx,
 	userID, organizationID uuid.UUID,
 ) (accounts.Role, error) {
+	if err := setAuditActor(ctx, tx, auth.Principal{UserID: userID}); err != nil {
+		return "", err
+	}
 	if err := lockActiveUsers(ctx, tx, userID); err != nil {
 		return "", err
 	}

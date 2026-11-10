@@ -1,11 +1,11 @@
 "use client";
 
 import {
-  ArchiveIcon, ArrowCounterClockwiseIcon, ChartBarIcon, CheckCircleIcon,
+  ArrowCounterClockwiseIcon, ChartBarIcon, CheckCircleIcon,
   CheckIcon, FolderSimpleIcon, KeyIcon, LightningIcon, ShieldCheckIcon, UsersIcon,
 } from "@phosphor-icons/react";
 import Link from "next/link";
-import { formatTime } from "@/lib/format";
+import { useFormatTime } from "@/lib/display-preferences";
 import { notificationCategories, notificationTarget, type InboxNotification } from "./types";
 import type { NotificationActions } from "./use-notification-actions";
 
@@ -20,6 +20,7 @@ export function NotificationItem({ item, actions, projectName, onNavigate }: {
   projectName?: string;
   onNavigate?: () => void;
 }) {
+  const formatTime = useFormatTime();
   const Icon = categoryIcons[item.category] ?? LightningIcon;
   const href = notificationTarget(item);
   const pending = actions.update.isPending || actions.readAll.isPending;
@@ -61,18 +62,11 @@ export function NotificationItem({ item, actions, projectName, onNavigate }: {
       </div>
       <div className="flex -mt-1 gap-0.5 in-data-[ui~='notification-feed-compact']:flex-col in-data-[ui~='notification-feed-compact']:-mt-0.5 in-data-[ui~='notification-feed-compact']:gap-1 max-[37.5rem]:col-2 max-[37.5rem]:mt-0 max-[37.5rem]:in-data-[ui~='notification-feed-compact']:col-auto">
         <button type="button" className="inline-flex items-center justify-center shrink-0 rounded-md bg-transparent text-muted p-0 size-8.5 border-0 border-none border-current [&:hover]:bg-surface-hover [&:hover]:text-foreground in-data-[ui~='notification-feed-compact']:size-7 pointer-coarse:size-11 pointer-coarse:in-data-[ui~='notification-feed-compact']:size-11"
-          title={item.read_at ? "Mark as unread" : "Mark as read"}
-          aria-label={(item.read_at ? "Mark as unread: " : "Mark as read: ") + item.title}
+          title={item.archived_at ? "Move to inbox" : "Mark as read"}
+          aria-label={(item.archived_at ? "Move to inbox: " : "Mark as read: ") + item.title}
           disabled={pending}
-          onClick={() => actions.update.mutate({ id: item.id, read: !item.read_at })}>
-          {item.read_at ? <span className="rounded-full size-2.5 border-[1.5px] border-solid border-current" aria-hidden="true" /> : <CheckIcon size={16} aria-hidden="true" />}
-        </button>
-        <button type="button" className="inline-flex items-center justify-center shrink-0 rounded-md bg-transparent text-muted p-0 size-8.5 border-0 border-none border-current [&:hover]:bg-surface-hover [&:hover]:text-foreground in-data-[ui~='notification-feed-compact']:size-7 pointer-coarse:size-11 pointer-coarse:in-data-[ui~='notification-feed-compact']:size-11"
-          title={item.archived_at ? "Restore to inbox" : "Archive"}
-          aria-label={(item.archived_at ? "Restore to inbox: " : "Archive: ") + item.title}
-          disabled={pending}
-          onClick={() => actions.update.mutate({ id: item.id, archived: !item.archived_at })}>
-          {item.archived_at ? <ArrowCounterClockwiseIcon size={16} aria-hidden="true" /> : <ArchiveIcon size={16} aria-hidden="true" />}
+          onClick={() => actions.update.mutate({ id: item.id, read: !item.archived_at })}>
+          {item.archived_at ? <ArrowCounterClockwiseIcon size={16} aria-hidden="true" /> : <CheckIcon size={16} aria-hidden="true" />}
         </button>
       </div>
     </li>
