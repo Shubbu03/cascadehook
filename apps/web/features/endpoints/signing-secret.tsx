@@ -22,6 +22,7 @@ import {
   type Endpoint,
   type SigningSecretReceipt,
 } from "./types";
+import { errorText, formField, panelHeading, panelText, securityCard } from "@/components/styles";
 
 type Disclosure =
   | { status: "idle"; }
@@ -126,10 +127,10 @@ export function SigningSecret({
   return (
     <section
       id="signing-secret"
-      data-ui="endpoint-security-card" className="min-w-0 py-5 px-5.5 [[data-ui~='endpoint-security-card']+&]:border-l [[data-ui~='endpoint-security-card']+&]:[border-left-style:solid] [[data-ui~='endpoint-security-card']+&]:border-l-border @max-[38.75rem]/endpoint-settings:p-4 @max-[47.5rem]/endpoint-settings:[[data-ui~='endpoint-security-card']+&]:border-t @max-[47.5rem]/endpoint-settings:[[data-ui~='endpoint-security-card']+&]:[border-top-style:solid] @max-[47.5rem]/endpoint-settings:[[data-ui~='endpoint-security-card']+&]:border-t-border @max-[47.5rem]/endpoint-settings:[[data-ui~='endpoint-security-card']+&]:border-l-0 @max-[47.5rem]/endpoint-settings:[[data-ui~='endpoint-security-card']+&]:[border-left-style:none] @max-[47.5rem]/endpoint-settings:[[data-ui~='endpoint-security-card']+&]:border-l-[currentColor]"
+      data-ui="endpoint-security-card" className={securityCard}
       aria-labelledby={id + "-title"}
     >
-      <div data-ui="endpoint-panel-heading" className="flex items-center flex-wrap gap-2 [&_>_svg]:shrink-0 [&_>_svg]:text-muted [&_h2]:font-medium [&_h2]:tracking-[-0.01em] [&_h2]:text-sm/normal">
+      <div data-ui="endpoint-panel-heading" className={panelHeading}>
         <KeyIcon size={18} aria-hidden="true" />
         <h2 id={id + "-title"}>Signing secret</h2>
         <Status
@@ -140,14 +141,14 @@ export function SigningSecret({
       </div>
       {disclosure.status === "revealed" ? (
         <div data-ui="secret-disclosure" className="mt-3">
-          <p data-ui="notice" className="rounded-lg bg-warning-subtle text-warning text-[13px] leading-[1.7] my-4 py-3.5 px-4.25 border border-solid border-border in-data-[ui~='endpoint-inline-fields']:mt-3 in-data-[ui~='endpoint-inline-fields']:mb-0 in-data-[ui~='endpoint-inline-fields']:text-[12px] in-data-[ui~='endpoint-inline-fields']:py-2.5 in-data-[ui~='endpoint-inline-fields']:px-3 [[data-ui~='endpoint-security-card']_[data-ui~='secret-disclosure']_&]:mt-0 [[data-ui~='endpoint-security-card']_[data-ui~='secret-disclosure']_&]:mb-4 [[data-ui~='endpoint-security-card']_[data-ui~='secret-disclosure']_&]:text-[12px] [[data-ui~='endpoint-security-card']_[data-ui~='secret-disclosure']_&]:py-2.5 [[data-ui~='endpoint-security-card']_[data-ui~='secret-disclosure']_&]:px-3">
+          <p className="rounded-lg bg-warning-subtle text-warning text-[13px] leading-[1.7] my-4 py-3.5 px-4.25 border border-solid border-border [[data-ui~='endpoint-security-card']_[data-ui~='secret-disclosure']_&]:mt-0 [[data-ui~='endpoint-security-card']_[data-ui~='secret-disclosure']_&]:mb-4 [[data-ui~='endpoint-security-card']_[data-ui~='secret-disclosure']_&]:text-[12px] [[data-ui~='endpoint-security-card']_[data-ui~='secret-disclosure']_&]:py-2.5 [[data-ui~='endpoint-security-card']_[data-ui~='secret-disclosure']_&]:px-3">
             Save this secret now. It is shown only in this view and is cleared
             when you leave. Store it securely on your receiver, then close it to
             continue setup.
           </p>
-          <label data-ui="form-field" className="grid mb-4.5 gap-2 [&_>_span]:text-[13px] [&_>_span]:font-medium [&_>_label]:text-[13px] [&_>_label]:font-medium in-data-[ui~='endpoint-inline-fields']:mb-0" htmlFor={id}>
+          <label className={formField} htmlFor={id}>
             <span>New signing secret</span>
-            <Input className="[[data-ui~='workspace-create-dialog']_&]:bg-surface-hover [[data-ui~='workspace-create-dialog']_&]:border-0 [[data-ui~='workspace-create-dialog']_&]:border-none [[data-ui~='workspace-create-dialog']_&]:border-current [[data-ui~='dashboard-main']_&]:min-h-10 [[data-ui~='dashboard-main']_&]:text-[14px] [[data-ui~='dashboard-main']_&]:py-2.25 [[data-ui~='dashboard-main']_&]:px-3 [[data-ui~='workspace-create-dialog']_&]:focus-visible:outline-hidden [[data-ui~='workspace-create-dialog']_&]:focus-visible:shadow-[inset_0_-2px_var(--accent)] max-[37.5rem]:[[data-ui~='dashboard-main']_&]:text-[16px] w-full min-h-11.5 rounded-md text-foreground py-2.75 px-3 placeholder:text-muted font-mono text-[13px] max-[32.5rem]:text-[16px]"
+            <Input className="in-data-[ui~='workspace-create-dialog']:bg-surface-hover in-data-[ui~='workspace-create-dialog']:border-0 in-data-[ui~='workspace-create-dialog']:border-none in-data-[ui~='workspace-create-dialog']:border-current in-data-[ui~='dashboard-main']:min-h-10 in-data-[ui~='dashboard-main']:text-[14px] in-data-[ui~='dashboard-main']:py-2.25 in-data-[ui~='dashboard-main']:px-3 in-data-[ui~='workspace-create-dialog']:focus-visible:outline-hidden in-data-[ui~='workspace-create-dialog']:focus-visible:shadow-[inset_0_-2px_var(--accent)] max-[37.5rem]:in-data-[ui~='dashboard-main']:text-[16px] w-full min-h-11.5 rounded-md text-foreground py-2.75 px-3 placeholder:text-muted font-mono text-[13px] max-[32.5rem]:text-[16px]"
               id={id}
               type={visible ? "text" : "password"}
               value={disclosure.receipt.signing_secret}
@@ -208,13 +209,13 @@ export function SigningSecret({
         </div>
       ) : (
         <>
-          <p className="mt-2 mb-3.5 text-muted text-[13px] leading-[1.65] wrap-anywhere [[data-ui~='endpoint-security-card']_>_&:last-child]:mb-0">
+          <p className={panelText}>
             {endpoint.has_signing_secret
               ? "Your secret is configured and cannot be retrieved. Rotate it only when you need a replacement."
               : "Generate a secret and configure your receiver to validate signed requests."}
           </p>
           {disclosure.status === "error" && (
-            <div className="text-danger text-[13px] my-3 [[data-ui~='endpoint-danger']_>_&]:basis-full [[data-ui~='endpoint-danger']_>_&]:text-danger" role="alert">
+            <div className={errorText} role="alert">
               <p>{disclosure.message}</p>
               <p>
                 The request may have completed. Check the endpoint state before

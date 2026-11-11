@@ -6,7 +6,7 @@ import { adapters } from "./verifier/providers";
 export const comparisonPath = "/tools/webhook-signature-comparison";
 export const comparisonChecked = "November 7, 2026";
 
-export type ComparisonRow = {
+type ComparisonRow = {
   name: string;
   verifier?: string;
   headers: string[];

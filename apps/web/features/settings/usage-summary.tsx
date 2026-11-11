@@ -3,16 +3,17 @@
 import { useFormatTime } from "@/lib/display-preferences";
 import { formatBytes } from "@/lib/format";
 import type { Usage } from "./types";
+import { leadText } from "@/components/styles";
 
 export function OrganizationUsageSummary({ usage }: { usage: Usage; }) {
   const formatTime = useFormatTime();
   return (
     <>
-      <p className="mt-3 mb-4.5 text-muted text-[14px] leading-[1.8] max-w-162.5 in-data-[ui~='dashboard-main']:text-[13px]">
+      <p className={leadText}>
         {usage.period} · Resets {formatTime(usage.resets_at)}
       </p>
       <h2 className="mt-9 text-[19px] in-data-[ui~='dashboard-main']:mt-7 in-data-[ui~='dashboard-main']:text-[17px]">Organization</h2>
-      <p className="mt-3 mb-4.5 text-muted text-[14px] leading-[1.8] max-w-162.5 in-data-[ui~='dashboard-main']:text-[13px]">
+      <p className={leadText}>
         Quotas are shared across projects. Replays count as new delivery cycles;
         automatic retries don’t.
       </p>
@@ -52,7 +53,7 @@ export function UsageActivity({ usage }: { usage: Usage; }) {
     ["Replays", usage.usage.replays],
   ] as const;
   return (
-    <dl data-ui="detail-facts" className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,230px),1fr))] rounded-[9px] bg-surface gap-6 p-5.5 my-6 border border-solid border-border [&_>_div]:min-w-0 [&_dt]:mb-2 [&_dt]:text-[12px] [&_dt]:text-muted [&_dd]:text-[13px] [&_dd]:leading-[1.7] [&_dd]:wrap-anywhere [&_dd]:m-0 [&_code]:text-[11px] max-[37.5rem]:p-4.5">
+    <dl className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,230px),1fr))] rounded-[9px] bg-surface gap-6 p-5.5 my-6 border border-solid border-border [&_>_div]:min-w-0 [&_dt]:mb-2 [&_dt]:text-[12px] [&_dt]:text-muted [&_dd]:text-[13px] [&_dd]:leading-[1.7] [&_dd]:wrap-anywhere [&_dd]:m-0 [&_code]:text-[11px] max-[37.5rem]:p-4.5">
       {values.map(([label, value]) => (
         <div key={label}>
           <dt>{label}</dt>

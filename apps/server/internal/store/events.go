@@ -84,13 +84,7 @@ func (s *Store) PublishEvent(ctx context.Context, projectID uuid.UUID, body []by
 		WHERE k.project_id = $1 AND k.idempotency_key = $2 AND e.purge_started_at IS NULL`,
 		projectID,
 		key,
-	).Scan(
-		&result.ID,
-		&result.Type,
-		&result.CreatedAt,
-		&result.DeliveryCount,
-		&storedHash,
-	)
+	).Scan(&result.ID, &result.Type, &result.CreatedAt, &result.DeliveryCount, &storedHash)
 	if err == nil {
 		if !bytes.Equal(storedHash, digest[:]) {
 			return events.Accepted{}, events.ErrIdempotencyConflict
@@ -106,12 +100,7 @@ func (s *Store) PublishEvent(ctx context.Context, projectID uuid.UUID, body []by
 	if suspended {
 		return events.Accepted{}, controls.ErrSuspended
 	}
-	if err := reservePayloadStorage(
-		ctx,
-		tx,
-		projectID,
-		len(body),
-	); err != nil {
+	if err := reservePayloadStorage(ctx, tx, projectID, len(body)); err != nil {
 		return events.Accepted{}, err
 	}
 
@@ -132,13 +121,7 @@ func (s *Store) PublishEvent(ctx context.Context, projectID uuid.UUID, body []by
 	if err != nil {
 		return events.Accepted{}, fmt.Errorf("create event: %w", err)
 	}
-	result.DeliveryCount, err = fanOutEvent(
-		ctx,
-		tx,
-		projectID,
-		id,
-		eventType,
-	)
+	result.DeliveryCount, err = fanOutEvent(ctx, tx, projectID, id, eventType)
 	if err != nil {
 		return events.Accepted{}, err
 	}

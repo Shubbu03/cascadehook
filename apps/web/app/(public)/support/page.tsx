@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { DocsLink } from "@/components/docs-link";
 import { pageMetadata } from "@/lib/site";
 import { supportEmail } from "@/lib/support";
+import { prose } from "@/components/styles";
 
 export const metadata: Metadata = pageMetadata({
   path: "/support",
@@ -11,7 +12,7 @@ export const metadata: Metadata = pageMetadata({
 
 export default function Page() {
   return (
-    <article data-ui="public-prose" className="max-w-185 leading-[1.85] mx-auto [&_h1]:mb-6.5 [&_h1]:text-[clamp(36px,5vw,56px)] [&_h1]:font-medium [&_h1]:leading-[1.12] [&_h1]:tracking-[-.045em] [&_h2]:mt-8 [&_h2]:text-[21px] [&_h2]:leading-[1.4] [&_h2]:tracking-[-.02em] [&_p]:mt-4 [&_p]:text-muted [&_p]:text-[14px] [&_ul]:mt-4 [&_ul]:text-muted [&_ul]:text-[14px] [&_ul]:pl-5.5 [&_ul]:[list-style:disc] [&_a]:underline [&_a]:underline-offset-[3px]">
+    <article className={prose}>
       <p data-ui="landing-eyebrow" className="text-accent text-[13px] leading-[1.6]">Support</p>
       <h1>How can we help?</h1>
       <p>Questions about setup, your account, or a delivery?</p>

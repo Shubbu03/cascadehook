@@ -65,12 +65,7 @@ func Run(ctx context.Context, db Store, options Options, logger *slog.Logger) (R
 			if options.DryRun {
 				result.Rows, err = db.PreviewRetentionBatch(opCtx, batch)
 			} else if phase == DeleteProviderAccounts {
-				result, err = options.cleanupProvider(
-					opCtx,
-					db,
-					batch,
-					logger,
-				)
+				result, err = options.cleanupProvider(opCtx, db, batch, logger)
 			} else {
 				result, err = db.CleanupRetentionBatch(opCtx, batch)
 			}
@@ -95,15 +90,7 @@ func Run(ctx context.Context, db Store, options Options, logger *slog.Logger) (R
 			report.Batches++
 			report.Rows[phase] += result.Rows
 			passRows += result.Rows
-			logger.Debug(
-				"retention batch finished",
-				"phase",
-				phase,
-				"rows",
-				result.Rows,
-				"dry_run",
-				options.DryRun,
-			)
+			logger.Debug("retention batch finished", "phase", phase, "rows", result.Rows, "dry_run", options.DryRun)
 		}
 		if options.DryRun {
 			report.Status = "preview"

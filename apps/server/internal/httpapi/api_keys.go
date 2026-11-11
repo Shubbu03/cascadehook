@@ -1,9 +1,7 @@
 package httpapi
 
 import (
-	"context"
 	"errors"
-	"io"
 	"net/http"
 	"time"
 
@@ -21,24 +19,13 @@ func (api *api) apiKeyCollection(w http.ResponseWriter, r *http.Request, princip
 	case http.MethodPost:
 		api.createAPIKey(w, r, principal)
 	default:
-		w.Header().Set("Allow", "GET, HEAD, POST")
-		writeProblem(
-			w,
-			r,
-			http.StatusMethodNotAllowed,
-			"method_not_allowed",
-		)
+		methodNotAllowed(w, r, "GET, HEAD, POST")
 	}
 }
 
 func (api *api) createAPIKey(w http.ResponseWriter, r *http.Request, principal auth.Principal) {
 	if r.URL.RawQuery != "" {
-		writeProblem(
-			w,
-			r,
-			http.StatusBadRequest,
-			"invalid_api_key_request",
-		)
+		writeProblem(w, r, http.StatusBadRequest, "invalid_api_key_request")
 		return
 	}
 	var body struct {
@@ -105,12 +92,7 @@ func (api *api) createAPIKey(w http.ResponseWriter, r *http.Request, principal a
 }
 
 func (api *api) listAPIKeys(w http.ResponseWriter, r *http.Request, principal auth.Principal) {
-	query, limit, ok := readListQuery(
-		w,
-		r,
-		"environment",
-		"status",
-	)
+	query, limit, ok := readListQuery(w, r, "environment", "status")
 	if !ok {
 		return
 	}
@@ -118,12 +100,7 @@ func (api *api) listAPIKeys(w http.ResponseWriter, r *http.Request, principal au
 	status := auth.KeyStatus(query.Get("status"))
 	if (query.Has("environment") && !auth.ValidKeyEnvironment(environment)) ||
 		(query.Has("status") && !auth.ValidKeyStatus(status)) {
-		writeProblem(
-			w,
-			r,
-			http.StatusBadRequest,
-			"invalid_filter",
-		)
+		writeProblem(w, r, http.StatusBadRequest, "invalid_filter")
 		return
 	}
 	before, ok := readPageCursor(w, r, query)
@@ -150,13 +127,7 @@ func (api *api) listAPIKeys(w http.ResponseWriter, r *http.Request, principal au
 
 func (api *api) apiKeyResource(w http.ResponseWriter, r *http.Request, principal auth.Principal) {
 	if r.Method != http.MethodGet && r.Method != http.MethodHead && r.Method != http.MethodDelete {
-		w.Header().Set("Allow", "GET, HEAD, DELETE")
-		writeProblem(
-			w,
-			r,
-			http.StatusMethodNotAllowed,
-			"method_not_allowed",
-		)
+		methodNotAllowed(w, r, "GET, HEAD, DELETE")
 		return
 	}
 	id, ok := readResourceID(w, r, "api_key_id")
@@ -190,23 +161,12 @@ func (api *api) apiKeyResource(w http.ResponseWriter, r *http.Request, principal
 		api.apiKeyProblem(w, r, err)
 		return
 	}
-	writeJSON(
-		w,
-		r,
-		http.StatusOK,
-		key,
-	)
+	writeJSON(w, r, http.StatusOK, key)
 }
 
 func (api *api) rotateAPIKey(w http.ResponseWriter, r *http.Request, principal auth.Principal) {
 	if r.Method != http.MethodPost {
-		w.Header().Set("Allow", "POST")
-		writeProblem(
-			w,
-			r,
-			http.StatusMethodNotAllowed,
-			"method_not_allowed",
-		)
+		methodNotAllowed(w, r, "POST")
 		return
 	}
 	id, ok := readResourceID(w, r, "api_key_id")
@@ -225,13 +185,7 @@ func (api *api) rotateAPIKey(w http.ResponseWriter, r *http.Request, principal a
 		api.apiKeyProblem(w, r, err)
 		return
 	}
-	rotation, err := api.db.RotateAPIKey(
-		r.Context(),
-		principal,
-		id,
-		credential.Prefix,
-		credential.Hash,
-	)
+	rotation, err := api.db.RotateAPIKey(r.Context(), principal, id, credential.Prefix, credential.Hash)
 	if err != nil {
 		api.apiKeyProblem(w, r, err)
 		return
@@ -265,25 +219,10 @@ func (api *api) rotateAPIKey(w http.ResponseWriter, r *http.Request, principal a
 
 func emptyAPIKeyAction(w http.ResponseWriter, r *http.Request) bool {
 	if r.URL.RawQuery != "" {
-		writeProblem(
-			w,
-			r,
-			http.StatusBadRequest,
-			"invalid_api_key_request",
-		)
+		writeProblem(w, r, http.StatusBadRequest, "invalid_api_key_request")
 		return false
 	}
-	body, err := io.ReadAll(http.MaxBytesReader(w, r.Body, 1))
-	if err != nil || len(body) != 0 {
-		writeProblem(
-			w,
-			r,
-			http.StatusBadRequest,
-			"unexpected_request_body",
-		)
-		return false
-	}
-	return true
+	return emptyBody(w, r)
 }
 
 func (api *api) apiKeyProblem(w http.ResponseWriter, r *http.Request, err error) {
@@ -299,77 +238,24 @@ func (api *api) apiKeyProblem(w http.ResponseWriter, r *http.Request, err error)
 	case errors.Is(err, auth.ErrInvalidAPIKey):
 		unauthorized(w, r)
 	case errors.Is(err, auth.ErrAPIKeyNotFound):
-		writeProblem(
-			w,
-			r,
-			http.StatusNotFound,
-			"api_key_not_found",
-		)
+		writeProblem(w, r, http.StatusNotFound, "api_key_not_found")
 	case errors.Is(err, auth.ErrInvalidKeyName):
-		writeProblem(
-			w,
-			r,
-			http.StatusUnprocessableEntity,
-			"invalid_api_key_name",
-		)
+		writeProblem(w, r, http.StatusUnprocessableEntity, "invalid_api_key_name")
 	case errors.Is(err, auth.ErrInvalidKeyEnvironment):
-		writeProblem(
-			w,
-			r,
-			http.StatusUnprocessableEntity,
-			"invalid_api_key_environment",
-		)
+		writeProblem(w, r, http.StatusUnprocessableEntity, "invalid_api_key_environment")
 	case errors.Is(err, auth.ErrInvalidKeyScope):
-		writeProblem(
-			w,
-			r,
-			http.StatusUnprocessableEntity,
-			"invalid_api_key_scope",
-		)
+		writeProblem(w, r, http.StatusUnprocessableEntity, "invalid_api_key_scope")
 	case errors.Is(err, auth.ErrInsufficientScope):
 		insufficientScope(w, r)
 	case errors.Is(err, auth.ErrInvalidKeyExpiry):
-		writeProblem(
-			w,
-			r,
-			http.StatusUnprocessableEntity,
-			"invalid_api_key_expiry",
-		)
+		writeProblem(w, r, http.StatusUnprocessableEntity, "invalid_api_key_expiry")
 	case errors.Is(err, auth.ErrInactiveAPIKey):
-		writeProblem(
-			w,
-			r,
-			http.StatusConflict,
-			"api_key_inactive",
-		)
+		writeProblem(w, r, http.StatusConflict, "api_key_inactive")
 	case errors.Is(err, auth.ErrAPIKeyRotationPending):
-		writeProblem(
-			w,
-			r,
-			http.StatusConflict,
-			"api_key_rotation_pending",
-		)
+		writeProblem(w, r, http.StatusConflict, "api_key_rotation_pending")
 	case errors.Is(err, auth.ErrLastUsableAPIKey):
-		writeProblem(
-			w,
-			r,
-			http.StatusConflict,
-			"last_usable_api_key",
-		)
-	case errors.Is(err, context.DeadlineExceeded), errors.Is(err, context.Canceled):
-		writeProblem(
-			w,
-			r,
-			http.StatusServiceUnavailable,
-			"request_timeout",
-		)
+		writeProblem(w, r, http.StatusConflict, "last_usable_api_key")
 	default:
-		api.logger.Error("API key management failed", "error", err)
-		writeProblem(
-			w,
-			r,
-			http.StatusInternalServerError,
-			"internal_error",
-		)
+		api.unexpectedProblem(w, r, "API key management failed", err)
 	}
 }

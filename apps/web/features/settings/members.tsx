@@ -25,6 +25,8 @@ import { apiRequest } from "@/lib/api";
 import { useFormatTime } from "@/lib/display-preferences";
 import { notify } from "@/lib/notify";
 import type { Membership } from "./types";
+import { errorText } from "@/components/styles";
+import { queryKeys } from "@/lib/query-keys";
 
 type MemberAction =
   | { member: Membership; role: OrganizationRole; }
@@ -72,12 +74,12 @@ export function Members({ organization }: { organization: Organization; }) {
       Promise.all([
         client.invalidateQueries({ queryKey: key }),
         client.invalidateQueries({
-          queryKey: ["organization", userId, organization.id],
+          queryKey: queryKeys.organization(userId, organization.id),
         }),
-        client.invalidateQueries({ queryKey: ["organizations", userId] }),
-        client.invalidateQueries({ queryKey: ["project", userId] }),
+        client.invalidateQueries({ queryKey: queryKeys.organizations(userId) }),
+        client.invalidateQueries({ queryKey: queryKeys.projectDetails(userId) }),
         client.invalidateQueries({
-          queryKey: ["projects", userId, organization.id],
+          queryKey: queryKeys.projects(userId, organization.id),
         }),
       ]),
   });
@@ -90,7 +92,7 @@ export function Members({ organization }: { organization: Organization; }) {
         <RefreshButton pending={members.isFetching} refresh={members.refetch} />
       </div>
       {update.isError && (
-        <p className="text-danger text-[13px] my-3" role="alert">
+        <p className={errorText} role="alert">
           {update.error.message}
         </p>
       )}
@@ -101,7 +103,7 @@ export function Members({ organization }: { organization: Organization; }) {
           </p>
         )}
         <div className="max-w-full overflow-x-auto rounded-[9px] bg-surface border border-solid border-border in-data-[ui~='organization-settings']:mt-5">
-          <table data-ui="data-table" className="w-full border-collapse text-[13px] text-left [&_th]:border-b [&_th]:[border-bottom-style:solid] [&_th]:border-b-border [&_th]:bg-background [&_th]:text-muted [&_th]:text-[12px] [&_th]:font-medium [&_th]:whitespace-nowrap [&_th]:py-3.25 [&_th]:px-4 [&_td]:align-middle [&_td]:leading-[1.7] [&_td]:min-w-27.5 [&_td]:p-4 [&_td_code]:text-[11px] [&_td_code]:wrap-anywhere [&_tr+tr_td]:border-t [&_tr+tr_td]:[border-top-style:solid] [&_tr+tr_td]:border-t-border [&_th:first-child]:w-[45%] [[data-ui~='dashboard-main']_&_th]:py-2.75 [[data-ui~='dashboard-main']_&_th]:px-4 [[data-ui~='dashboard-main']_&_td]:min-w-27.5 [[data-ui~='dashboard-main']_&_td]:py-3.25 [[data-ui~='dashboard-main']_&_td]:px-4 [&_tbody_tr:hover]:bg-surface-hover max-[37.5rem]:[&_td]:p-3">
+          <table data-ui="data-table" className="w-full border-collapse text-[13px] text-left [&_th]:border-b [&_th]:border-b-border [&_th]:bg-background [&_th]:text-muted [&_th]:text-[12px] [&_th]:font-medium [&_th]:whitespace-nowrap [&_th]:py-3.25 [&_th]:px-4 [&_td]:align-middle [&_td]:leading-[1.7] [&_td]:min-w-27.5 [&_td]:p-4 [&_td_code]:text-[11px] [&_td_code]:wrap-anywhere [&_tr+tr_td]:border-t [&_tr+tr_td]:border-t-border [&_th:first-child]:w-[45%] [[data-ui~='dashboard-main']_&_th]:py-2.75 [[data-ui~='dashboard-main']_&_th]:px-4 [[data-ui~='dashboard-main']_&_td]:min-w-27.5 [[data-ui~='dashboard-main']_&_td]:py-3.25 [[data-ui~='dashboard-main']_&_td]:px-4 [&_tbody_tr:hover]:bg-surface-hover max-[37.5rem]:[&_td]:p-3">
             <caption className="sr-only">Organization members</caption>
             <thead>
               <tr>
@@ -124,12 +126,12 @@ export function Members({ organization }: { organization: Organization; }) {
                   <td>{formatTime(member.created_at)}</td>
                   {organization.role === "owner" && (
                     <td>
-                      <div data-ui="member-actions" className="flex items-center gap-3">
-                        <label data-ui="filter-field" className="grid gap-1.75 [&_>_span]:text-[12px] [&_>_span]:font-medium w-37.5 shrink-0 in-data-[ui~='dashboard-main']:flex-[0_1_auto] in-data-[ui~='dashboard-main']:gap-1.5">
+                      <div className="flex items-center gap-3">
+                        <label className="grid gap-1.75 [&_>_span]:text-[12px] [&_>_span]:font-medium w-37.5 shrink-0 in-data-[ui~='dashboard-main']:flex-[0_1_auto] in-data-[ui~='dashboard-main']:gap-1.5">
                           <span className="sr-only">
                             Role for {memberName(member)}
                           </span>
-                          <Select className="[[data-ui~='dashboard-main']_&]:w-auto [[data-ui~='dashboard-main']_&]:min-w-37.5 [[data-ui~='dashboard-main']_&]:min-h-9 [[data-ui~='dashboard-main']_&]:pr-10.5 [[data-ui~='dashboard-main']_&]:pl-3.5 [[data-ui~='dashboard-main']_&]:py-1.75 [[data-ui~='dashboard-main']_&]:text-[13px]/5 max-[37.5rem]:[[data-ui~='dashboard-main']_&]:w-full max-[37.5rem]:[[data-ui~='dashboard-main']_&]:min-w-0 max-[37.5rem]:[[data-ui~='dashboard-main']_&]:text-[16px] min-h-10.5 rounded-md text-foreground text-[14px] max-w-full py-2.25 px-2.75 max-[32.5rem]:text-[16px]"
+                          <Select className="in-data-[ui~='dashboard-main']:w-auto in-data-[ui~='dashboard-main']:min-w-37.5 in-data-[ui~='dashboard-main']:min-h-9 in-data-[ui~='dashboard-main']:pr-10.5 in-data-[ui~='dashboard-main']:pl-3.5 in-data-[ui~='dashboard-main']:py-1.75 in-data-[ui~='dashboard-main']:text-[13px]/5 max-[37.5rem]:in-data-[ui~='dashboard-main']:w-full max-[37.5rem]:in-data-[ui~='dashboard-main']:min-w-0 max-[37.5rem]:in-data-[ui~='dashboard-main']:text-[16px] min-h-10.5 rounded-md text-foreground text-[14px] max-w-full py-2.25 px-2.75 max-[32.5rem]:text-[16px]"
                             value={member.role}
                             disabled={update.isPending}
                             onChange={(event) => {
@@ -149,7 +151,7 @@ export function Members({ organization }: { organization: Organization; }) {
                           account.data.id !== member.user_id && (
                             <button
                               type="button"
-                              className="text-danger inline-flex items-center font-medium gap-2 [&:hover]:underline [&:hover]:underline-offset-4 in-data-[ui~='switcher-error']:mt-1.25 in-data-[ui~='switcher-error']:text-[13px] in-data-[ui~='switcher-error']:text-accent text-[12px] [[data-ui~='settings-section']_>_&]:text-[14px] whitespace-nowrap in-data-[ui~='notification-error']:ml-auto in-data-[ui~='notification-error']:text-[12px] [[data-ui~='organization-settings']_>_&:first-child]:mb-4.5 [[data-ui~='organization-settings']_>_&:first-child]:text-[12px] [[data-ui~='dashboard-main']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='dashboard-main']_>_section_>_&:first-child]:text-[12px]"
+                              className="text-danger inline-flex items-center font-medium gap-2 [&:hover]:underline [&:hover]:underline-offset-4 text-[12px] [[data-ui~='settings-section']_>_&]:text-[14px] whitespace-nowrap [[data-ui~='organization-settings']_>_&:first-child]:mb-4.5 [[data-ui~='organization-settings']_>_&:first-child]:text-[12px] [[data-ui~='dashboard-main']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='dashboard-main']_>_section_>_&:first-child]:text-[12px]"
                               disabled={update.isPending}
                               onClick={() => {
                                 update.reset();

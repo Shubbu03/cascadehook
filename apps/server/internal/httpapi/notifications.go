@@ -2,7 +2,6 @@ package httpapi
 
 import (
 	"errors"
-	"io"
 	"net/http"
 	"net/url"
 
@@ -74,8 +73,7 @@ func (api *api) notificationUnreadCount(w http.ResponseWriter, r *http.Request, 
 
 func (api *api) notificationResource(w http.ResponseWriter, r *http.Request, user accounts.User) {
 	if r.Method != http.MethodPatch {
-		w.Header().Set("Allow", "PATCH")
-		writeProblem(w, r, http.StatusMethodNotAllowed, "method_not_allowed")
+		methodNotAllowed(w, r, "PATCH")
 		return
 	}
 	organizationID, ok := readResourceID(w, r, "organization_id")
@@ -119,17 +117,14 @@ func (api *api) notificationResource(w http.ResponseWriter, r *http.Request, use
 
 func (api *api) notificationReadAll(w http.ResponseWriter, r *http.Request, user accounts.User) {
 	if r.Method != http.MethodPost {
-		w.Header().Set("Allow", "POST")
-		writeProblem(w, r, http.StatusMethodNotAllowed, "method_not_allowed")
+		methodNotAllowed(w, r, "POST")
 		return
 	}
 	organizationID, filters, ok := notificationActionFilters(w, r)
 	if !ok {
 		return
 	}
-	body, err := io.ReadAll(http.MaxBytesReader(w, r.Body, 1))
-	if err != nil || len(body) != 0 {
-		writeProblem(w, r, http.StatusBadRequest, "unexpected_request_body")
+	if !emptyBody(w, r) {
 		return
 	}
 	count, err := api.db.ReadAllNotifications(r.Context(), user.ID, organizationID, filters)

@@ -9,6 +9,7 @@ import { QueryState } from "@/components/query-state";
 import { useSessionUserId } from "@/features/workspace/session";
 import { projectHref, useProject } from "../project-workspace";
 import { overviewUsageQuery } from "./queries";
+import { textLink } from "@/components/styles";
 
 export function OverviewMetrics() {
   const { project, canManage } = useProject();
@@ -52,7 +53,7 @@ export function OverviewMetrics() {
             <span className="ml-2.5 text-muted text-[11px] font-normal">{usage.data.period} · UTC</span>
           )}
         </h2>
-        <Link href={projectHref(project.id) + "/usage"} className="inline-flex items-center text-[14px] font-medium gap-2 [&:hover]:underline [&:hover]:underline-offset-4 in-data-[ui~='onboarding-header']:min-h-11 in-data-[ui~='onboarding-header']:text-muted in-data-[ui~='onboarding-header']:text-[13px] in-data-[ui~='switcher-error']:mt-1.25 in-data-[ui~='switcher-error']:text-[13px] in-data-[ui~='switcher-error']:text-accent in-data-[ui~='workspace-banner']:[font-size:inherit] in-data-[ui~='workspace-banner']:underline in-data-[ui~='project-overview']:text-[12px] in-data-[ui~='notification-error']:ml-auto in-data-[ui~='notification-error']:text-[12px] [[data-ui~='dashboard-main']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='dashboard-main']_>_section_>_&:first-child]:text-[12px] [[data-ui~='project-content']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='project-content']_>_section_>_&:first-child]:text-[12px] max-[37.5rem]:in-data-[ui~='onboarding-header']:text-[12px]">
+        <Link href={projectHref(project.id) + "/usage"} className={textLink}>
           Usage details <ArrowRightIcon size={14} aria-hidden="true" />
         </Link>
       </div>

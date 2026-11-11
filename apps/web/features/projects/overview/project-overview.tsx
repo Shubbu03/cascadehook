@@ -21,6 +21,7 @@ import { OverviewEndpoints } from "./overview-endpoints";
 import { OverviewMetrics } from "./overview-metrics";
 import { OverviewSetup } from "./overview-setup";
 import { setupEndpointsQuery } from "./queries";
+import { queryKeys } from "@/lib/query-keys";
 
 export function ProjectOverview() {
   const { project, canManage, availabilityKnown, suspended } = useProject();
@@ -44,9 +45,9 @@ export function ProjectOverview() {
         ...[
           ["api-keys", userId, project.id, "overview-active"],
           ["project-overview", userId, project.id],
-          ["events", userId, project.id],
-          ["deliveries", userId, project.id],
-          ["usage", userId, "project", project.id],
+          queryKeys.events(userId, project.id),
+          queryKeys.deliveries(userId, project.id),
+          queryKeys.projectUsage(userId, project.id),
         ].map((queryKey) => client.invalidateQueries({ queryKey })),
       ]);
     } finally {

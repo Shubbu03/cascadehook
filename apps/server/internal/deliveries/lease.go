@@ -44,7 +44,7 @@ type Lease struct {
 }
 
 // Job contains the immutable event bytes and destination snapshot at claim
-// time. Claiming does not increment AttemptCount: reserving work is not an
+// time. Claiming does not increment the attempt count: reserving work is not an
 // HTTP attempt. The sender must recheck destination eligibility before sending.
 type Job struct {
 	Lease
@@ -52,12 +52,9 @@ type Job struct {
 	EventID                 uuid.UUID
 	EndpointID              uuid.UUID
 	URL                     string
-	EventType               string
 	Payload                 []byte
 	EventCreatedAt          time.Time
 	NextAttemptAt           time.Time
-	LeaseExpiresAt          time.Time
-	AttemptCount            int
 	Cycle                   int
 	ConfigurationVersion    int64
 	SigningSecret           []byte `json:"-"`

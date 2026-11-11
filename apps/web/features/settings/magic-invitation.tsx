@@ -10,6 +10,7 @@ import { Brand } from "@/components/brand";
 import { FormSkeleton } from "@/features/workspace/skeletons";
 import { apiRequest, ApiError } from "@/lib/api";
 import { uuidPattern } from "@/lib/format";
+import { errorText } from "@/components/styles";
 
 type Phase = "joining" | "sign-in" | "profile" | "error";
 type Receipt = { destination: string; };
@@ -84,19 +85,19 @@ export function MagicInvitation({ invitationId, ticket }: { invitationId: string
   return (
     <div className="relative isolate flex flex-col min-h-svh">
       <AmbientBackground />
-      <header data-ui="onboarding-header" className="w-[min(1200px,calc(100%-80px))] relative z-1 flex items-center justify-between min-h-22 mx-auto gap-5 max-[65.625rem]:w-[calc(100%-56px)] max-[37.5rem]:w-[calc(100%-40px)] max-[37.5rem]:min-h-20 max-[37.5rem]:flex-wrap max-[37.5rem]:gap-3"><Brand href="/" /><Link href="/" className="inline-flex items-center font-medium gap-2 [&:hover]:underline [&:hover]:underline-offset-4 min-h-11 text-muted text-[13px] [[data-ui~='dashboard-main']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='dashboard-main']_>_section_>_&:first-child]:text-[12px] max-[37.5rem]:text-[12px]">Back to home</Link></header>
-      <div className="relative z-1 grid items-center flex-1 pt-9 pb-22 max-[37.5rem]:pt-6 max-[37.5rem]:pb-12"><main id="main-content" data-ui="invitation-entry" className="w-[min(460px,calc(100%-40px))] mx-auto [&_.cl-rootBox]:w-full [&_.cl-rootBox]:max-w-full [&_.cl-cardBox]:w-full [&_.cl-cardBox]:max-w-full">
+      <header data-ui="onboarding-header" className="w-[min(1200px,calc(100%-80px))] relative z-1 flex items-center justify-between min-h-22 mx-auto gap-5 max-[65.625rem]:w-[calc(100%-56px)] max-[37.5rem]:w-[calc(100%-40px)] max-[37.5rem]:min-h-20 max-[37.5rem]:flex-wrap max-[37.5rem]:gap-3"><Brand href="/" /><Link href="/" className="inline-flex items-center font-medium gap-2 [&:hover]:underline [&:hover]:underline-offset-4 min-h-11 text-muted text-[13px] max-[37.5rem]:text-[12px]">Back to home</Link></header>
+      <div className="relative z-1 grid items-center flex-1 pt-9 pb-22 max-[37.5rem]:pt-6 max-[37.5rem]:pb-12"><main id="main-content" className="w-[min(460px,calc(100%-40px))] mx-auto [&_.cl-rootBox]:w-full [&_.cl-rootBox]:max-w-full [&_.cl-cardBox]:w-full [&_.cl-cardBox]:max-w-full">
         <div data-ui="onboarding-card" className="rounded-xl bg-surface p-8 border border-solid border-border [&_h1]:text-[26px] [&_h1]:tracking-[-0.035em] [&_form]:mt-7 max-w-130 max-[37.5rem]:p-6 max-[37.5rem]:[&_h1]:text-[24px]">
           <h1>{phase === "joining" ? "Joining your team…" : phase === "profile" ? "Finish your account" : "Accept your invitation"}</h1>
           {phase === "joining" && <FormSkeleton fields={1} label="Preparing your account and joining the organization…" />}
-          {phase === "sign-in" && <><p className="mt-3 text-muted text-[14px] leading-[1.8] max-w-162.5 in-data-[ui~='dashboard-main']:text-[13px] mb-6">Continue with the invited email. Your invitation will be accepted after you sign in.</p>
+          {phase === "sign-in" && <><p className="mt-3 text-muted text-[14px] leading-[1.8] max-w-162.5 mb-6">Continue with the invited email. Your invitation will be accepted after you sign in.</p>
             <SignIn {...authProps} withSignUp signUpForceRedirectUrl={destination} signInUrl={destination} signUpUrl={destination + "#/create"} />
           </>}
-          {phase === "profile" && <><p className="mt-3 text-muted text-[14px] leading-[1.8] max-w-162.5 in-data-[ui~='dashboard-main']:text-[13px] mb-6">Your email is verified. Complete the information required for your account to join your team.</p>
+          {phase === "profile" && <><p className="mt-3 text-muted text-[14px] leading-[1.8] max-w-162.5 mb-6">Your email is verified. Complete the information required for your account to join your team.</p>
             <SignUp {...authProps} signInUrl={destination} />
           </>}
           {phase === "error" && <>
-            <p className="text-danger text-[13px] my-3" role="alert">{error}</p>
+            <p className={errorText} role="alert">{error}</p>
             <div className="flex flex-wrap mt-5 gap-3.5">
               {mismatch ? <Button type="button" data-ui="button" className="w-full mt-1.5" onClick={() => { void signOut({ redirectUrl: destination + (ticket ? "&__clerk_ticket=" + encodeURIComponent(ticket) : "") }); }}>Switch account</Button>
                 : isSignedIn ? <Button type="button" data-ui="button" className="w-full mt-1.5" onClick={() => { setPhase("joining"); setRetry((value) => value + 1); }}>Try again</Button>

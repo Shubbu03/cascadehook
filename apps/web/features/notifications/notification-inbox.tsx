@@ -16,13 +16,14 @@ import type { Organization } from "@/features/workspace/types";
 import { NotificationFeed } from "./notification-feed";
 import { NotificationPageSkeleton } from "./notification-skeleton";
 import { notificationCategories, type NotificationCategory, type NotificationState } from "./types";
+import { dashboardMain } from "@/components/styles";
 
 export function NotificationInbox({ organizationId }: { organizationId: string; }) {
   const userId = useSessionUserId();
   const { getToken } = useAuth();
   const organization = useQuery(organizationQuery(userId, organizationId, getToken));
   return (
-    <main id="main-content" data-ui="dashboard-main" className="w-full min-w-0 min-h-[calc(100svh-var(--topbar-height,60px))] pt-7 pb-16 m-0 px-8 max-[56.25rem]:pt-6 max-[56.25rem]:pb-12 max-[56.25rem]:px-6 max-[37.5rem]:pt-5.5 max-[37.5rem]:pb-10 max-[37.5rem]:px-4.5">
+    <main id="main-content" data-ui="dashboard-main" className={dashboardMain}>
       <QueryState query={organization} loading={<NotificationPageSkeleton />}>
         {organization.data && <InboxContent key={organizationId} organization={organization.data} />}
       </QueryState>
@@ -56,15 +57,15 @@ function InboxContent({ organization }: { organization: Organization; }) {
           {states.map((tab) => <button key={tab.value} type="button" aria-pressed={state === tab.value}
             onClick={() => setState(tab.value)}>{tab.label}</button>)}
         </div>
-        <div data-ui="notification-filters" className="flex items-end flex-wrap gap-3 max-[37.5rem]:items-stretch max-[37.5rem]:w-full">
-          <label data-ui="filter-field" className="gap-1.75 [&_>_span]:text-[12px] [&_>_span]:font-medium in-data-[ui~='dashboard-main']:flex-[0_1_auto] in-data-[ui~='dashboard-main']:gap-1.5 flex flex-col text-muted text-[12px] max-[37.5rem]:flex-[1_1_140px] max-[37.5rem]:min-w-0">Category
-            <Select className="[[data-ui~='dashboard-main']_&]:w-auto [[data-ui~='dashboard-main']_&]:min-w-37.5 [[data-ui~='dashboard-main']_&]:min-h-9 [[data-ui~='dashboard-main']_&]:pr-10.5 [[data-ui~='dashboard-main']_&]:pl-3.5 [[data-ui~='dashboard-main']_&]:py-1.75 [[data-ui~='dashboard-main']_&]:text-[13px]/5 max-[37.5rem]:[[data-ui~='dashboard-main']_&]:w-full max-[37.5rem]:[[data-ui~='dashboard-main']_&]:min-w-0 max-[37.5rem]:[[data-ui~='dashboard-main']_&]:text-[16px] max-[37.5rem]:max-w-none min-h-10.5 rounded-md text-foreground text-[14px] max-w-full py-2.25 px-2.75 max-[32.5rem]:text-[16px]" value={category} onChange={(event) => setCategory(event.target.value as NotificationCategory | "")}>
+        <div className="flex items-end flex-wrap gap-3 max-[37.5rem]:items-stretch max-[37.5rem]:w-full">
+          <label className="gap-1.75 [&_>_span]:text-[12px] [&_>_span]:font-medium in-data-[ui~='dashboard-main']:flex-[0_1_auto] in-data-[ui~='dashboard-main']:gap-1.5 flex flex-col text-muted text-[12px] max-[37.5rem]:flex-[1_1_140px] max-[37.5rem]:min-w-0">Category
+            <Select className="in-data-[ui~='dashboard-main']:w-auto in-data-[ui~='dashboard-main']:min-w-37.5 in-data-[ui~='dashboard-main']:min-h-9 in-data-[ui~='dashboard-main']:pr-10.5 in-data-[ui~='dashboard-main']:pl-3.5 in-data-[ui~='dashboard-main']:py-1.75 in-data-[ui~='dashboard-main']:text-[13px]/5 max-[37.5rem]:in-data-[ui~='dashboard-main']:w-full max-[37.5rem]:in-data-[ui~='dashboard-main']:min-w-0 max-[37.5rem]:in-data-[ui~='dashboard-main']:text-[16px] max-[37.5rem]:max-w-none min-h-10.5 rounded-md text-foreground text-[14px] max-w-full py-2.25 px-2.75 max-[32.5rem]:text-[16px]" value={category} onChange={(event) => setCategory(event.target.value as NotificationCategory | "")}>
               <option value="">All categories</option>
               {Object.entries(notificationCategories).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
             </Select>
           </label>
-          <label data-ui="filter-field" className="gap-1.75 [&_>_span]:text-[12px] [&_>_span]:font-medium in-data-[ui~='dashboard-main']:flex-[0_1_auto] in-data-[ui~='dashboard-main']:gap-1.5 flex flex-col text-muted text-[12px] max-[37.5rem]:flex-[1_1_140px] max-[37.5rem]:min-w-0">Project
-            <Select className="[[data-ui~='dashboard-main']_&]:w-auto [[data-ui~='dashboard-main']_&]:min-w-37.5 [[data-ui~='dashboard-main']_&]:min-h-9 [[data-ui~='dashboard-main']_&]:pr-10.5 [[data-ui~='dashboard-main']_&]:pl-3.5 [[data-ui~='dashboard-main']_&]:py-1.75 [[data-ui~='dashboard-main']_&]:text-[13px]/5 max-[37.5rem]:[[data-ui~='dashboard-main']_&]:w-full max-[37.5rem]:[[data-ui~='dashboard-main']_&]:min-w-0 max-[37.5rem]:[[data-ui~='dashboard-main']_&]:text-[16px] max-[37.5rem]:max-w-none min-h-10.5 rounded-md text-foreground text-[14px] max-w-full py-2.25 px-2.75 max-[32.5rem]:text-[16px]" value={projectId} disabled={projects.isPending} onChange={(event) => setProjectId(event.target.value)}>
+          <label className="gap-1.75 [&_>_span]:text-[12px] [&_>_span]:font-medium in-data-[ui~='dashboard-main']:flex-[0_1_auto] in-data-[ui~='dashboard-main']:gap-1.5 flex flex-col text-muted text-[12px] max-[37.5rem]:flex-[1_1_140px] max-[37.5rem]:min-w-0">Project
+            <Select className="in-data-[ui~='dashboard-main']:w-auto in-data-[ui~='dashboard-main']:min-w-37.5 in-data-[ui~='dashboard-main']:min-h-9 in-data-[ui~='dashboard-main']:pr-10.5 in-data-[ui~='dashboard-main']:pl-3.5 in-data-[ui~='dashboard-main']:py-1.75 in-data-[ui~='dashboard-main']:text-[13px]/5 max-[37.5rem]:in-data-[ui~='dashboard-main']:w-full max-[37.5rem]:in-data-[ui~='dashboard-main']:min-w-0 max-[37.5rem]:in-data-[ui~='dashboard-main']:text-[16px] max-[37.5rem]:max-w-none min-h-10.5 rounded-md text-foreground text-[14px] max-w-full py-2.25 px-2.75 max-[32.5rem]:text-[16px]" value={projectId} disabled={projects.isPending} onChange={(event) => setProjectId(event.target.value)}>
               <option value="">{projects.isPending ? "Loading projects…" : "All projects & organization"}</option>
               {projectItems.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}
             </Select>
@@ -74,7 +75,7 @@ function InboxContent({ organization }: { organization: Organization; }) {
         </div>
       </div>
       {(projects.hasNextPage || projects.isError) && <div className="text-muted text-[12px] leading-[1.7] my-3.5">
-        {projects.isError && <p role="alert">Couldn’t load project filters. <button type="button" className="inline-flex items-center text-[14px] font-medium gap-2 [&:hover]:underline [&:hover]:underline-offset-4 in-data-[ui~='switcher-error']:mt-1.25 in-data-[ui~='switcher-error']:text-[13px] in-data-[ui~='switcher-error']:text-accent in-data-[ui~='notification-error']:ml-auto in-data-[ui~='notification-error']:text-[12px] [[data-ui~='dashboard-main']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='dashboard-main']_>_section_>_&:first-child]:text-[12px]" disabled={projects.isFetching}
+        {projects.isError && <p role="alert">Couldn’t load project filters. <button type="button" className="inline-flex items-center text-[14px] font-medium gap-2 [&:hover]:underline [&:hover]:underline-offset-4 [[data-ui~='dashboard-main']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='dashboard-main']_>_section_>_&:first-child]:text-[12px]" disabled={projects.isFetching}
           onClick={() => { void projects.refetch(); }}>Try again</button></p>}
         <LoadMore query={projects} label="Load more project options" />
       </div>}

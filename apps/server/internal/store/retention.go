@@ -81,40 +81,19 @@ func (s *Store) PreviewRetentionBatch(ctx context.Context, batch retention.Batch
 		return 0, fmt.Errorf("bound retention preview: %w", err)
 	}
 	if batch.Phase == retention.DeleteMetadata {
-		return cleanupMetadata(
-			ctx,
-			tx,
-			batch.Reference,
-			batch.Limit,
-			true,
-		)
+		return cleanupMetadata(ctx, tx, batch.Reference, batch.Limit, true)
 	}
 	if batch.Phase == retention.DeleteNotifications {
 		return cleanupNotifications(ctx, tx, batch.NotificationCutoff, batch.Limit, true)
 	}
 	if batch.Phase == retention.DeleteProjects {
-		return cleanupProjectData(
-			ctx,
-			tx,
-			batch.Limit,
-			true,
-		)
+		return cleanupProjectData(ctx, tx, batch.Limit, true)
 	}
 	if batch.Phase == retention.DeleteOrganizations {
-		return cleanupOrganizationData(
-			ctx,
-			tx,
-			batch.Limit,
-			true,
-		)
+		return cleanupOrganizationData(ctx, tx, batch.Limit, true)
 	}
 	if batch.Phase == retention.DeleteAccounts {
-		return cleanupAccountData(
-			ctx,
-			tx,
-			batch.Limit,
-			true,
-		)
+		return cleanupAccountData(ctx, tx, batch.Limit, true)
 	}
 	selection := retentionCandidates(batch)
 	var count int64
@@ -151,36 +130,15 @@ func (s *Store) CleanupRetentionBatch(ctx context.Context, batch retention.Batch
 	case retention.DeleteNotifications:
 		affected, err = cleanupNotifications(ctx, tx, batch.NotificationCutoff, batch.Limit, false)
 	case retention.DeleteMetadata:
-		affected, err = cleanupMetadata(
-			ctx,
-			tx,
-			batch.Reference,
-			batch.Limit,
-			false,
-		)
+		affected, err = cleanupMetadata(ctx, tx, batch.Reference, batch.Limit, false)
 	case retention.MarkEvents:
 		affected, err = retireEventGroups(ctx, tx, batch)
 	case retention.DeleteProjects:
-		affected, err = cleanupProjectData(
-			ctx,
-			tx,
-			batch.Limit,
-			false,
-		)
+		affected, err = cleanupProjectData(ctx, tx, batch.Limit, false)
 	case retention.DeleteOrganizations:
-		affected, err = cleanupOrganizationData(
-			ctx,
-			tx,
-			batch.Limit,
-			false,
-		)
+		affected, err = cleanupOrganizationData(ctx, tx, batch.Limit, false)
 	case retention.DeleteAccounts:
-		affected, err = cleanupAccountData(
-			ctx,
-			tx,
-			batch.Limit,
-			false,
-		)
+		affected, err = cleanupAccountData(ctx, tx, batch.Limit, false)
 	case retention.DeleteProviderAccounts:
 		return retention.BatchResult{}, fmt.Errorf("provider cleanup must run outside a database transaction")
 	case retention.DeleteEvents:

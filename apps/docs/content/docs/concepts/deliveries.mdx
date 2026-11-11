@@ -4,9 +4,9 @@ description: Follow a webhook from queueing through its attempts and final outco
 ---
 
 Each event creates one delivery per subscribed endpoint, and delivery is at
-least once. A failing delivery gets up to eight attempts within 72 hours, with
-jittered backoff from about 15 seconds to 18 hours. Every attempt is recorded,
-and a finished delivery can be replayed.
+least once. By default a failing delivery gets up to eight attempts within 72
+hours, with jittered backoff from about 15 seconds to 18 hours. Every attempt is
+recorded, and a finished delivery can be replayed.
 
 ## Events and deliveries
 
@@ -30,7 +30,15 @@ bodies and sensitive response headers are not included.
 ## Retries
 
 Cascadehook retries eligible failures within the delivery's retry horizon.
-The current limits are eight attempts per cycle and a 72-hour retry horizon.
+The defaults are eight attempts per cycle, 30 seconds per attempt, and delays
+from 15 seconds to 18 hours. The 72-hour retry horizon is fixed.
+
+Each project has a delivery policy that an owner or admin can change in project
+settings: 1–8 attempts, a timeout of 1–30 seconds, and non-decreasing retry
+delays of up to 18 hours. A delivery cycle keeps the policy it started with, so
+a change applies to new deliveries and to replays, not to cycles already in
+progress.
+
 Use `next_attempt_at` and `retry_deadline` from the delivery rather than
 predicting the next attempt in your integration.
 

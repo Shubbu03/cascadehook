@@ -127,12 +127,7 @@ func (s *Store) ReplayDelivery(ctx context.Context, principal auth.Principal, de
 	if err != nil {
 		return deliveries.Replay{}, fmt.Errorf("record delivery replay: %w", err)
 	}
-	if err := recordUsage(
-		ctx,
-		tx,
-		principal.ProjectID,
-		usageDelta{jobs: 1, replays: 1},
-	); err != nil {
+	if err := recordUsage(ctx, tx, principal.ProjectID, usageDelta{jobs: 1, replays: 1}); err != nil {
 		return deliveries.Replay{}, err
 	}
 	if err := tx.Commit(ctx); err != nil {

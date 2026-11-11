@@ -1,9 +1,7 @@
 package httpapi
 
 import (
-	"context"
 	"errors"
-	"io"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -23,8 +21,7 @@ func (api *api) accountResource(w http.ResponseWriter, r *http.Request) {
 
 func (api *api) currentUser(w http.ResponseWriter, r *http.Request, user accounts.User) {
 	if r.Method != http.MethodGet && r.Method != http.MethodHead {
-		w.Header().Set("Allow", "GET, HEAD, DELETE")
-		writeProblem(w, r, http.StatusMethodNotAllowed, "method_not_allowed")
+		methodNotAllowed(w, r, "GET, HEAD, DELETE")
 		return
 	}
 	if !accountQueryEmpty(w, r) {
@@ -62,8 +59,7 @@ func (api *api) organizationCollection(w http.ResponseWriter, r *http.Request, u
 		api.logger.Info("organization created", "organization_id", organization.ID, "actor_user_id", user.ID)
 		writeJSON(w, r, http.StatusCreated, organization)
 	default:
-		w.Header().Set("Allow", "GET, HEAD, POST")
-		writeProblem(w, r, http.StatusMethodNotAllowed, "method_not_allowed")
+		methodNotAllowed(w, r, "GET, HEAD, POST")
 	}
 }
 
@@ -74,8 +70,7 @@ func (api *api) organizationResource(w http.ResponseWriter, r *http.Request, use
 		return
 	case http.MethodGet, http.MethodHead, http.MethodPatch:
 	default:
-		w.Header().Set("Allow", "GET, HEAD, PATCH, DELETE")
-		writeProblem(w, r, http.StatusMethodNotAllowed, "method_not_allowed")
+		methodNotAllowed(w, r, "GET, HEAD, PATCH, DELETE")
 		return
 	}
 	id, ok := readResourceID(w, r, "organization_id")
@@ -106,8 +101,7 @@ func (api *api) organizationResource(w http.ResponseWriter, r *http.Request, use
 
 func (api *api) projectCollection(w http.ResponseWriter, r *http.Request, user accounts.User) {
 	if r.Method != http.MethodGet && r.Method != http.MethodHead && r.Method != http.MethodPost {
-		w.Header().Set("Allow", "GET, HEAD, POST")
-		writeProblem(w, r, http.StatusMethodNotAllowed, "method_not_allowed")
+		methodNotAllowed(w, r, "GET, HEAD, POST")
 		return
 	}
 	organizationID, ok := readResourceID(w, r, "organization_id")
@@ -153,8 +147,7 @@ func (api *api) projectResource(w http.ResponseWriter, r *http.Request, user acc
 		return
 	case http.MethodGet, http.MethodHead, http.MethodPatch:
 	default:
-		w.Header().Set("Allow", "GET, HEAD, PATCH, DELETE")
-		writeProblem(w, r, http.StatusMethodNotAllowed, "method_not_allowed")
+		methodNotAllowed(w, r, "GET, HEAD, PATCH, DELETE")
 		return
 	}
 	id, ok := readResourceID(w, r, "project_id")
@@ -237,65 +230,27 @@ func readAccountPage(w http.ResponseWriter, r *http.Request) (pagination.Options
 }
 
 func emptyAccountAction(w http.ResponseWriter, r *http.Request) bool {
-	if !accountQueryEmpty(w, r) {
-		return false
-	}
-	body, err := io.ReadAll(http.MaxBytesReader(w, r.Body, 1))
-	if err != nil || len(body) != 0 {
-		writeProblem(w, r, http.StatusBadRequest, "unexpected_request_body")
-		return false
-	}
-	return true
+	return accountQueryEmpty(w, r) && emptyBody(w, r)
 }
 
 func (api *api) accountProblem(w http.ResponseWriter, r *http.Request, err error) {
 	switch {
 	case errors.Is(err, accounts.ErrInvitationRateLimited):
 		w.Header().Set("Retry-After", "5")
-		writeProblem(
-			w,
-			r,
-			http.StatusTooManyRequests,
-			"invitation_lookup_rate_limited",
-		)
+		writeProblem(w, r, http.StatusTooManyRequests, "invitation_lookup_rate_limited")
 	case errors.Is(err, accounts.ErrInvitationResend):
 		w.Header().Set("Retry-After", "60")
 		writeProblem(w, r, http.StatusTooManyRequests, "invitation_resend_rate_limited")
 	case errors.Is(err, accounts.ErrInvalidEmail):
-		writeProblem(
-			w,
-			r,
-			http.StatusUnprocessableEntity,
-			"invalid_invitation_email",
-		)
+		writeProblem(w, r, http.StatusUnprocessableEntity, "invalid_invitation_email")
 	case errors.Is(err, accounts.ErrInvitationConflict):
-		writeProblem(
-			w,
-			r,
-			http.StatusConflict,
-			"invitation_pending",
-		)
+		writeProblem(w, r, http.StatusConflict, "invitation_pending")
 	case errors.Is(err, accounts.ErrInvitationInvalid):
-		writeProblem(
-			w,
-			r,
-			http.StatusConflict,
-			"invitation_unavailable",
-		)
+		writeProblem(w, r, http.StatusConflict, "invitation_unavailable")
 	case errors.Is(err, accounts.ErrInvitationEmail):
-		writeProblem(
-			w,
-			r,
-			http.StatusForbidden,
-			"invitation_email_mismatch",
-		)
+		writeProblem(w, r, http.StatusForbidden, "invitation_email_mismatch")
 	case errors.Is(err, accounts.ErrQuotaExceeded):
-		writeProblem(
-			w,
-			r,
-			http.StatusConflict,
-			"quota_exceeded",
-		)
+		writeProblem(w, r, http.StatusConflict, "quota_exceeded")
 	case errors.Is(err, accounts.ErrAccountDeleted):
 		writeProblem(w, r, http.StatusGone, "account_deleted")
 	case errors.Is(err, accounts.ErrOwnsOrganizations):
@@ -318,11 +273,8 @@ func (api *api) accountProblem(w http.ResponseWriter, r *http.Request, err error
 		writeProblem(w, r, http.StatusConflict, "already_member")
 	case errors.Is(err, accounts.ErrLastOwner):
 		writeProblem(w, r, http.StatusConflict, "last_organization_owner")
-	case errors.Is(err, context.DeadlineExceeded), errors.Is(err, context.Canceled):
-		writeProblem(w, r, http.StatusServiceUnavailable, "request_timeout")
 	default:
-		api.logger.Error("account operation failed", "error", err)
-		writeProblem(w, r, http.StatusInternalServerError, "internal_error")
+		api.unexpectedProblem(w, r, "account operation failed", err)
 	}
 }
 

@@ -3,7 +3,6 @@ package accounts
 import (
 	"crypto/rand"
 	"crypto/sha256"
-	"encoding/hex"
 	"errors"
 	"net/mail"
 	"strings"
@@ -49,21 +48,10 @@ func NormalizeEmail(value string) (string, error) {
 	return value, nil
 }
 
-func NewInvitationToken() (string, [sha256.Size]byte, error) {
-	var random [32]byte
-	if _, err := rand.Read(random[:]); err != nil {
-		return "", [sha256.Size]byte{}, err
-	}
-	token := "chi_" + hex.EncodeToString(random[:])
-	return token, sha256.Sum256([]byte(token)), nil
-}
-
-func InvitationDigest(token string) ([sha256.Size]byte, error) {
-	if len(token) != 68 || !strings.HasPrefix(token, "chi_") {
-		return [sha256.Size]byte{}, ErrInvitationInvalid
-	}
-	if _, err := hex.DecodeString(token[4:]); err != nil {
-		return [sha256.Size]byte{}, ErrInvitationInvalid
-	}
-	return sha256.Sum256([]byte(token)), nil
+// NewInvitationHash returns the random lookup key stored as token_hash. No
+// plaintext token exists: invitations are accepted by ID after an email check.
+func NewInvitationHash() ([sha256.Size]byte, error) {
+	var hash [sha256.Size]byte
+	_, err := rand.Read(hash[:])
+	return hash, err
 }

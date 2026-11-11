@@ -12,6 +12,7 @@ import { DocsLink } from "@/components/docs-link";
 import { EndpointReadinessSkeleton } from "@/features/workspace/skeletons";
 import { endpointState, type Endpoint } from "@/features/endpoints/types";
 import { projectHref, useProject } from "../project-workspace";
+import { textLink } from "@/components/styles";
 
 export function OverviewEndpoints({
   endpoints,
@@ -39,7 +40,7 @@ export function OverviewEndpoints({
 
   return (
     <aside
-      data-ui="overview-endpoints" className="min-w-0 rounded-[9px] bg-surface border border-solid border-border"
+      className="min-w-0 rounded-[9px] bg-surface border border-solid border-border"
       aria-labelledby="overview-endpoints-heading"
     >
       <div className="flex items-center justify-between flex-wrap gap-y-2.5 gap-x-4 px-5 [&_h2]:text-[14px] [&_h2]:font-medium [&_h2]:tracking-[-0.01em] [&_p]:mt-1 [&_p]:text-muted [&_p]:text-[11px] py-3 @max-[27.5rem]/project-overview:px-4">
@@ -83,7 +84,7 @@ export function OverviewEndpoints({
               From the {endpoints.length} most recent endpoints.
             </p>
           )}
-          <ul className="list-none p-0 m-0 [&_li]:border-t [&_li]:[border-top-style:solid] [&_li]:border-t-border [&_a]:flex [&_a]:items-center [&_a]:gap-2.5 [&_a]:py-3.25 [&_a]:px-5 [&_svg]:shrink-0 [&_svg]:text-muted [&_a:hover]:bg-surface-hover">
+          <ul className="list-none p-0 m-0 [&_li]:border-t [&_li]:border-t-border [&_a]:flex [&_a]:items-center [&_a]:gap-2.5 [&_a]:py-3.25 [&_a]:px-5 [&_svg]:shrink-0 [&_svg]:text-muted [&_a:hover]:bg-surface-hover">
             {endpoints.slice(0, 4).map((endpoint) => (
               <li key={endpoint.id}>
                 <Link href={href + "/endpoints/" + endpoint.id}>
@@ -109,14 +110,14 @@ export function OverviewEndpoints({
           Add a destination to start receiving signed webhooks.
         </p>
       )}
-      <div className="grid justify-items-start border-t [border-top-style:solid] border-t-border gap-3 py-4 px-5">
-        <Link href={href + "/endpoints"} className="inline-flex items-center text-[14px] font-medium gap-2 [&:hover]:underline [&:hover]:underline-offset-4 in-data-[ui~='onboarding-header']:min-h-11 in-data-[ui~='onboarding-header']:text-muted in-data-[ui~='onboarding-header']:text-[13px] in-data-[ui~='switcher-error']:mt-1.25 in-data-[ui~='switcher-error']:text-[13px] in-data-[ui~='switcher-error']:text-accent in-data-[ui~='workspace-banner']:[font-size:inherit] in-data-[ui~='workspace-banner']:underline in-data-[ui~='project-overview']:text-[12px] in-data-[ui~='notification-error']:ml-auto in-data-[ui~='notification-error']:text-[12px] [[data-ui~='dashboard-main']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='dashboard-main']_>_section_>_&:first-child]:text-[12px] [[data-ui~='project-content']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='project-content']_>_section_>_&:first-child]:text-[12px] max-[37.5rem]:in-data-[ui~='onboarding-header']:text-[12px]">
+      <div className="grid justify-items-start border-t border-t-border gap-3 py-4 px-5">
+        <Link href={href + "/endpoints"} className={textLink}>
           View all endpoints
           <ArrowRightIcon size={14} aria-hidden="true" />
         </Link>
         <DocsLink
           path="/docs/receivers"
-          className="inline-flex items-center text-[13px] font-medium text-muted gap-2 [&:hover]:underline [&:hover]:underline-offset-4 in-data-[ui~='onboarding-header']:min-h-11 in-data-[ui~='onboarding-header']:text-muted in-data-[ui~='onboarding-header']:text-[13px] in-data-[ui~='switcher-error']:mt-1.25 in-data-[ui~='switcher-error']:text-[13px] in-data-[ui~='switcher-error']:text-accent in-data-[ui~='workspace-banner']:[font-size:inherit] in-data-[ui~='workspace-banner']:underline in-data-[ui~='project-overview']:text-[12px] in-data-[ui~='notification-error']:ml-auto in-data-[ui~='notification-error']:text-[12px] [[data-ui~='dashboard-main']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='dashboard-main']_>_section_>_&:first-child]:text-[12px] [[data-ui~='project-content']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='project-content']_>_section_>_&:first-child]:text-[12px] max-[37.5rem]:in-data-[ui~='onboarding-header']:text-[12px]"
+          className="inline-flex items-center text-[13px] font-medium text-muted gap-2 [&:hover]:underline [&:hover]:underline-offset-4 in-data-[ui~='project-overview']:text-[12px] [[data-ui~='dashboard-main']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='dashboard-main']_>_section_>_&:first-child]:text-[12px] [[data-ui~='project-content']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='project-content']_>_section_>_&:first-child]:text-[12px]"
         >
           Receiver guide <ArrowRightIcon size={14} aria-hidden="true" />
         </DocsLink>

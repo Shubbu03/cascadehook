@@ -61,12 +61,7 @@ func cleanupMetadata(ctx context.Context, tx pgx.Tx, reference time.Time, limit 
 			args: []any{reference.Add(-90 * 24 * time.Hour), reference, limit},
 		}},
 	}
-	count, err := cleanupLifecycleSelections(
-		ctx,
-		tx,
-		selections,
-		preview,
-	)
+	count, err := cleanupLifecycleSelections(ctx, tx, selections, preview)
 	if err != nil {
 		return 0, fmt.Errorf("clean expired security metadata: %w", err)
 	}

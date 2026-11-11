@@ -57,22 +57,21 @@ func (cfg Config) Validate() error {
 }
 
 type Job struct {
-	ID                uuid.UUID
-	LeaseID           uuid.UUID
-	InvitationID      uuid.UUID
-	NotificationID    uuid.UUID
-	RecipientSubject  string
-	Title             string
-	Body              string
-	OrganizationID    uuid.UUID
-	Email             string
-	OrganizationName  string
-	Role              string
-	ExpiresAt         time.Time
-	Attempts          int
-	FirstAttemptAt    time.Time
-	Payload           []byte
-	ClerkInvitationID string
+	ID               uuid.UUID
+	LeaseID          uuid.UUID
+	InvitationID     uuid.UUID
+	NotificationID   uuid.UUID
+	RecipientSubject string
+	Title            string
+	Body             string
+	OrganizationID   uuid.UUID
+	Email            string
+	OrganizationName string
+	Role             string
+	ExpiresAt        time.Time
+	Attempts         int
+	FirstAttemptAt   time.Time
+	Payload          []byte
 }
 
 type Message struct {

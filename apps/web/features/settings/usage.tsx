@@ -16,6 +16,7 @@ import {
   UsageActivity,
 } from "./usage-summary";
 import type { Usage } from "./types";
+import { queryKeys } from "@/lib/query-keys";
 
 export function ProjectUsage() {
   const { project, canManage } = useProject();
@@ -31,12 +32,12 @@ function UsageContent() {
   const userId = useSessionUserId();
   const { getToken } = useAuth();
   const projectUsage = useQuery({
-    queryKey: ["usage", userId, "project", project.id],
+    queryKey: queryKeys.projectUsage(userId, project.id),
     queryFn: ({ signal }) =>
       apiRequest<Usage>(projectPath(project.id, "usage"), getToken, { signal }),
   });
   const organization = useQuery({
-    queryKey: ["usage", userId, "organization", project.organization_id],
+    queryKey: queryKeys.organizationUsage(userId, project.organization_id),
     queryFn: ({ signal }) =>
       apiRequest<Usage>(
         "/v1/organizations/" +

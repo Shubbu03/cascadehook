@@ -1,7 +1,6 @@
 package httpapi
 
 import (
-	"context"
 	"errors"
 	"io"
 	"mime"
@@ -20,8 +19,7 @@ func (api *api) eventCollection(w http.ResponseWriter, r *http.Request, principa
 	case http.MethodPost:
 		api.publishEvent(w, r, principal)
 	default:
-		w.Header().Set("Allow", "GET, HEAD, POST")
-		writeProblem(w, r, http.StatusMethodNotAllowed, "method_not_allowed")
+		methodNotAllowed(w, r, "GET, HEAD, POST")
 	}
 }
 
@@ -61,12 +59,7 @@ func (api *api) publicationProblem(w http.ResponseWriter, r *http.Request, err e
 	case errors.Is(err, controls.ErrProjectNotFound):
 		api.projectControlProblem(w, r, err)
 	case errors.Is(err, controls.ErrSuspended):
-		writeProblem(
-			w,
-			r,
-			http.StatusForbidden,
-			"project_suspended",
-		)
+		writeProblem(w, r, http.StatusForbidden, "project_suspended")
 	case errors.Is(err, events.ErrInvalidIdempotencyKey):
 		writeProblem(w, r, http.StatusBadRequest, "invalid_idempotency_key")
 	case errors.Is(err, events.ErrInvalidEvent):
@@ -79,10 +72,7 @@ func (api *api) publicationProblem(w http.ResponseWriter, r *http.Request, err e
 		writeProblem(w, r, http.StatusConflict, "idempotency_conflict")
 	case errors.Is(err, auth.ErrInvalidAPIKey):
 		unauthorized(w, r)
-	case errors.Is(err, context.DeadlineExceeded), errors.Is(err, context.Canceled):
-		writeProblem(w, r, http.StatusServiceUnavailable, "request_timeout")
 	default:
-		api.logger.Error("event publication failed", "error", err)
-		writeProblem(w, r, http.StatusInternalServerError, "internal_error")
+		api.unexpectedProblem(w, r, "event publication failed", err)
 	}
 }

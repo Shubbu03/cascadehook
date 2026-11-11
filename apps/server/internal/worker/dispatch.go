@@ -77,23 +77,12 @@ func processDelivery(
 			requestCtx,
 			job.URL,
 			job.Payload,
-			secret.Headers(
-				job.DeliveryID,
-				job.Payload,
-				attempt.StartedAt,
-				previous,
-			),
+			secret.Headers(job.DeliveryID, job.Payload, attempt.StartedAt, previous),
 		)
 	}
 	elapsed := time.Since(started)
 	requestCancel()
-	result := delivery.ClassifyWithDelays(
-		response,
-		requestErr,
-		attempt.Number,
-		elapsed,
-		attempt.RetryDelaysSeconds,
-	)
+	result := delivery.ClassifyWithDelays(response, requestErr, attempt.Number, elapsed, attempt.RetryDelaysSeconds)
 	// Preserve a received 2xx even when shutdown interrupts response-body reads.
 	if ctx.Err() != nil && result.StatusCode == 0 {
 		result.Outcome, result.ErrorCode = deliveries.OutcomeInterrupted, "worker_shutdown"

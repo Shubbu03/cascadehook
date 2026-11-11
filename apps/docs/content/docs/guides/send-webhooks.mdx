@@ -59,7 +59,7 @@ Space retries out with exponential backoff and random jitter, so a receiver that
 recovers isn't hit by every queued delivery at once. Honor `Retry-After` when a
 receiver sends it, and cap both the number of attempts and the total time.
 
-Cascadehook's schedule, each delay with ±20% jitter:
+Cascadehook's default schedule, each delay with ±20% jitter:
 
 | Attempt | Delay after the previous attempt |
 | --- | --- |
@@ -71,8 +71,10 @@ Cascadehook's schedule, each delay with ±20% jitter:
 | 7 | 6 hours |
 | 8 | 18 hours |
 
-Each attempt has 30 seconds to respond. `Retry-After` can lengthen a delay but
-not shorten it, and no retry is scheduled past the 72-hour horizon. See
+By default each attempt has 30 seconds to respond. An owner or admin can lower
+the attempt count and timeout and change the delays in the project's delivery
+policy. `Retry-After` can lengthen a delay but not shorten it, and no retry is
+scheduled past the 72-hour horizon. See
 [deliveries, retries, and replay](/docs/concepts/deliveries).
 
 ## 4. Expect duplicates

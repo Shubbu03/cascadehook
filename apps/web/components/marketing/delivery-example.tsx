@@ -21,7 +21,7 @@ export function DeliveryExample() {
           </li>
         ))}
       </ol>
-      <div className="pt-5.75 border-t [border-top-style:solid] border-t-border max-[37.5rem]:pt-4.5 [&_p]:text-[17px] [&_p]:leading-normal [&_p]:tracking-tight [&_>_span]:block [&_>_span]:mt-1.25 [&_>_span]:text-muted [&_>_span]:text-[11px] max-[37.5rem]:[&_p]:text-[16px]">
+      <div className="pt-5.75 border-t border-t-border max-[37.5rem]:pt-4.5 [&_p]:text-[17px] [&_p]:leading-normal [&_p]:tracking-tight [&_>_span]:block [&_>_span]:mt-1.25 [&_>_span]:text-muted [&_>_span]:text-[11px] max-[37.5rem]:[&_p]:text-[16px]">
         <p>Delivered on attempt 3.</p>
         <span>HMAC-signed requests · Every attempt recorded</span>
       </div>

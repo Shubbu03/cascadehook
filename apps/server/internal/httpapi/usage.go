@@ -31,12 +31,7 @@ func (api *api) organizationUsage(w http.ResponseWriter, r *http.Request, user a
 		api.accountProblem(w, r, err)
 		return
 	}
-	writeJSON(
-		w,
-		r,
-		http.StatusOK,
-		usage,
-	)
+	writeJSON(w, r, http.StatusOK, usage)
 }
 
 func (api *api) projectUsage(w http.ResponseWriter, r *http.Request, principal auth.Principal) {
@@ -53,10 +48,5 @@ func (api *api) projectUsage(w http.ResponseWriter, r *http.Request, principal a
 		api.accountProblem(w, r, err)
 		return
 	}
-	writeJSON(
-		w,
-		r,
-		http.StatusOK,
-		usage,
-	)
+	writeJSON(w, r, http.StatusOK, usage)
 }

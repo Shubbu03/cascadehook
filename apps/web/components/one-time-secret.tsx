@@ -6,6 +6,7 @@ import { Button } from "@/components/button";
 
 import { useEffect, useId, useRef, useState } from "react";
 import { CopyButton } from "./copy-button";
+import { formField } from "@/components/styles";
 
 type SecretValue = { value: string; label: string; note?: string; };
 type SecretState =
@@ -69,12 +70,12 @@ export function OneTimeSecret({
   return (
     <section data-ui="one-time-secret" className="rounded-[10px] bg-surface p-5.5 my-6 border border-solid border-accent [&_h3]:text-[19px]" aria-labelledby={id + "-title"}>
       <h3 id={id + "-title"}>Save this value</h3>
-      <p data-ui="notice" className="rounded-lg bg-warning-subtle text-warning text-[13px] leading-[1.7] my-4 py-3.5 px-4.25 border border-solid border-border">
+      <p className="rounded-lg bg-warning-subtle text-warning text-[13px] leading-[1.7] my-4 py-3.5 px-4.25 border border-solid border-border">
         This value is shown once. It is cleared when you leave this view.
       </p>
-      <label data-ui="form-field" className="grid mb-4.5 gap-2 [&_>_span]:text-[13px] [&_>_span]:font-medium [&_>_label]:text-[13px] [&_>_label]:font-medium" htmlFor={id}>
+      <label className={formField} htmlFor={id}>
         <span>{secret.label}</span>
-        <Input className="[[data-ui~='workspace-create-dialog']_&]:bg-surface-hover [[data-ui~='workspace-create-dialog']_&]:border-0 [[data-ui~='workspace-create-dialog']_&]:border-none [[data-ui~='workspace-create-dialog']_&]:border-current [[data-ui~='dashboard-main']_&]:min-h-10 [[data-ui~='dashboard-main']_&]:text-[14px] [[data-ui~='dashboard-main']_&]:py-2.25 [[data-ui~='dashboard-main']_&]:px-3 [[data-ui~='workspace-create-dialog']_&]:focus-visible:outline-hidden [[data-ui~='workspace-create-dialog']_&]:focus-visible:shadow-[inset_0_-2px_var(--accent)] max-[37.5rem]:[[data-ui~='dashboard-main']_&]:text-[16px] w-full min-h-11.5 rounded-md text-foreground py-2.75 px-3 placeholder:text-muted font-mono text-[13px]"
+        <Input className="in-data-[ui~='workspace-create-dialog']:bg-surface-hover in-data-[ui~='workspace-create-dialog']:border-0 in-data-[ui~='workspace-create-dialog']:border-none in-data-[ui~='workspace-create-dialog']:border-current in-data-[ui~='dashboard-main']:min-h-10 in-data-[ui~='dashboard-main']:text-[14px] in-data-[ui~='dashboard-main']:py-2.25 in-data-[ui~='dashboard-main']:px-3 in-data-[ui~='workspace-create-dialog']:focus-visible:outline-hidden in-data-[ui~='workspace-create-dialog']:focus-visible:shadow-[inset_0_-2px_var(--accent)] max-[37.5rem]:in-data-[ui~='dashboard-main']:text-[16px] w-full min-h-11.5 rounded-md text-foreground py-2.75 px-3 placeholder:text-muted font-mono text-[13px]"
           id={id}
           value={secret.value}
           type={visible ? "text" : "password"}
@@ -83,8 +84,8 @@ export function OneTimeSecret({
           spellCheck={false}
         />
       </label>
-      {secret.note && <p className="text-[12px] text-muted leading-[1.7] in-data-[ui~='settings-form']:mt-3 in-data-[ui~='settings-form']:mb-4.5 [[data-ui~='settings-section']_>_&]:mt-3 [[data-ui~='settings-section']_>_&]:mb-5">{secret.note}</p>}
-      <div data-ui="form-actions" className="flex items-center flex-wrap gap-2.5 in-data-[ui~='workspace-create-dialog']:flex-row-reverse in-data-[ui~='workspace-create-dialog']:mt-6 in-data-[ui~='data-table']:gap-3.5 [[data-ui~='one-time-secret']_>_&]:mt-4.5">
+      {secret.note && <p className="text-[12px] text-muted leading-[1.7]">{secret.note}</p>}
+      <div data-ui="form-actions" className="flex items-center flex-wrap gap-2.5 in-data-[ui~='workspace-create-dialog']:flex-row-reverse in-data-[ui~='workspace-create-dialog']:mt-6 [[data-ui~='one-time-secret']_>_&]:mt-4.5">
         <Button
           type="button"
           data-ui="button" variant="secondary" size="small" className="leading-[1.4]"

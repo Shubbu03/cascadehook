@@ -2,7 +2,7 @@ import { siteName } from "@/lib/site";
 import type { Snippet } from "../code-tabs";
 import type { VerifierContent } from "../verifier-page";
 
-export const snippets: Snippet[] = [
+const snippets: Snippet[] = [
   {
     id: "node",
     label: "Node.js",

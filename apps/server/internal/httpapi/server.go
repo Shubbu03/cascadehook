@@ -76,13 +76,7 @@ func Run(ctx context.Context, cfg config.APIConfig, db *store.Store, logger *slo
 			if err != nil {
 				return fmt.Errorf("listen on %s: %w", cfg.HTTPAddr, err)
 			}
-			return serve(
-				serviceCtx,
-				server,
-				listener,
-				cfg.ShutdownTimeout,
-				logger,
-			)
+			return serve(serviceCtx, server, listener, cfg.ShutdownTimeout, logger)
 		},
 	)
 }

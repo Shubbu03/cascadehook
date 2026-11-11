@@ -80,12 +80,7 @@ func (q *queueSampler) Collect(ch chan<- prometheus.Metric) {
 			"pending": snapshot.Pending, "due": snapshot.Due,
 			"leased": snapshot.Leased, "expired_leases": snapshot.ExpiredLeases,
 		} {
-			ch <- prometheus.MustNewConstMetric(
-				q.depth,
-				prometheus.GaugeValue,
-				float64(count),
-				state,
-			)
+			ch <- prometheus.MustNewConstMetric(q.depth, prometheus.GaugeValue, float64(count), state)
 		}
 		ch <- prometheus.MustNewConstMetric(q.oldestDue, prometheus.GaugeValue, snapshot.OldestDueAge.Seconds())
 	}

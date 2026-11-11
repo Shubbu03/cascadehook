@@ -187,12 +187,7 @@ func requestLimits() (limits.Config, error) {
 		{name: "API_PROJECT_BURST", value: &cfg.Project.Burst, maximum: limits.MaxBurst},
 	}
 	for _, setting := range settings {
-		value, err := boundedInt(
-			setting.name,
-			*setting.value,
-			1,
-			setting.maximum,
-		)
+		value, err := boundedInt(setting.name, *setting.value, 1, setting.maximum)
 		if err != nil {
 			return limits.Config{}, err
 		}
@@ -314,12 +309,7 @@ func LoadJanitor() (JanitorConfig, error) {
 		},
 	}
 	for _, setting := range settings {
-		value, err := boundedInt(
-			setting.name,
-			*setting.value,
-			setting.minimum,
-			setting.maximum,
-		)
+		value, err := boundedInt(setting.name, *setting.value, setting.minimum, setting.maximum)
 		if err != nil {
 			return JanitorConfig{}, err
 		}

@@ -14,7 +14,7 @@ import { stateTone, stateLabel, type Attempt } from "./types";
 export function DeliveryAttempts({ records }: { records: Attempt[]; }) {
   const formatTime = useFormatTime();
   return (
-    <ol className="list-none m-0 p-0 [&_>_li]:py-4 [&_>_li]:px-5 [&_>_li+li]:border-t [&_>_li+li]:[border-top-style:solid] [&_>_li+li]:border-t-border @max-[27.5rem]/delivery-detail:[&_>_li]:px-4" role="list">
+    <ol className="list-none m-0 p-0 [&_>_li]:py-4 [&_>_li]:px-5 [&_>_li+li]:border-t [&_>_li+li]:border-t-border @max-[27.5rem]/delivery-detail:[&_>_li]:px-4" role="list">
       {records.map((attempt) => (
         <li key={attempt.id} data-outcome={attempt.outcome}>
           <div data-ui="delivery-attempt-heading" className="flex items-center flex-wrap gap-y-2 gap-x-2.5 [&_h3]:flex [&_h3]:items-baseline [&_h3]:flex-wrap [&_h3]:flex-1 [&_h3]:gap-y-1 [&_h3]:gap-x-2.5 [&_h3]:text-[13px] [&_h3]:font-medium [&_h3_>_span]:text-muted [&_h3_>_span]:text-[11px] [&_h3_>_span]:font-normal">
@@ -34,7 +34,7 @@ export function DeliveryAttempts({ records }: { records: Attempt[]; }) {
             </Status>
           </div>
           <div className="pl-7.5 @max-[27.5rem]/delivery-detail:pl-0">
-            <div data-ui="delivery-attempt-facts" className="flex flex-wrap gap-y-1.25 gap-x-4 mt-1.5 text-muted text-[11px] leading-[1.7]">
+            <div className="flex flex-wrap gap-y-1.25 gap-x-4 mt-1.5 text-muted text-[11px] leading-[1.7]">
               <time dateTime={attempt.started_at}>
                 {formatTime(attempt.started_at)}
               </time>

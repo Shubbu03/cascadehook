@@ -20,6 +20,9 @@ import { useSessionUserId } from "./session";
 import { useWorkspaceSelection } from "./use-workspace-selection";
 import { useWorkspaceCreation } from "./workspace-creation";
 
+const menuItem =
+  "flex items-center w-full min-h-11 rounded-md text-[14px] text-left bg-transparent text-muted gap-3 py-2.25 px-2.5 border-0 border-none border-current [&_>_svg]:shrink-0 [&_>_svg]:mx-1.25 [&:hover]:bg-surface-hover [&:hover]:text-foreground focus-visible:-outline-offset-2";
+
 type Selection = ReturnType<typeof useWorkspaceSelection>;
 
 export function WorkspaceNavigation() {
@@ -66,7 +69,7 @@ function OrganizationSwitcher({ selection }: { selection: Selection; }) {
         </>
       }
     >
-      <div className="flex items-center pt-3 pb-4.5 mb-1.5 border-b [border-bottom-style:solid] border-b-border gap-3 px-2.5 [&_>_div]:min-w-0 [&_strong]:block [&_strong]:text-[15px] [&_strong]:font-medium [&_strong]:wrap-anywhere [&_div_>_span]:block [&_div_>_span]:mt-1 [&_div_>_span]:text-muted [&_div_>_span]:text-[12px]">
+      <div className="flex items-center pt-3 pb-4.5 mb-1.5 border-b border-b-border gap-3 px-2.5 [&_>_div]:min-w-0 [&_strong]:block [&_strong]:text-[15px] [&_strong]:font-medium [&_strong]:wrap-anywhere [&_div_>_span]:block [&_div_>_span]:mt-1 [&_div_>_span]:text-muted [&_div_>_span]:text-[12px]">
         <span
           className="grid place-items-center shrink-0 rounded-[9px] bg-accent-subtle text-accent text-[18px] font-medium size-10.5 in-data-[ui~='dashboard-topbar']:rounded-[5px] in-data-[ui~='dashboard-topbar']:text-[11px] in-data-[ui~='dashboard-topbar']:size-6"
           aria-hidden="true"
@@ -112,7 +115,7 @@ function OrganizationSwitcher({ selection }: { selection: Selection; }) {
         </ul>
         {organizations.hasNextPage && (
           <button
-            className="flex items-center w-full min-h-11 rounded-md text-[14px] text-left bg-transparent text-muted gap-3 py-2.25 px-2.5 border-0 border-none border-current [&_>_svg]:shrink-0 [&_>_svg]:mx-1.25 [&:hover]:bg-surface-hover [&:hover]:text-foreground focus-visible:-outline-offset-2"
+            className={menuItem}
             type="button"
             disabled={organizations.isFetchingNextPage}
             onClick={() => {
@@ -125,10 +128,10 @@ function OrganizationSwitcher({ selection }: { selection: Selection; }) {
           </button>
         )}
       </div>
-      <div className="pt-1.5 mt-1.5 border-t [border-top-style:solid] border-t-border">
+      <div className="pt-1.5 mt-1.5 border-t border-t-border">
         {active && (
           <Link
-            className="flex items-center w-full min-h-11 rounded-md text-[14px] text-left bg-transparent text-muted gap-3 py-2.25 px-2.5 border-0 border-none border-current [&_>_svg]:shrink-0 [&_>_svg]:mx-1.25 [&:hover]:bg-surface-hover [&:hover]:text-foreground focus-visible:-outline-offset-2"
+            className={menuItem}
             href={
               "/dashboard/organizations/" +
               encodeURIComponent(active.id) +
@@ -141,7 +144,7 @@ function OrganizationSwitcher({ selection }: { selection: Selection; }) {
         )}
         {active && active.role !== "member" && (
           <Link
-            className="flex items-center w-full min-h-11 rounded-md text-[14px] text-left bg-transparent text-muted gap-3 py-2.25 px-2.5 border-0 border-none border-current [&_>_svg]:shrink-0 [&_>_svg]:mx-1.25 [&:hover]:bg-surface-hover [&:hover]:text-foreground focus-visible:-outline-offset-2"
+            className={menuItem}
             href={
               "/dashboard/organizations/" +
               encodeURIComponent(active.id) +
@@ -153,7 +156,7 @@ function OrganizationSwitcher({ selection }: { selection: Selection; }) {
           </Link>
         )}
         <button
-          className="flex items-center w-full min-h-11 rounded-md text-[14px] text-left bg-transparent text-muted gap-3 py-2.25 px-2.5 border-0 border-none border-current [&_>_svg]:shrink-0 [&_>_svg]:mx-1.25 [&:hover]:bg-surface-hover [&:hover]:text-foreground focus-visible:-outline-offset-2"
+          className={menuItem}
           type="button"
           data-close-dropdown
           onClick={createOrganization}
@@ -256,7 +259,7 @@ function ProjectSwitcher({ selection }: { selection: Selection; }) {
         </ul>
         {projects.hasNextPage && (
           <button
-            className="flex items-center w-full min-h-11 rounded-md text-[14px] text-left bg-transparent text-muted gap-3 py-2.25 px-2.5 border-0 border-none border-current [&_>_svg]:shrink-0 [&_>_svg]:mx-1.25 [&:hover]:bg-surface-hover [&:hover]:text-foreground focus-visible:-outline-offset-2"
+            className={menuItem}
             type="button"
             disabled={projects.isFetchingNextPage}
             onClick={() => {
@@ -267,10 +270,10 @@ function ProjectSwitcher({ selection }: { selection: Selection; }) {
           </button>
         )}
       </div>
-      <div className="pt-1.5 mt-1.5 border-t [border-top-style:solid] border-t-border">
+      <div className="pt-1.5 mt-1.5 border-t border-t-border">
         {canCreate && (
           <button
-            className="flex items-center w-full min-h-11 rounded-md text-[14px] text-left bg-transparent text-muted gap-3 py-2.25 px-2.5 border-0 border-none border-current [&_>_svg]:shrink-0 [&_>_svg]:mx-1.25 [&:hover]:bg-surface-hover [&:hover]:text-foreground focus-visible:-outline-offset-2"
+            className={menuItem}
             type="button"
             data-close-dropdown
             onClick={() => createProject(active)}
@@ -281,7 +284,7 @@ function ProjectSwitcher({ selection }: { selection: Selection; }) {
         )}
         <Link
           href={active ? organizationHref(active.id) : "/dashboard"}
-          className="flex items-center w-full min-h-11 rounded-md text-[14px] text-left bg-transparent text-muted gap-3 py-2.25 px-2.5 border-0 border-none border-current [&_>_svg]:shrink-0 [&_>_svg]:mx-1.25 [&:hover]:bg-surface-hover [&:hover]:text-foreground focus-visible:-outline-offset-2"
+          className={menuItem}
         >
           <SquaresFourIcon size={18} aria-hidden="true" />
           All projects
@@ -329,11 +332,11 @@ function SwitcherError({
   pending: boolean;
 }) {
   return (
-    <div data-ui="switcher-error" className="text-muted text-[13px] leading-[1.7] py-3 px-2.5" role="alert">
+    <div className="text-muted text-[13px] leading-[1.7] py-3 px-2.5" role="alert">
       <p>{error.message}</p>
       <button
         type="button"
-        className="inline-flex items-center font-medium gap-2 [&:hover]:underline [&:hover]:underline-offset-4 mt-1.25 text-[13px] text-accent [[data-ui~='dashboard-main']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='dashboard-main']_>_section_>_&:first-child]:text-[12px]"
+        className="inline-flex items-center font-medium gap-2 [&:hover]:underline [&:hover]:underline-offset-4 mt-1.25 text-[13px] text-accent"
         onClick={retry}
         disabled={pending}
       >

@@ -48,31 +48,16 @@ func newEncryption(key []byte) (cipher.AEAD, error) {
 
 func (vault *Vault) Encrypt(projectID, endpointID uuid.UUID, secret Secret) []byte {
 	// #nosec G407 -- NewGCMWithRandomNonce generates and prepends a fresh nonce; it requires nil here.
-	return vault.aead.Seal(
-		[]byte{ciphertextVersion},
-		nil,
-		secret.key[:],
-		secretIdentity(projectID, endpointID),
-	)
+	return vault.aead.Seal([]byte{ciphertextVersion}, nil, secret.key[:], secretIdentity(projectID, endpointID))
 }
 
 func (vault *Vault) Decrypt(projectID, endpointID uuid.UUID, encrypted []byte) (Secret, error) {
 	if len(encrypted) != 1+SecretSize+vault.aead.Overhead() || encrypted[0] != ciphertextVersion {
 		return Secret{}, fmt.Errorf("invalid encrypted signing secret")
 	}
-	plaintext, err := vault.aead.Open(
-		nil,
-		nil,
-		encrypted[1:],
-		secretIdentity(projectID, endpointID),
-	)
+	plaintext, err := vault.aead.Open(nil, nil, encrypted[1:], secretIdentity(projectID, endpointID))
 	if err != nil && vault.previous != nil {
-		plaintext, err = vault.previous.Open(
-			nil,
-			nil,
-			encrypted[1:],
-			secretIdentity(projectID, endpointID),
-		)
+		plaintext, err = vault.previous.Open(nil, nil, encrypted[1:], secretIdentity(projectID, endpointID))
 	}
 	if err != nil || len(plaintext) != SecretSize {
 		return Secret{}, fmt.Errorf("cannot decrypt signing secret")
@@ -90,12 +75,7 @@ func (vault *Vault) Rewrap(projectID, endpointID uuid.UUID, encrypted []byte) ([
 	if len(encrypted) != 1+SecretSize+vault.aead.Overhead() || encrypted[0] != ciphertextVersion {
 		return nil, false, fmt.Errorf("invalid encrypted signing secret")
 	}
-	plaintext, err := vault.aead.Open(
-		nil,
-		nil,
-		encrypted[1:],
-		secretIdentity(projectID, endpointID),
-	)
+	plaintext, err := vault.aead.Open(nil, nil, encrypted[1:], secretIdentity(projectID, endpointID))
 	if err == nil {
 		clear(plaintext)
 		return encrypted, false, nil

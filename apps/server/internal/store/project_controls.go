@@ -18,13 +18,7 @@ import (
 const projectStateColumns = `id, suspended_at IS NOT NULL, suspended_at, suspension_reason, control_version`
 
 func scanProjectState(row pgx.Row, state *controls.ProjectState) error {
-	return row.Scan(
-		&state.ProjectID,
-		&state.Suspended,
-		&state.SuspendedAt,
-		&state.Reason,
-		&state.Version,
-	)
+	return row.Scan(&state.ProjectID, &state.Suspended, &state.SuspendedAt, &state.Reason, &state.Version)
 }
 
 func (s *Store) GetProjectState(ctx context.Context, projectID uuid.UUID) (controls.ProjectState, error) {
@@ -47,10 +41,7 @@ type ProjectControlResult struct {
 	Changed bool                  `json:"changed"`
 }
 
-func (s *Store) ChangeProjectControl(
-	ctx context.Context,
-	change controls.ProjectChange,
-) (ProjectControlResult, error) {
+func (s *Store) ChangeProjectControl(ctx context.Context, change controls.ProjectChange) (ProjectControlResult, error) {
 	if err := change.Validate(); err != nil {
 		return ProjectControlResult{}, err
 	}

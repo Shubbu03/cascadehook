@@ -6,6 +6,7 @@ import { Button } from "@/components/button";
 
 import { useId, useState, type SubmitEvent } from "react";
 import { ApiError } from "@/lib/api";
+import { errorText, formField } from "@/components/styles";
 
 export function NameForm({
   titleId,
@@ -49,11 +50,11 @@ export function NameForm({
       <h2 id={titleId}>
         {kind === "organization" ? "Create organization" : "Create project"}
       </h2>
-      <label data-ui="form-field" className="grid mb-4.5 gap-2 [&_>_span]:text-[13px] [&_>_span]:font-medium [&_>_label]:text-[13px] [&_>_label]:font-medium" htmlFor={id}>
+      <label className={formField} htmlFor={id}>
         <span>
           {kind === "organization" ? "Organization name" : "Project name"}
         </span>
-        <Input className="[[data-ui~='workspace-create-dialog']_&]:bg-surface-hover [[data-ui~='workspace-create-dialog']_&]:border-0 [[data-ui~='workspace-create-dialog']_&]:border-none [[data-ui~='workspace-create-dialog']_&]:border-current [[data-ui~='dashboard-main']_&]:min-h-10 [[data-ui~='dashboard-main']_&]:text-[14px] [[data-ui~='dashboard-main']_&]:py-2.25 [[data-ui~='dashboard-main']_&]:px-3 [[data-ui~='workspace-create-dialog']_&]:focus-visible:outline-hidden [[data-ui~='workspace-create-dialog']_&]:focus-visible:shadow-[inset_0_-2px_var(--accent)] max-[37.5rem]:[[data-ui~='dashboard-main']_&]:text-[16px] w-full min-h-11.5 rounded-md text-foreground text-[16px] py-2.75 px-3 placeholder:text-muted"
+        <Input className="in-data-[ui~='workspace-create-dialog']:bg-surface-hover in-data-[ui~='workspace-create-dialog']:border-0 in-data-[ui~='workspace-create-dialog']:border-none in-data-[ui~='workspace-create-dialog']:border-current in-data-[ui~='workspace-create-dialog']:focus-visible:outline-hidden in-data-[ui~='workspace-create-dialog']:focus-visible:shadow-[inset_0_-2px_var(--accent)] w-full min-h-11.5 rounded-md text-foreground text-[16px] py-2.75 px-3 placeholder:text-muted"
           id={id}
           name="name"
           value={name}
@@ -69,7 +70,7 @@ export function NameForm({
         />
       </label>
       {message && (
-        <p className="text-danger text-[13px] my-3" id={id + "-error"} role="alert">
+        <p className={errorText} id={id + "-error"} role="alert">
           {message}
         </p>
       )}

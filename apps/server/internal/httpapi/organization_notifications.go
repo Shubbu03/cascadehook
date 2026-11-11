@@ -47,8 +47,7 @@ func (api *api) organizationNotificationPreferences(w http.ResponseWriter, r *ht
 
 func (api *api) testNotificationEmail(w http.ResponseWriter, r *http.Request, user accounts.User) {
 	if r.Method != http.MethodPost {
-		w.Header().Set("Allow", "POST")
-		writeProblem(w, r, http.StatusMethodNotAllowed, "method_not_allowed")
+		methodNotAllowed(w, r, "POST")
 		return
 	}
 	id, ok := readResourceID(w, r, "organization_id")

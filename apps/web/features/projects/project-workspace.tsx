@@ -9,6 +9,8 @@ import { RouteContentLoading } from "@/features/workspace/route-loading";
 import { useSessionUserId } from "@/features/workspace/session";
 import { projectQuery } from "@/features/workspace/queries";
 import type { Project } from "@/features/workspace/types";
+import { dashboardMain, warningBanner } from "@/components/styles";
+import { queryKeys } from "@/lib/query-keys";
 
 type ProjectStatus = { project_id: string; suspended: boolean; };
 type ProjectContextValue = {
@@ -40,7 +42,7 @@ export function ProjectWorkspace({
   const { getToken } = useAuth();
   const project = useQuery(projectQuery(userId, projectId, getToken));
   const status = useQuery({
-    queryKey: ["project-status", userId, projectId],
+    queryKey: queryKeys.projectStatus(userId, projectId),
     enabled: project.isSuccess,
     queryFn: ({ signal }) =>
       apiRequest<ProjectStatus>(
@@ -52,13 +54,13 @@ export function ProjectWorkspace({
   });
   if (project.isPending)
     return (
-      <main id="main-content" data-ui="dashboard-main" className="w-full min-w-0 min-h-[calc(100svh-var(--topbar-height,60px))] pt-7 pb-16 m-0 px-8 max-[56.25rem]:pt-6 max-[56.25rem]:pb-12 max-[56.25rem]:px-6 max-[37.5rem]:pt-5.5 max-[37.5rem]:pb-10 max-[37.5rem]:px-4.5">
+      <main id="main-content" data-ui="dashboard-main" className={dashboardMain}>
         <RouteContentLoading />
       </main>
     );
   if (project.isError)
     return (
-      <main id="main-content" data-ui="dashboard-main" className="w-full min-w-0 min-h-[calc(100svh-var(--topbar-height,60px))] pt-7 pb-16 m-0 px-8 max-[56.25rem]:pt-6 max-[56.25rem]:pb-12 max-[56.25rem]:px-6 max-[37.5rem]:pt-5.5 max-[37.5rem]:pb-10 max-[37.5rem]:px-4.5">
+      <main id="main-content" data-ui="dashboard-main" className={dashboardMain}>
         <ConnectionError
           error={project.error}
           retry={() => {
@@ -80,10 +82,10 @@ export function ProjectWorkspace({
         availabilityKnown: status.isSuccess,
       }}
     >
-      <main id="main-content" data-ui="dashboard-main" className="w-full min-w-0 min-h-[calc(100svh-var(--topbar-height,60px))] pt-7 pb-16 m-0 px-8 max-[56.25rem]:pt-6 max-[56.25rem]:pb-12 max-[56.25rem]:px-6 max-[37.5rem]:pt-5.5 max-[37.5rem]:pb-10 max-[37.5rem]:px-4.5">
+      <main id="main-content" data-ui="dashboard-main" className={dashboardMain}>
         {status.data?.suspended && (
           <p
-            data-ui="workspace-banner" className="flex items-center flex-wrap mt-0 mb-5 rounded-md text-warning bg-warning-subtle text-[12px] leading-[1.6] gap-2.5 py-2.5 px-3 mx-0 border border-solid border-border"
+            className={warningBanner}
             role="status"
           >
             Project paused. Publishing, replay, endpoint activation, and API key
@@ -92,13 +94,13 @@ export function ProjectWorkspace({
         )}
         {status.isError && (
           <p
-            data-ui="workspace-banner" className="flex items-center flex-wrap mt-0 mb-5 rounded-md text-warning bg-warning-subtle text-[12px] leading-[1.6] gap-2.5 py-2.5 px-3 mx-0 border border-solid border-border"
+            className={warningBanner}
             role="status"
           >
             Project availability could not be checked.
             <button
               type="button"
-              className="inline-flex items-center text-[14px] font-medium gap-2 [&:hover]:underline [&:hover]:underline-offset-4 in-data-[ui~='onboarding-header']:min-h-11 in-data-[ui~='onboarding-header']:text-muted in-data-[ui~='onboarding-header']:text-[13px] in-data-[ui~='switcher-error']:mt-1.25 in-data-[ui~='switcher-error']:text-[13px] in-data-[ui~='switcher-error']:text-accent [font-size:inherit] underline in-data-[ui~='notification-error']:ml-auto in-data-[ui~='notification-error']:text-[12px] [[data-ui~='dashboard-main']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='dashboard-main']_>_section_>_&:first-child]:text-[12px] [[data-ui~='project-content']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='project-content']_>_section_>_&:first-child]:text-[12px] max-[37.5rem]:in-data-[ui~='onboarding-header']:text-[12px]"
+              className="inline-flex items-center text-[14px] font-medium gap-2 [&:hover]:underline [&:hover]:underline-offset-4 [font-size:inherit] underline [[data-ui~='dashboard-main']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='dashboard-main']_>_section_>_&:first-child]:text-[12px]"
               onClick={() => {
                 void status.refetch();
               }}
@@ -108,7 +110,7 @@ export function ProjectWorkspace({
             </button>
           </p>
         )}
-        {!canManage && <p data-ui="workspace-banner" className="flex items-center flex-wrap mt-0 mb-5 rounded-md text-muted bg-surface text-[12px] leading-[1.6] gap-2.5 py-2.5 px-3 mx-0 border border-solid border-border">Read-only access</p>}
+        {!canManage && <p className="flex items-center flex-wrap mt-0 mb-5 rounded-md text-muted bg-surface text-[12px] leading-[1.6] gap-2.5 py-2.5 px-3 mx-0 border border-solid border-border">Read-only access</p>}
         <div data-ui="project-content" className="min-w-0 [&_section[id]]:scroll-mt-20">{children}</div>
       </main>
     </ProjectContext>

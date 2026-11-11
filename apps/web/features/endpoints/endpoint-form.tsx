@@ -21,6 +21,7 @@ import {
   type Endpoint,
   type EndpointInput,
 } from "./types";
+import { queryKeys } from "@/lib/query-keys";
 
 export function EndpointForm({
   onCancel,
@@ -66,7 +67,7 @@ export function EndpointForm({
         queryKey: endpointKeys.lists(userId, project.id),
       });
       void queryClient.invalidateQueries({
-        queryKey: ["usage", userId, "project", project.id],
+        queryKey: queryKeys.projectUsage(userId, project.id),
       });
     },
   });
@@ -109,7 +110,7 @@ export function EndpointForm({
         secret and verify the receiver.
       </p>
       {!allowed && (
-        <p data-ui="notice" className="rounded-lg bg-warning-subtle text-warning text-[13px] leading-[1.7] my-4 py-3.5 px-4.25 border border-solid border-border in-data-[ui~='endpoint-registration-dialog']:text-warning" role="status">
+        <p className="rounded-lg bg-warning-subtle text-warning text-[13px] leading-[1.7] my-4 py-3.5 px-4.25 border border-solid border-border in-data-[ui~='endpoint-registration-dialog']:text-warning" role="status">
           {!canManage
             ? "Only an owner or admin can register endpoints."
             : suspended

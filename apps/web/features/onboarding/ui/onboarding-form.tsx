@@ -6,8 +6,8 @@ import { Button } from "@/components/button";
 
 import { ArrowRightIcon, CheckIcon } from "@phosphor-icons/react";
 import { useActionState, useId, useState } from "react";
-import Link from "next/link";
 import type { NameActionState } from "../data-access/form-state";
+import { errorText, formField } from "@/components/styles";
 
 export function OnboardingForm({
   step,
@@ -59,9 +59,9 @@ export function OnboardingForm({
               value={organization.id}
             />
           )}
-          <label data-ui="form-field" className="grid mb-4.5 gap-2 [&_>_span]:text-[13px] [&_>_span]:font-medium [&_>_label]:text-[13px] [&_>_label]:font-medium" htmlFor={id}>
+          <label className={formField} htmlFor={id}>
             <span>{isProject ? "Project name" : "Organization name"}</span>
-            <Input className="[[data-ui~='dashboard-main']_&]:min-h-10 [[data-ui~='dashboard-main']_&]:text-[14px] [[data-ui~='dashboard-main']_&]:py-2.25 [[data-ui~='dashboard-main']_&]:px-3 max-[37.5rem]:[[data-ui~='dashboard-main']_&]:text-[16px] w-full min-h-11.5 rounded-md text-foreground text-[16px] py-2.75 px-3 placeholder:text-muted bg-surface-hover shadow-[inset_0_-2px_transparent] transition-shadow border-0 border-none border-current focus-visible:outline-hidden focus-visible:shadow-[inset_0_-2px_var(--accent)]"
+            <Input className="w-full min-h-11.5 rounded-md text-foreground text-[16px] py-2.75 px-3 placeholder:text-muted bg-surface-hover shadow-[inset_0_-2px_transparent] transition-shadow border-0 border-none border-current focus-visible:outline-hidden focus-visible:shadow-[inset_0_-2px_var(--accent)]"
               id={id}
               name="name"
               value={name}
@@ -77,7 +77,7 @@ export function OnboardingForm({
             />
           </label>
           {state.error && (
-            <p className="text-danger text-[13px] my-3" id={id + "-error"} role="alert">
+            <p className={errorText} id={id + "-error"} role="alert">
               {state.error}
             </p>
           )}
@@ -92,10 +92,8 @@ export function OnboardingForm({
         </form>
       </div>
       {!isProject && (
-        <p data-ui="onboarding-invitation" className="mt-5.5 text-center">
-          <Link href="/invitations/accept" className="inline-flex items-center font-medium gap-2 [&:hover]:underline [&:hover]:underline-offset-4 in-data-[ui~='onboarding-header']:min-h-11 in-data-[ui~='onboarding-header']:text-muted in-data-[ui~='onboarding-header']:text-[13px] text-muted text-[13px] [[data-ui~='dashboard-main']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='dashboard-main']_>_section_>_&:first-child]:text-[12px] max-[37.5rem]:in-data-[ui~='onboarding-header']:text-[12px]">
-            Have an invitation? Join an organization
-          </Link>
+        <p className="mt-5.5 text-center text-muted text-[13px]">
+          Have an invitation? Open the link in your invitation email.
         </p>
       )}
     </main>

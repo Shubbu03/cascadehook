@@ -31,7 +31,7 @@ export function ThemeSwitcher() {
   return (
     <button
       type="button"
-      data-ui="theme-switcher" className="grid place-items-center shrink-0 rounded-[7px] bg-transparent text-muted [transition:background-color_140ms,color_140ms] p-0 size-11 border-0 border-none border-current [&:hover]:bg-surface-hover [&:hover]:text-foreground motion-reduce:transition-none"
+      className="grid place-items-center shrink-0 rounded-[7px] bg-transparent text-muted [transition:background-color_140ms,color_140ms] p-0 size-11 border-0 border-none border-current [&:hover]:bg-surface-hover [&:hover]:text-foreground motion-reduce:transition-none"
       onClick={toggle}
       aria-label={label}
       title={label}

@@ -19,7 +19,7 @@ export function LandingPage() {
     <LandingMotion>
       <MarketingHeader home />
       <main id="main-content" className="w-[min(1320px,calc(100%-clamp(40px,6vw,96px)))] mx-auto">
-        <section className="grid grid-cols-[1.05fr_1fr] min-h-[calc(100svh-var(--landing-header-height))] content-center items-center pt-21.5 pb-19.5 border-b [border-bottom-style:solid] border-b-border gap-14 max-[68.75rem]:gap-9.5 max-[68.75rem]:py-16 max-[53.125rem]:grid-cols-[minmax(0,1fr)] max-[53.125rem]:gap-9 max-[53.125rem]:py-13 max-[37.5rem]:gap-8 max-[37.5rem]:py-9.5 [&_h1]:mt-6.75 [&_h1]:text-[clamp(48px,6vw,86px)] [&_h1]:font-normal [&_h1]:leading-[1.06] [&_h1]:tracking-[-0.055em] max-[53.125rem]:[&_h1]:text-[clamp(58px,9vw,76px)] max-[37.5rem]:[&_h1]:mt-5.25 max-[37.5rem]:[&_h1]:text-[clamp(43px,10.8vw,64px)] [&_h1_>_span]:block [&_h1_>_span]:text-accent" aria-labelledby="hero-heading">
+        <section className="grid grid-cols-[1.05fr_1fr] min-h-[calc(100svh-var(--landing-header-height))] content-center items-center pt-21.5 pb-19.5 border-b border-b-border gap-14 max-[68.75rem]:gap-9.5 max-[68.75rem]:py-16 max-[53.125rem]:grid-cols-[minmax(0,1fr)] max-[53.125rem]:gap-9 max-[53.125rem]:py-13 max-[37.5rem]:gap-8 max-[37.5rem]:py-9.5 [&_h1]:mt-6.75 [&_h1]:text-[clamp(48px,6vw,86px)] [&_h1]:font-normal [&_h1]:leading-[1.06] [&_h1]:tracking-[-0.055em] max-[53.125rem]:[&_h1]:text-[clamp(58px,9vw,76px)] max-[37.5rem]:[&_h1]:mt-5.25 max-[37.5rem]:[&_h1]:text-[clamp(43px,10.8vw,64px)] [&_h1_>_span]:block [&_h1_>_span]:text-accent" aria-labelledby="hero-heading">
           <div className="min-w-0 max-[53.125rem]:max-w-155">
             <p data-ui="landing-eyebrow" className="text-accent text-[13px] leading-[1.6]">Outbound webhooks, without the upkeep.</p>
             <h1 id="hero-heading">Webhooks,<span>taken care of.</span></h1>
@@ -28,10 +28,10 @@ export function LandingPage() {
               Signed requests, automatic retries and a record of every attempt are built in.
             </p>
             <div className="flex items-center flex-wrap gap-y-3 gap-x-6 mt-8 max-[37.5rem]:gap-y-2.5 max-[37.5rem]:gap-x-5 max-[37.5rem]:mt-6">
-              <Link href="/login" className="inline-flex items-center justify-center min-h-12 rounded-[100px] font-medium text-center whitespace-nowrap [transition:background-color_140ms,border-color_140ms] bg-foreground text-background gap-5 py-3 px-5.25 border border-solid border-transparent text-sm/normal max-[37.5rem]:text-[13px] max-[37.5rem]:gap-4.5 max-[37.5rem]:px-4.5 motion-reduce:transition-none motion-safe:[&_>_svg]:[transition:transform_180ms_ease-out] [&:hover]:bg-[color-mix(in_srgb,var(--foreground)_84%,var(--background))] [[data-ui~='landing-closing']_>_&]:shrink-0 motion-safe:[&:focus-visible_>_svg]:transform-[translateX(3px)] motion-safe:[@media(hover:_hover)_and_(pointer:_fine)]:[&:hover_>_svg]:transform-[translateX(3px)]">
+              <Link href="/login" className="inline-flex items-center justify-center min-h-12 rounded-[100px] font-medium text-center whitespace-nowrap [transition:background-color_140ms,border-color_140ms] bg-foreground text-background gap-5 py-3 px-5.25 border border-solid border-transparent text-sm/normal max-[37.5rem]:text-[13px] max-[37.5rem]:gap-4.5 max-[37.5rem]:px-4.5 motion-reduce:transition-none motion-safe:[&_>_svg]:[transition:transform_180ms_ease-out] [&:hover]:bg-[color-mix(in_srgb,var(--foreground)_84%,var(--background))] motion-safe:[&:focus-visible_>_svg]:transform-[translateX(3px)] motion-safe:[@media(hover:_hover)_and_(pointer:_fine)]:[&:hover_>_svg]:transform-[translateX(3px)]">
                 Get started <ArrowRightIcon size={18} aria-hidden="true" />
               </Link>
-              <DocsLink path="/docs/quickstart" className="inline-flex items-center min-h-11 text-[14px] gap-2.5 max-[37.5rem]:text-[13px] [&:hover]:underline [&:hover]:underline-offset-[5px] in-data-[ui~='landing-integration-copy']:mt-6 in-data-[ui~='landing-integration-copy']:text-accent">Read the quickstart</DocsLink>
+              <DocsLink path="/docs/quickstart" className="inline-flex items-center min-h-11 text-[14px] gap-2.5 max-[37.5rem]:text-[13px] [&:hover]:underline [&:hover]:underline-offset-[5px]">Read the quickstart</DocsLink>
             </div>
           </div>
           <DeliveryExample />
@@ -45,7 +45,7 @@ export function LandingPage() {
               so they stay off your team&apos;s to-do list.
             </p>
           </div>
-          <ol data-ui="landing-feature-list" className={"grid list-none m-0 p-0 [&_>_li]:grid [&_>_li]:grid-cols-[24px_minmax(0,1fr)] [&_>_li]:items-start [&_>_li]:border-b [&_>_li]:[border-bottom-style:solid] [&_>_li]:border-b-border [&_>_li]:gap-5 [&_>_li]:py-7.5 [&_h3]:text-[18px] [&_h3]:font-medium [&_h3]:leading-[1.4] [&_h3]:tracking-[-0.02em] [&_p]:mt-2.75 [&_p]:text-muted [&_p]:text-[14px] [&_p]:leading-[1.8] max-[37.5rem]:[&_>_li]:grid-cols-[20px_minmax(0,1fr)] max-[37.5rem]:[&_>_li]:gap-3.5 max-[37.5rem]:[&_>_li]:py-6 max-[37.5rem]:[&_h3]:text-[17px] max-[37.5rem]:[&_p]:text-[13px] [&_>_li:first-child]:pt-0 [&_>_li:last-child]:pb-0 [&_>_li:last-child]:border-b-0 [&_>_li:last-child]:[border-bottom-style:none] [&_>_li:last-child]:border-b-[currentColor] motion-safe:[&[data-visible=\"true\"]_>_li]:animate-landing-content-reveal-staggered motion-safe:[&[data-visible=\"true\"]_>_li:nth-child(2)]:[animation-delay:110ms] motion-safe:[&[data-visible=\"true\"]_>_li:nth-child(3)]:[animation-delay:220ms]"} data-motion="stagger">
+          <ol className={"grid list-none m-0 p-0 [&_>_li]:grid [&_>_li]:grid-cols-[24px_minmax(0,1fr)] [&_>_li]:items-start [&_>_li]:border-b [&_>_li]:[border-bottom-style:solid] [&_>_li]:border-b-border [&_>_li]:gap-5 [&_>_li]:py-7.5 [&_h3]:text-[18px] [&_h3]:font-medium [&_h3]:leading-[1.4] [&_h3]:tracking-[-0.02em] [&_p]:mt-2.75 [&_p]:text-muted [&_p]:text-[14px] [&_p]:leading-[1.8] max-[37.5rem]:[&_>_li]:grid-cols-[20px_minmax(0,1fr)] max-[37.5rem]:[&_>_li]:gap-3.5 max-[37.5rem]:[&_>_li]:py-6 max-[37.5rem]:[&_h3]:text-[17px] max-[37.5rem]:[&_p]:text-[13px] [&_>_li:first-child]:pt-0 [&_>_li:last-child]:pb-0 [&_>_li:last-child]:border-b-0 motion-safe:[&[data-visible=\"true\"]_>_li]:animate-landing-content-reveal-staggered motion-safe:[&[data-visible=\"true\"]_>_li:nth-child(2)]:[animation-delay:110ms] motion-safe:[&[data-visible=\"true\"]_>_li:nth-child(3)]:[animation-delay:220ms]"} data-motion="stagger">
             <li>
               <span className="pt-1 text-accent font-mono text-[11px]" aria-hidden="true">01</span>
               <div>
@@ -80,9 +80,9 @@ export function LandingPage() {
             </li>
           </ol>
         </section>
-        <section id="quickstart" className="pt-13.5 pb-16 [border-top-style:solid] [border-bottom-style:solid] border-y border-y-border max-[37.5rem]:py-9.5" aria-labelledby="quickstart-heading">
+        <section id="quickstart" className="pt-13.5 pb-16 border-y border-y-border max-[37.5rem]:py-9.5" aria-labelledby="quickstart-heading">
           <div className="grid grid-cols-[0.9fr_1.1fr] items-start gap-14 max-[68.75rem]:gap-9.5 max-[53.125rem]:grid-cols-[minmax(0,1fr)] max-[53.125rem]:gap-7.5">
-            <div data-ui="landing-integration-copy" className="[&_h2]:mt-5.25 [&_h2]:text-[clamp(28px,3vw,36px)] [&_h2]:font-normal [&_h2]:leading-[1.2] [&_h2]:tracking-[-0.04em] max-[37.5rem]:[&_h2]:mt-4.25 max-[37.5rem]:[&_h2]:text-[29px] [&_>_p:not([data-ui~='landing-eyebrow'])]:max-w-105 [&_>_p:not([data-ui~='landing-eyebrow'])]:mt-5.5 [&_>_p:not([data-ui~='landing-eyebrow'])]:text-muted [&_>_p:not([data-ui~='landing-eyebrow'])]:text-[15px] [&_>_p:not([data-ui~='landing-eyebrow'])]:leading-[1.85] max-[53.125rem]:[&_>_p:not([data-ui~='landing-eyebrow'])]:max-w-125 max-[37.5rem]:[&_>_p:not([data-ui~='landing-eyebrow'])]:text-[14px]" data-motion="reveal">
+            <div className="[&_h2]:mt-5.25 [&_h2]:text-[clamp(28px,3vw,36px)] [&_h2]:font-normal [&_h2]:leading-[1.2] [&_h2]:tracking-[-0.04em] max-[37.5rem]:[&_h2]:mt-4.25 max-[37.5rem]:[&_h2]:text-[29px] [&_>_p:not([data-ui~='landing-eyebrow'])]:max-w-105 [&_>_p:not([data-ui~='landing-eyebrow'])]:mt-5.5 [&_>_p:not([data-ui~='landing-eyebrow'])]:text-muted [&_>_p:not([data-ui~='landing-eyebrow'])]:text-[15px] [&_>_p:not([data-ui~='landing-eyebrow'])]:leading-[1.85] max-[53.125rem]:[&_>_p:not([data-ui~='landing-eyebrow'])]:max-w-125 max-[37.5rem]:[&_>_p:not([data-ui~='landing-eyebrow'])]:text-[14px]" data-motion="reveal">
               <p data-ui="landing-eyebrow" className="text-accent text-[13px] leading-[1.6]">Your first event is one API call away.</p>
               <h2 id="quickstart-heading">Connect an endpoint.<br />Publish an event.</h2>
               <p>
@@ -106,9 +106,9 @@ export function LandingPage() {
           </Link>
         </section>
       </main>
-      <footer className="pt-11.5 border-t [border-top-style:solid] border-t-border overflow-hidden max-[37.5rem]:pt-8">
+      <footer className="pt-11.5 border-t border-t-border overflow-hidden max-[37.5rem]:pt-8">
         <div className="w-[min(1320px,calc(100%-clamp(40px,6vw,96px)))] mx-auto">
-          <div className="flex items-center justify-between pb-7 border-b [border-bottom-style:solid] border-b-border gap-8 max-[53.125rem]:flex-col max-[53.125rem]:items-start max-[53.125rem]:gap-5 max-[37.5rem]:pb-6">
+          <div className="flex items-center justify-between pb-7 border-b border-b-border gap-8 max-[53.125rem]:flex-col max-[53.125rem]:items-start max-[53.125rem]:gap-5 max-[37.5rem]:pb-6">
             <div className="min-w-0 [&_p]:max-w-85 [&_p]:mt-3.5 [&_p]:text-muted [&_p]:text-[13px] [&_p]:leading-[1.7]">
               <Brand href={null} />
               <p>Signed webhooks, automatic retries and delivery logs.</p>

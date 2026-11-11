@@ -4,8 +4,6 @@ import (
 	"context"
 	"log/slog"
 	"os"
-	"os/signal"
-	"syscall"
 	"time"
 
 	"cascadehook/internal/clerk"
@@ -13,6 +11,7 @@ import (
 	"cascadehook/internal/delivery"
 	"cascadehook/internal/mailoutbox"
 	"cascadehook/internal/notifications"
+	"cascadehook/internal/process"
 	"cascadehook/internal/signing"
 	"cascadehook/internal/store"
 	"cascadehook/internal/telemetry"
@@ -28,15 +27,12 @@ func main() {
 
 func run() error {
 	// Configuration failures also use structured logging.
-	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)).With("service", "worker"))
+	process.StartLogging("worker", os.Stdout)
 	cfg, err := config.LoadWorker()
 	if err != nil {
 		return err
 	}
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-		Level: cfg.LogLevel,
-	})).With("service", "worker")
-	slog.SetDefault(logger)
+	logger := process.Logger("worker", os.Stdout, cfg.LogLevel)
 	vault, err := signing.NewVaultWithPrevious(cfg.SigningEncryptionKey, cfg.PreviousEncryptionKey)
 	if err != nil {
 		return err
@@ -58,7 +54,7 @@ func run() error {
 		return err
 	}
 
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	ctx, stop := process.SignalContext()
 	defer stop()
 	go func() {
 		<-ctx.Done()

@@ -8,7 +8,7 @@ export const notificationCategories = {
 } as const;
 
 export type NotificationCategory = keyof typeof notificationCategories;
-export type NotificationState = "all" | "unread" | "read" | "archived";
+export type NotificationState = "unread" | "archived";
 export type NotificationFilters = {
   projectId?: string;
   category?: NotificationCategory;

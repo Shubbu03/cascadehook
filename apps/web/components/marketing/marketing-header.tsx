@@ -10,7 +10,7 @@ export function MarketingHeader({ home = false }: { home?: boolean; }) {
   const howItWorksHref = home ? "#how-it-works" : "/#how-it-works";
 
   return (
-    <header data-ui="landing-header" className="w-[min(1320px,calc(100%-clamp(40px,6vw,96px)))] flex items-center min-h-(--landing-header-height) border-b [border-bottom-style:solid] border-b-border mx-auto gap-7 max-[68.75rem]:gap-5 max-[53.125rem]:justify-between max-[37.5rem]:gap-3">
+    <header data-ui="landing-header" className="w-[min(1320px,calc(100%-clamp(40px,6vw,96px)))] flex items-center min-h-(--landing-header-height) border-b border-b-border mx-auto gap-7 max-[68.75rem]:gap-5 max-[53.125rem]:justify-between max-[37.5rem]:gap-3">
       <Brand href={home ? null : "/"} />
       <nav className="flex items-center ml-auto gap-6 max-[68.75rem]:gap-4.5 max-[53.125rem]:hidden [&_a]:inline-flex [&_a]:items-center [&_a]:min-h-11 [&_a]:text-muted [&_a]:text-[13px] [&_a:hover]:text-foreground" aria-label="Main navigation">
         <a href={howItWorksHref}>How it works</a>

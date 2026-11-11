@@ -31,7 +31,7 @@ func (s *Store) ClaimDeliveries(ctx context.Context, ownerID uuid.UUID, limit in
 	}
 	defer rollbackTransaction(tx)
 	rows, err := tx.Query(ctx, `SELECT d.id, d.project_id, d.event_id, d.endpoint_id,
-		e.url, v.event_type, v.payload, v.created_at, d.next_attempt_at, d.attempt_count, d.cycle,
+		e.url, v.payload, v.created_at, d.next_attempt_at, d.cycle,
 		e.verification_version, e.signing_secret,
 		CASE WHEN e.previous_secret_expires_at > now() THEN e.previous_signing_secret ELSE NULL END,
 		e.previous_secret_expires_at
@@ -56,7 +56,7 @@ func (s *Store) ClaimDeliveries(ctx context.Context, ownerID uuid.UUID, limit in
 	jobs, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (deliveries.Job, error) {
 		var job deliveries.Job
 		err := row.Scan(&job.DeliveryID, &job.ProjectID, &job.EventID, &job.EndpointID,
-			&job.URL, &job.EventType, &job.Payload, &job.EventCreatedAt, &job.NextAttemptAt, &job.AttemptCount, &job.Cycle,
+			&job.URL, &job.Payload, &job.EventCreatedAt, &job.NextAttemptAt, &job.Cycle,
 			&job.ConfigurationVersion, &job.SigningSecret, &job.PreviousSigningSecret, &job.PreviousSecretExpiresAt)
 		return job, err
 	})
@@ -76,14 +76,14 @@ func (s *Store) ClaimDeliveries(ctx context.Context, ownerID uuid.UUID, limit in
 		ids[i] = pgtype.UUID{Bytes: [16]byte(jobs[i].DeliveryID), Valid: true}
 		tokens[i] = pgtype.UUID{Bytes: [16]byte(token), Valid: true}
 	}
-	var expiresAt time.Time
+	var claimed int
 	err = tx.QueryRow(ctx, `WITH claimed AS (
 		UPDATE deliveries d SET state = 'leased', lease_owner = $1, terminal_reason = NULL,
 			lease_token = claims.token, lease_expires_at = now() + $4::interval, updated_at = now()
 		FROM unnest($2::uuid[], $3::uuid[]) AS claims(id, token)
-		WHERE d.id = claims.id AND d.state = 'pending' RETURNING d.lease_expires_at
-	) SELECT min(lease_expires_at) FROM claimed HAVING count(*) = $5`,
-		ownerID, ids, tokens, deliveryInterval(deliveries.LeaseDuration), len(jobs)).Scan(&expiresAt)
+		WHERE d.id = claims.id AND d.state = 'pending' RETURNING d.id
+	) SELECT count(*) FROM claimed HAVING count(*) = $5`,
+		ownerID, ids, tokens, deliveryInterval(deliveries.LeaseDuration), len(jobs)).Scan(&claimed)
 	if err != nil {
 		return nil, fmt.Errorf("assign delivery leases: %w", err)
 	}
@@ -91,9 +91,6 @@ func (s *Store) ClaimDeliveries(ctx context.Context, ownerID uuid.UUID, limit in
 		// An ambiguous commit is never dispatched. Recovery handles any leases
 		// that committed after the client lost its acknowledgement.
 		return nil, fmt.Errorf("commit delivery claim: %w", err)
-	}
-	for i := range jobs {
-		jobs[i].LeaseExpiresAt = expiresAt
 	}
 	return jobs, nil
 }

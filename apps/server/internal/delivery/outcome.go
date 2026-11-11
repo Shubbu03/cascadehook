@@ -13,10 +13,6 @@ import (
 	"cascadehook/internal/deliveries"
 )
 
-func Classify(response Response, err error, attemptNumber int, elapsed time.Duration) deliveries.Result {
-	return ClassifyWithDelays(response, err, attemptNumber, elapsed, deliveries.DefaultPolicy().RetryDelaysSeconds)
-}
-
 func ClassifyWithDelays(response Response, err error, attemptNumber int, elapsed time.Duration, delays []int) deliveries.Result {
 	result := deliveries.Result{
 		StatusCode: response.StatusCode, Duration: max(elapsed, 0),

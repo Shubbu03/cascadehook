@@ -131,15 +131,7 @@ func TestSplitAttemptUsageRollback(t *testing.T) {
 				FROM organization_usage_months WHERE organization_id = $1 AND period = $2::date`,
 				test.organizationID,
 				test.period,
-			).Scan(
-				&got[0],
-				&got[1],
-				&got[2],
-				&got[3],
-				&got[4],
-				&got[5],
-				&got[6],
-			)
+			).Scan(&got[0], &got[1], &got[2], &got[3], &got[4], &got[5], &got[6])
 			if err != nil {
 				t.Fatal(err)
 			}

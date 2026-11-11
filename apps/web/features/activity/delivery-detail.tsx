@@ -48,6 +48,8 @@ import {
   type Delivery,
   type ReplayReceipt,
 } from "./types";
+import { errorText } from "@/components/styles";
+import { queryKeys } from "@/lib/query-keys";
 
 const resultCopy: Record<Delivery["state"], { title: string; description: string; }> = {
   pending: {
@@ -140,7 +142,7 @@ export function DeliveryDetail({ deliveryId }: { deliveryId: string; }) {
         queryKey: ["attempts", userId, project.id, deliveryId],
       }),
       client.invalidateQueries({
-        queryKey: ["deliveries", userId, project.id],
+        queryKey: queryKeys.deliveries(userId, project.id),
       }),
       ...(detail.data
         ? [
@@ -209,7 +211,7 @@ export function DeliveryDetail({ deliveryId }: { deliveryId: string; }) {
     <section data-ui="delivery-detail" className="max-w-300 [container:delivery-detail/inline-size]" aria-labelledby="delivery-title">
       <Link
         href={href + "/deliveries" + (search.size ? "?" + search.toString() : "")}
-        className="inline-flex items-center font-medium text-muted gap-2 [&:hover]:underline [&:hover]:underline-offset-4 in-data-[ui~='onboarding-header']:min-h-11 in-data-[ui~='onboarding-header']:text-muted in-data-[ui~='onboarding-header']:text-[13px] in-data-[ui~='switcher-error']:mt-1.25 in-data-[ui~='switcher-error']:text-[13px] in-data-[ui~='switcher-error']:text-accent text-[12px] in-data-[ui~='workspace-banner']:[font-size:inherit] in-data-[ui~='workspace-banner']:underline in-data-[ui~='notification-error']:ml-auto in-data-[ui~='notification-error']:text-[12px] [[data-ui~='dashboard-main']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='dashboard-main']_>_section_>_&:first-child]:text-[12px] [[data-ui~='project-content']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='project-content']_>_section_>_&:first-child]:text-[12px] [[data-ui~='project-content']_>_[data-ui~='delivery-detail']_>_&:first-child]:mb-3 max-[37.5rem]:in-data-[ui~='onboarding-header']:text-[12px]"
+        className="inline-flex items-center font-medium text-muted gap-2 [&:hover]:underline [&:hover]:underline-offset-4 text-[12px] [[data-ui~='dashboard-main']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='dashboard-main']_>_section_>_&:first-child]:text-[12px] [[data-ui~='project-content']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='project-content']_>_section_>_&:first-child]:text-[12px] [[data-ui~='project-content']_>_[data-ui~='delivery-detail']_>_&:first-child]:mb-3"
       >
         <ArrowLeftIcon size={15} aria-hidden="true" />
         Deliveries
@@ -288,7 +290,7 @@ export function DeliveryDetail({ deliveryId }: { deliveryId: string; }) {
                   )}
                 </div>
               </div>
-              <dl className="flex pl-7 border-l [border-left-style:solid] border-l-border gap-7 m-0 [&_dt]:text-muted [&_dt]:text-[11px] [&_dd]:mt-0.75 [&_dd]:mb-0 [&_dd]:tabular-nums [&_dd]:mx-0 [&_dd]:text-2xl/tight @max-[37.5rem]/delivery-detail:pt-3 @max-[37.5rem]/delivery-detail:pb-0 @max-[37.5rem]/delivery-detail:border-t @max-[37.5rem]/delivery-detail:[border-top-style:solid] @max-[37.5rem]/delivery-detail:border-t-border @max-[37.5rem]/delivery-detail:border-l-0 @max-[37.5rem]/delivery-detail:[border-left-style:none] @max-[37.5rem]/delivery-detail:border-l-[currentColor] @max-[37.5rem]/delivery-detail:gap-7 @max-[37.5rem]/delivery-detail:px-0">
+              <dl className="flex pl-7 border-l [border-left-style:solid] border-l-border gap-7 m-0 [&_dt]:text-muted [&_dt]:text-[11px] [&_dd]:mt-0.75 [&_dd]:mb-0 [&_dd]:tabular-nums [&_dd]:mx-0 [&_dd]:text-2xl/tight @max-[37.5rem]/delivery-detail:pt-3 @max-[37.5rem]/delivery-detail:pb-0 @max-[37.5rem]/delivery-detail:border-t @max-[37.5rem]/delivery-detail:[border-top-style:solid] @max-[37.5rem]/delivery-detail:border-t-border @max-[37.5rem]/delivery-detail:border-l-0 @max-[37.5rem]/delivery-detail:gap-7 @max-[37.5rem]/delivery-detail:px-0">
                 <div>
                   <dt>Current cycle</dt><dd>{detail.data.cycle}</dd>
                 </div>
@@ -307,7 +309,7 @@ export function DeliveryDetail({ deliveryId }: { deliveryId: string; }) {
                 {endpoint.isError ? (
                   <button
                     type="button"
-                    className="inline-flex items-center font-medium gap-2 [&:hover]:underline [&:hover]:underline-offset-4 in-data-[ui~='onboarding-header']:min-h-11 in-data-[ui~='onboarding-header']:text-muted in-data-[ui~='onboarding-header']:text-[13px] in-data-[ui~='switcher-error']:mt-1.25 in-data-[ui~='switcher-error']:text-[13px] in-data-[ui~='switcher-error']:text-accent text-[12px] in-data-[ui~='workspace-banner']:[font-size:inherit] in-data-[ui~='workspace-banner']:underline in-data-[ui~='notification-error']:ml-auto in-data-[ui~='notification-error']:text-[12px] [[data-ui~='dashboard-main']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='dashboard-main']_>_section_>_&:first-child]:text-[12px] [[data-ui~='project-content']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='project-content']_>_section_>_&:first-child]:text-[12px] [[data-ui~='project-content']_>_[data-ui~='delivery-detail']_>_&:first-child]:mb-3 max-[37.5rem]:in-data-[ui~='onboarding-header']:text-[12px]"
+                    className="inline-flex items-center font-medium gap-2 [&:hover]:underline [&:hover]:underline-offset-4 text-[12px] [[data-ui~='dashboard-main']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='dashboard-main']_>_section_>_&:first-child]:text-[12px] [[data-ui~='project-content']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='project-content']_>_section_>_&:first-child]:text-[12px] [[data-ui~='project-content']_>_[data-ui~='delivery-detail']_>_&:first-child]:mb-3"
                     disabled={endpoint.isFetching}
                     onClick={() => { void endpoint.refetch(); }}
                   >
@@ -316,7 +318,7 @@ export function DeliveryDetail({ deliveryId }: { deliveryId: string; }) {
                   </button>
                 ) : currentEndpoint && !suspended && availabilityKnown && (
                   <Link
-                    className="inline-flex items-center font-medium gap-2 [&:hover]:underline [&:hover]:underline-offset-4 in-data-[ui~='onboarding-header']:min-h-11 in-data-[ui~='onboarding-header']:text-muted in-data-[ui~='onboarding-header']:text-[13px] in-data-[ui~='switcher-error']:mt-1.25 in-data-[ui~='switcher-error']:text-[13px] in-data-[ui~='switcher-error']:text-accent text-[12px] in-data-[ui~='workspace-banner']:[font-size:inherit] in-data-[ui~='workspace-banner']:underline in-data-[ui~='notification-error']:ml-auto in-data-[ui~='notification-error']:text-[12px] [[data-ui~='dashboard-main']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='dashboard-main']_>_section_>_&:first-child]:text-[12px] [[data-ui~='project-content']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='project-content']_>_section_>_&:first-child]:text-[12px] [[data-ui~='project-content']_>_[data-ui~='delivery-detail']_>_&:first-child]:mb-3 max-[37.5rem]:in-data-[ui~='onboarding-header']:text-[12px]"
+                    className="inline-flex items-center font-medium gap-2 [&:hover]:underline [&:hover]:underline-offset-4 text-[12px] [[data-ui~='dashboard-main']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='dashboard-main']_>_section_>_&:first-child]:text-[12px] [[data-ui~='project-content']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='project-content']_>_section_>_&:first-child]:text-[12px] [[data-ui~='project-content']_>_[data-ui~='delivery-detail']_>_&:first-child]:mb-3"
                     href={href + "/endpoints/" + detail.data.endpoint_id}
                   >
                     Endpoint settings <ArrowRightIcon size={13} aria-hidden="true" />
@@ -325,14 +327,14 @@ export function DeliveryDetail({ deliveryId }: { deliveryId: string; }) {
               </div>
             )}
             {replay.isError && (
-              <p className="text-danger text-[13px] my-3 [[data-ui~='delivery-history']_>_&]:my-3 [[data-ui~='delivery-history']_>_&]:mx-5" role="alert">{replay.error.message}</p>
+              <p className={errorText} role="alert">{replay.error.message}</p>
             )}
             <div className="grid grid-cols-[minmax(0,1fr)_300px] items-start gap-5 @max-[55rem]/delivery-detail:grid-cols-[1fr]">
               <section
                 data-ui="delivery-history" className="min-w-0 rounded-[9px] bg-surface border border-solid border-border [&_h2]:text-[14px] [&_h2]:font-medium [&_h2]:tracking-[-0.01em]"
                 aria-labelledby="delivery-attempts-title"
               >
-                <div className="flex items-center justify-between flex-wrap gap-y-3 gap-x-5 border-b [border-bottom-style:solid] border-b-border py-4 px-5 [&_p]:mt-1 [&_p]:text-muted [&_p]:text-[11px] @max-[27.5rem]/delivery-detail:px-4">
+                <div className="flex items-center justify-between flex-wrap gap-y-3 gap-x-5 border-b border-b-border py-4 px-5 [&_p]:mt-1 [&_p]:text-muted [&_p]:text-[11px] @max-[27.5rem]/delivery-detail:px-4">
                   <div>
                     <h2 id="delivery-attempts-title">Attempt history</h2>
                     <p>
@@ -391,7 +393,7 @@ export function DeliveryDetail({ deliveryId }: { deliveryId: string; }) {
                   </p>
                 )}
                 {detail.data.active_attempt_id && (cycle === undefined || cycle === detail.data.cycle) && (
-                  <div className="flex items-start border-b [border-bottom-style:solid] border-b-border bg-warning-subtle gap-2.5 py-4 px-5 [&_>_svg]:shrink-0 [&_>_svg]:mt-0.5 [&_>_svg]:text-warning [&_h3]:text-[13px] [&_h3]:font-medium [&_p]:mt-1 [&_p]:text-muted [&_p]:text-[11px] [&_p]:leading-[1.7]" role="status">
+                  <div className="flex items-start border-b border-b-border bg-warning-subtle gap-2.5 py-4 px-5 [&_>_svg]:shrink-0 [&_>_svg]:mt-0.5 [&_>_svg]:text-warning [&_h3]:text-[13px] [&_h3]:font-medium [&_p]:mt-1 [&_p]:text-muted [&_p]:text-[11px] [&_p]:leading-[1.7]" role="status">
                     <ClockIcon size={18} aria-hidden="true" />
                     <div>
                       <h3>

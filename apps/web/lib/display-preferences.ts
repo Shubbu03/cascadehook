@@ -3,7 +3,7 @@
 import { useCallback, useSyncExternalStore } from "react";
 import { formatTime } from "./format";
 
-export type TimezonePreference = "utc" | "local";
+type TimezonePreference = "utc" | "local";
 const storageKey = "cascadehook-timezone";
 const changeEvent = "cascadehook-timezone-change";
 

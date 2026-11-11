@@ -15,13 +15,7 @@ func (api *api) deleteAccount(w http.ResponseWriter, r *http.Request, user accou
 		api.accountProblem(w, r, err)
 		return
 	}
-	api.logger.Info(
-		"account deletion accepted",
-		"user_id",
-		user.ID,
-		"deletion_requested_at",
-		deletion.RequestedAt,
-	)
+	api.logger.Info("account deletion accepted", "user_id", user.ID, "deletion_requested_at", deletion.RequestedAt)
 	writeJSON(w, r, http.StatusAccepted, deletion)
 }
 

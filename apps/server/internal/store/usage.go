@@ -25,12 +25,7 @@ func recordUsage(ctx context.Context, tx pgx.Tx, projectID uuid.UUID, delta usag
 	err := tx.QueryRow(ctx, `SELECT o.id, o.max_monthly_events, o.max_monthly_deliveries,
 		date_trunc('month', clock_timestamp() AT TIME ZONE 'UTC')::date
 		FROM projects p JOIN organizations o ON o.id = p.organization_id WHERE p.id = $1`,
-		projectID).Scan(
-		&organizationID,
-		&eventLimit,
-		&jobLimit,
-		&period,
-	)
+		projectID).Scan(&organizationID, &eventLimit, &jobLimit, &period)
 	if err != nil {
 		return fmt.Errorf("read usage admission limits: %w", err)
 	}

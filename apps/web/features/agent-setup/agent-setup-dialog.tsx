@@ -12,6 +12,7 @@ import { DocsLink } from "@/components/docs-link";
 import { Modal } from "@/components/modal";
 import { projectHref, useProject } from "@/features/projects/project-workspace";
 import { buildSetupPrompt, integrationAPIBaseURL } from "./prompt";
+import { textLink, warningBanner } from "@/components/styles";
 
 export function AgentSetupDialog({ siteOrigin, onClose }: {
   siteOrigin: string;
@@ -29,7 +30,7 @@ export function AgentSetupDialog({ siteOrigin, onClose }: {
       aria-describedby={id + "-description"}
       onDismiss={onClose}
     >
-      <div data-ui="agent-setup-heading" className="flex items-start justify-between gap-3">
+      <div className="flex items-start justify-between gap-3">
         <div>
           <span className="font-medium text-[11px] leading-normal font-mono tracking-[0.02em] block mb-2 text-muted">Connect your application</span>
           <h2 id={id}>Set up with your AI agent</h2>
@@ -43,7 +44,7 @@ export function AgentSetupDialog({ siteOrigin, onClose }: {
         connect Cascadehook, and check your first delivery.
       </p>
       {(!availabilityKnown || suspended) && (
-        <p data-ui="workspace-banner" className="flex items-center flex-wrap mt-0 mb-5 rounded-md text-warning bg-warning-subtle text-[12px] leading-[1.6] gap-2.5 py-2.5 px-3 mx-0 border border-solid border-border" role="status">
+        <p className={warningBanner} role="status">
           {suspended
             ? "This project is paused. You can prepare the integration, but an operator must resume the project before delivery can be tested."
             : "Project availability is unknown. Your agent must check project status before changing setup."}
@@ -53,12 +54,12 @@ export function AgentSetupDialog({ siteOrigin, onClose }: {
         <li>
           <h3>Save a project key locally</h3>
           <p>
-            <Link href={projectHref(project.id) + "/api-keys"} className="inline-flex items-center text-[14px] font-medium gap-2 [&:hover]:underline [&:hover]:underline-offset-4 in-data-[ui~='onboarding-header']:min-h-11 in-data-[ui~='onboarding-header']:text-muted in-data-[ui~='onboarding-header']:text-[13px] in-data-[ui~='switcher-error']:mt-1.25 in-data-[ui~='switcher-error']:text-[13px] in-data-[ui~='switcher-error']:text-accent in-data-[ui~='workspace-banner']:[font-size:inherit] in-data-[ui~='workspace-banner']:underline in-data-[ui~='project-overview']:text-[12px] in-data-[ui~='notification-error']:ml-auto in-data-[ui~='notification-error']:text-[12px] [[data-ui~='dashboard-main']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='dashboard-main']_>_section_>_&:first-child]:text-[12px] [[data-ui~='project-content']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='project-content']_>_section_>_&:first-child]:text-[12px] max-[37.5rem]:in-data-[ui~='onboarding-header']:text-[12px]">Create an API key</Link>{" "}
+            <Link href={projectHref(project.id) + "/api-keys"} className={textLink}>Create an API key</Link>{" "}
             and save its one-time value as <code>CASCADEHOOK_API_KEY</code> in
             your application’s local environment or secret manager. Keep it out
             of chat and source control.
           </p>
-          <p className="text-[12px] text-muted leading-[1.7] in-data-[ui~='agent-prompt']:mt-2 in-data-[ui~='agent-prompt']:text-[12px]">
+          <p className="text-[12px] text-muted leading-[1.7]">
             The agent needs a Full access key to register endpoints. Give
             your deployed application a separate Publish only key. Only share
             a key with an agent you trust.
@@ -80,7 +81,7 @@ export function AgentSetupDialog({ siteOrigin, onClose }: {
         </li>
       </ol>
       {prompt ? (
-        <div data-ui="agent-prompt" className="pt-5 border-t [border-top-style:solid] border-t-border">
+        <div className="pt-5 border-t border-t-border">
           <div className="flex items-center justify-between flex-wrap mb-3 text-[13px] gap-3">
             <label htmlFor={id + "-prompt"}>Your project setup prompt</label>
             <CopyButton value={prompt} label="Copy setup prompt" successMessage="Setup prompt copied. Paste it into your coding agent." />
@@ -89,15 +90,15 @@ export function AgentSetupDialog({ siteOrigin, onClose }: {
           <p className="text-muted mt-2 text-[12px]">Includes project context and documentation links. No credentials are included.</p>
         </div>
       ) : (
-        <p data-ui="workspace-banner" className="flex items-center flex-wrap mt-0 mb-5 rounded-md text-warning bg-warning-subtle text-[12px] leading-[1.6] gap-2.5 py-2.5 px-3 mx-0 border border-solid border-border" role="alert">
+        <p className={warningBanner} role="alert">
           The API address is unavailable. Ask the platform operator to configure
           the API origin before generating a setup prompt.
         </p>
       )}
       <div className="flex items-center justify-start gap-y-3 gap-x-5 flex-wrap mt-6 text-[12px]">
-        <DocsLink path="/docs/agents" className="inline-flex items-center text-[14px] font-medium gap-2 [&:hover]:underline [&:hover]:underline-offset-4 in-data-[ui~='onboarding-header']:min-h-11 in-data-[ui~='onboarding-header']:text-muted in-data-[ui~='onboarding-header']:text-[13px] in-data-[ui~='switcher-error']:mt-1.25 in-data-[ui~='switcher-error']:text-[13px] in-data-[ui~='switcher-error']:text-accent in-data-[ui~='workspace-banner']:[font-size:inherit] in-data-[ui~='workspace-banner']:underline in-data-[ui~='project-overview']:text-[12px] in-data-[ui~='notification-error']:ml-auto in-data-[ui~='notification-error']:text-[12px] [[data-ui~='dashboard-main']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='dashboard-main']_>_section_>_&:first-child]:text-[12px] [[data-ui~='project-content']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='project-content']_>_section_>_&:first-child]:text-[12px] max-[37.5rem]:in-data-[ui~='onboarding-header']:text-[12px]">Agent setup guide →</DocsLink>
-        <DocsLink path="/docs/agents.md" className="inline-flex items-center text-[14px] font-medium gap-2 [&:hover]:underline [&:hover]:underline-offset-4 in-data-[ui~='onboarding-header']:min-h-11 in-data-[ui~='onboarding-header']:text-muted in-data-[ui~='onboarding-header']:text-[13px] in-data-[ui~='switcher-error']:mt-1.25 in-data-[ui~='switcher-error']:text-[13px] in-data-[ui~='switcher-error']:text-accent in-data-[ui~='workspace-banner']:[font-size:inherit] in-data-[ui~='workspace-banner']:underline in-data-[ui~='project-overview']:text-[12px] in-data-[ui~='notification-error']:ml-auto in-data-[ui~='notification-error']:text-[12px] [[data-ui~='dashboard-main']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='dashboard-main']_>_section_>_&:first-child]:text-[12px] [[data-ui~='project-content']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='project-content']_>_section_>_&:first-child]:text-[12px] max-[37.5rem]:in-data-[ui~='onboarding-header']:text-[12px]">Markdown guide</DocsLink>
-        <DocsLink path="/openapi.json" className="inline-flex items-center text-[14px] font-medium gap-2 [&:hover]:underline [&:hover]:underline-offset-4 in-data-[ui~='onboarding-header']:min-h-11 in-data-[ui~='onboarding-header']:text-muted in-data-[ui~='onboarding-header']:text-[13px] in-data-[ui~='switcher-error']:mt-1.25 in-data-[ui~='switcher-error']:text-[13px] in-data-[ui~='switcher-error']:text-accent in-data-[ui~='workspace-banner']:[font-size:inherit] in-data-[ui~='workspace-banner']:underline in-data-[ui~='project-overview']:text-[12px] in-data-[ui~='notification-error']:ml-auto in-data-[ui~='notification-error']:text-[12px] [[data-ui~='dashboard-main']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='dashboard-main']_>_section_>_&:first-child]:text-[12px] [[data-ui~='project-content']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='project-content']_>_section_>_&:first-child]:text-[12px] max-[37.5rem]:in-data-[ui~='onboarding-header']:text-[12px]">API schema</DocsLink>
+        <DocsLink path="/docs/agents" className={textLink}>Agent setup guide →</DocsLink>
+        <DocsLink path="/docs/agents.md" className={textLink}>Markdown guide</DocsLink>
+        <DocsLink path="/openapi.json" className={textLink}>API schema</DocsLink>
       </div>
     </Modal>
   );

@@ -99,12 +99,7 @@ func (s *Store) CreateProject(
 	if !role.CanManageProjects() {
 		return accounts.Project{}, accounts.ErrForbidden
 	}
-	if err := checkResourceQuota(
-		ctx,
-		tx,
-		params.OrganizationID,
-		"projects",
-	); err != nil {
+	if err := checkResourceQuota(ctx, tx, params.OrganizationID, "projects"); err != nil {
 		return accounts.Project{}, err
 	}
 	project := accounts.Project{ID: id, OrganizationID: params.OrganizationID, Name: name, Role: role}

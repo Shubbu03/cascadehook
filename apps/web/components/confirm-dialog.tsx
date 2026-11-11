@@ -34,7 +34,7 @@ export function ConfirmDialog({
     >
       <h2 id={id}>{title}</h2>
       <div id={id + "-description"}>{children}</div>
-      <div data-ui="form-actions" className="flex items-center flex-wrap gap-2.5 mt-6 in-data-[ui~='endpoint-security-card']:gap-1.5 in-data-[ui~='workspace-create-dialog']:flex-row-reverse in-data-[ui~='workspace-create-dialog']:mt-6 in-data-[ui~='data-table']:gap-3.5 in-data-[ui~='invitation-dialog']:justify-end in-data-[ui~='invitation-dialog']:border-t in-data-[ui~='invitation-dialog']:[border-top-style:solid] in-data-[ui~='invitation-dialog']:border-t-border in-data-[ui~='invitation-dialog']:bg-surface in-data-[ui~='invitation-dialog']:gap-2 in-data-[ui~='invitation-dialog']:m-0 in-data-[ui~='invitation-dialog']:py-4 in-data-[ui~='invitation-dialog']:px-6">
+      <div data-ui="form-actions" className="flex items-center flex-wrap gap-2.5 mt-6 in-data-[ui~='endpoint-security-card']:gap-1.5 in-data-[ui~='workspace-create-dialog']:flex-row-reverse in-data-[ui~='workspace-create-dialog']:mt-6">
         <Button
           type="button"
           data-ui="button" variant="secondary"

@@ -58,7 +58,7 @@ export function AccountSettings() {
   const unavailable = details.error instanceof ApiError && details.error.code === "account_deleted";
   const accountId = details.data?.account.id;
   return (
-    <main id="main-content" data-ui="dashboard-main account-settings" className="m-0 min-h-[calc(100svh-var(--topbar-height,60px))] w-full min-w-0 px-8 pt-7 pb-16 max-[56.25rem]:px-6 max-[37.5rem]:px-4.5">
+    <main id="main-content" data-ui="dashboard-main" className="m-0 min-h-[calc(100svh-var(--topbar-height,60px))] w-full min-w-0 px-8 pt-7 pb-16 max-[56.25rem]:px-6 max-[37.5rem]:px-4.5">
       <PageHeader title="Account settings" description="Your profile, sign-in security, and personal notification preferences." />
       {signOutError && <p className="my-3 text-[13px] text-danger" role="alert">{signOutError}</p>}
       {accepted || unavailable ? (

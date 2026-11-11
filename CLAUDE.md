@@ -20,7 +20,7 @@ history, and replay. Setup, commands, and deployment are in `README.md`.
 
 ## Checks
 
-Run `bun run check` (web and docs lint and typecheck, `go vet`, `go build`).
+Run `bun run check` (web and docs lint and typecheck, `go vet`, `go build`, `go test`).
 Run migration regression tests with `go test ./migrations` from `apps/server`.
 Set `CASCADEHOOK_TEST_DATABASE_URL` to a disposable PostgreSQL database to
 enable them; fixtures use a private schema and are rolled back.

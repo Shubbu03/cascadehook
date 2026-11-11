@@ -25,6 +25,7 @@ import { ProjectEnvironment } from "@/features/projects/project-environment";
 import { RetentionSettings } from "./retention-settings";
 import { RenameForm } from "./rename-form";
 import { SettingsRow, SettingsSection, SettingsTabs } from "./settings-layout";
+import { queryKeys } from "@/lib/query-keys";
 
 export function ProjectSettings() {
   const formatTime = useFormatTime();
@@ -43,14 +44,14 @@ export function ProjectSettings() {
     onSuccess: async () => {
       setConfirmation(false);
       notify("Project deletion requested.", "success");
-      const queryKey = ["projects", userId, project.organization_id];
+      const queryKey = queryKeys.projects(userId, project.organization_id);
       await client.cancelQueries({ queryKey });
       client.setQueriesData<InfiniteData<Page<Project>>>({ queryKey }, (data) => data ? {
         ...data,
         pages: data.pages.map((page) => ({ ...page, data: page.data.filter((item) => item.id !== project.id) })),
       } : data);
       void client.invalidateQueries({ queryKey, refetchType: "none" });
-      void client.invalidateQueries({ queryKey: ["usage", userId, "organization", project.organization_id], refetchType: "all" });
+      void client.invalidateQueries({ queryKey: queryKeys.organizationUsage(userId, project.organization_id), refetchType: "all" });
       router.replace(organizationHref(project.organization_id));
       router.refresh();
     },
@@ -67,8 +68,8 @@ export function ProjectSettings() {
           <SettingsSection title="Project details" description="The name your team sees in the dashboard and project switcher.">
             {canManage ? <RenameForm key={project.name} kind="Project" name={project.name} path={path}
               saved={() => Promise.all([
-                client.invalidateQueries({ queryKey: ["project", userId, project.id] }),
-                client.invalidateQueries({ queryKey: ["projects", userId, project.organization_id] }),
+                client.invalidateQueries({ queryKey: queryKeys.project(userId, project.id) }),
+                client.invalidateQueries({ queryKey: queryKeys.projects(userId, project.organization_id) }),
               ])} /> : <SettingsRow title="Project name" description="An owner or admin can rename this project."><span className="text-[13px]">{project.name}</span></SettingsRow>}
             <ProjectDetailsForm key={project.description + ":" + project.environment} project={project} canManage={canManage} />
             <SettingsRow title="Project ID" description="The identifier used in API requests and integrations.">

@@ -21,6 +21,7 @@ import { RenameForm } from "./rename-form";
 import { DeleteOrganization } from "./delete-organization";
 import { LeaveOrganization } from "./leave-organization";
 import { SettingsRow, SettingsSection, SettingsTabs } from "./settings-layout";
+import { queryKeys } from "@/lib/query-keys";
 
 export function OrganizationSettings({ organizationId }: { organizationId: string }) {
   const formatTime = useFormatTime();
@@ -43,8 +44,8 @@ export function OrganizationSettings({ organizationId }: { organizationId: strin
             { id: "general", label: "General", content: <SettingsSection title="Organization details" description="Your shared workspace for projects, team access, and usage.">
               {organization.data.role === "owner" ? <RenameForm key={organization.data.name} kind="Organization" name={organization.data.name} path={path}
                 saved={() => Promise.all([
-                  client.invalidateQueries({ queryKey: ["organization", userId, organizationId] }),
-                  client.invalidateQueries({ queryKey: ["organizations", userId] }),
+                  client.invalidateQueries({ queryKey: queryKeys.organization(userId, organizationId) }),
+                  client.invalidateQueries({ queryKey: queryKeys.organizations(userId) }),
                 ])} /> : <SettingsRow title="Organization name" description="An owner can rename this organization."><span className="text-[13px]">{organization.data.name}</span></SettingsRow>}
               <SettingsRow title="Organization ID" description="Use this identifier when contacting support.">
                 <div className="flex flex-wrap items-center gap-2 text-[12px]"><code className="break-all">{organizationId}</code><CopyButton value={organizationId} label="Copy ID" /></div>

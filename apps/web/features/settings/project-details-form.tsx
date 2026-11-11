@@ -10,6 +10,7 @@ import { useSessionUserId } from "@/features/workspace/session";
 import type { Project } from "@/features/workspace/types";
 import { apiRequest } from "@/lib/api";
 import { notify } from "@/lib/notify";
+import { queryKeys } from "@/lib/query-keys";
 
 export function ProjectDetailsForm({ project, canManage }: { project: Project; canManage: boolean }) {
   const { getToken } = useAuth();
@@ -23,8 +24,8 @@ export function ProjectDetailsForm({ project, canManage }: { project: Project; c
     onSuccess: async () => {
       notify("Project details saved.", "success");
       await Promise.all([
-        client.invalidateQueries({ queryKey: ["project", userId, project.id] }),
-        client.invalidateQueries({ queryKey: ["projects", userId, project.organization_id] }),
+        client.invalidateQueries({ queryKey: queryKeys.project(userId, project.id) }),
+        client.invalidateQueries({ queryKey: queryKeys.projects(userId, project.organization_id) }),
       ]);
     },
   });

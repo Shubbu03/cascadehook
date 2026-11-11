@@ -20,6 +20,10 @@ import { apiRequest } from "@/lib/api";
 import { useFormatTime } from "@/lib/display-preferences";
 import { notify } from "@/lib/notify";
 import { invitationStatus, type Invitation, type InvitationReceipt } from "./types";
+import { dataTable, errorText } from "@/components/styles";
+
+const fieldGroup =
+  "grid [&_>_label]:text-[13px] [&_>_label]:font-medium min-w-0 gap-1.75 m-0 [&_>_span]:text-[12px] [&_>_span]:font-medium [&_>_span]:m-0 [&_small]:block [&_small]:text-muted [&_small]:m-0 [&_small]:text-xs/normal";
 
 function subscribeClock(listener: () => void) {
   const timer = window.setInterval(listener, 5_000);
@@ -90,7 +94,7 @@ export function InvitationManagement({ organization }: { organization: Organizat
   return (
     <section data-ui="settings-section" className="mb-8">
       <div className="flex items-start justify-between mb-5.5 gap-5 [&_h2]:text-[23px] [&_h2]:tracking-[-0.03em] [&_h2]:wrap-anywhere [&_p]:text-muted [&_p]:text-[13px] [&_p]:mt-2 [[data-ui~='dashboard-main']_&_h2]:text-[17px] max-[37.5rem]:flex-wrap max-[37.5rem]:gap-4">
-        <div><h2>Invitations</h2><p className="text-[12px] text-muted leading-[1.7] [[data-ui~='settings-section']_>_&]:mt-3 [[data-ui~='settings-section']_>_&]:mb-5 in-data-[ui~='invitation-dialog']:text-[12px] in-data-[ui~='invitation-dialog']:leading-[1.6] in-data-[ui~='invitation-dialog']:m-0">Invite teammates by email. New members can create their account from the invitation.</p></div>
+        <div><h2>Invitations</h2><p className="text-[12px] text-muted leading-[1.7] [[data-ui~='settings-section']_>_&]:mt-3 [[data-ui~='settings-section']_>_&]:mb-5">Invite teammates by email. New members can create their account from the invitation.</p></div>
         <div className="flex items-center flex-wrap shrink-0 gap-2.5 max-[37.5rem]:gap-2">
           <RefreshButton pending={list.isFetching} refresh={list.refetch} />
           <Button type="button" data-ui="button" variant="quiet" size="small" className="leading-[1.4] aria-expanded:bg-surface-hover [&:hover:not(:disabled)]:bg-surface-hover" disabled={busy}
@@ -98,9 +102,9 @@ export function InvitationManagement({ organization }: { organization: Organizat
             onClick={() => { invite.reset(); setOpen(true); }}><PaperPlaneTiltIcon size={16} aria-hidden="true" />Invite member</Button>
         </div>
       </div>
-      {(resend.error || revoke.error) && <p className="text-danger text-[13px] my-3 in-data-[ui~='invitation-dialog']:text-[12px] in-data-[ui~='invitation-dialog']:leading-[1.6] in-data-[ui~='invitation-dialog']:text-danger in-data-[ui~='invitation-dialog']:m-0" role="alert">{resend.error?.message ?? revoke.error?.message}</p>}
+      {(resend.error || revoke.error) && <p className={errorText} role="alert">{resend.error?.message ?? revoke.error?.message}</p>}
       <QueryState query={list} loading={<TableSkeleton columns={6} rows={3} label="Loading invitations…" />}>
-        {items.length ? <div className="max-w-full overflow-x-auto rounded-[9px] bg-surface border border-solid border-border in-data-[ui~='organization-settings']:mt-5"><table data-ui="data-table" className="w-full border-collapse text-[13px] text-left [&_th]:border-b [&_th]:[border-bottom-style:solid] [&_th]:border-b-border [&_th]:bg-background [&_th]:text-muted [&_th]:text-[12px] [&_th]:font-medium [&_th]:whitespace-nowrap [&_th]:py-3.25 [&_th]:px-4 [&_td]:align-top [&_td]:leading-[1.7] [&_td]:min-w-27.5 [&_td]:p-4 [&_td_code]:text-[11px] [&_td_code]:wrap-anywhere [&_tr+tr_td]:border-t [&_tr+tr_td]:[border-top-style:solid] [&_tr+tr_td]:border-t-border [[data-ui~='dashboard-main']_&_th]:py-2.75 [[data-ui~='dashboard-main']_&_th]:px-4 [[data-ui~='dashboard-main']_&_td]:min-w-27.5 [[data-ui~='dashboard-main']_&_td]:py-3.25 [[data-ui~='dashboard-main']_&_td]:px-4 [&_tbody_tr:hover]:bg-surface-hover max-[37.5rem]:[&_td]:p-3">
+        {items.length ? <div className="max-w-full overflow-x-auto rounded-[9px] bg-surface border border-solid border-border in-data-[ui~='organization-settings']:mt-5"><table data-ui="data-table" className={dataTable}>
           <caption className="sr-only">Organization invitations and email delivery</caption>
           <thead><tr><th>Email</th><th>Role</th><th>Invitation</th><th>Email delivery</th><th>Expires</th><th>Actions</th></tr></thead>
           <tbody>{items.map((item) => {
@@ -111,15 +115,15 @@ export function InvitationManagement({ organization }: { organization: Organizat
               <td><span className={"text-muted text-[12px] data-[state=\"delivered\"]:text-success data-[state=\"failed\"]:text-danger data-[state=\"bounced\"]:text-danger data-[state=\"suppressed\"]:text-danger data-[state=\"complained\"]:text-danger"} data-state={item.email_status}>{emailLabels[item.email_status]}</span></td>
               <td>{formatTime(item.expires_at)}</td>
               <td>{status === "Pending" && <div className="flex flex-wrap gap-3.5">
-                <button type="button" className="inline-flex items-center font-medium gap-2 [&:hover]:underline [&:hover]:underline-offset-4 in-data-[ui~='notice']:[font-size:inherit] in-data-[ui~='notice']:underline in-data-[ui~='notice']:underline-offset-[3px] in-data-[ui~='notice']:ml-1.25 in-data-[ui~='switcher-error']:mt-1.25 in-data-[ui~='switcher-error']:text-[13px] in-data-[ui~='switcher-error']:text-accent text-[12px] [[data-ui~='settings-section']_>_&]:text-[14px] in-data-[ui~='notification-error']:ml-auto in-data-[ui~='notification-error']:text-[12px] [[data-ui~='organization-settings']_>_&:first-child]:mb-4.5 [[data-ui~='organization-settings']_>_&:first-child]:text-[12px] [[data-ui~='dashboard-main']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='dashboard-main']_>_section_>_&:first-child]:text-[12px]" disabled={busy || coolingDown}
+                <button type="button" className="inline-flex items-center font-medium gap-2 [&:hover]:underline [&:hover]:underline-offset-4 text-[12px] [[data-ui~='settings-section']_>_&]:text-[14px] [[data-ui~='organization-settings']_>_&:first-child]:mb-4.5 [[data-ui~='organization-settings']_>_&:first-child]:text-[12px] [[data-ui~='dashboard-main']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='dashboard-main']_>_section_>_&:first-child]:text-[12px]" disabled={busy || coolingDown}
                   title={coolingDown ? "Wait one minute between invitation emails" : "Send another invitation email"}
                   onClick={() => { revoke.reset(); resend.mutate(item); }}>{resend.isPending && resend.variables?.id === item.id ? "Queuing…" : item.email_status === "not_sent" ? "Send email" : "Resend"}</button>
-                <button type="button" className="text-danger inline-flex items-center font-medium gap-2 [&:hover]:underline [&:hover]:underline-offset-4 in-data-[ui~='notice']:[font-size:inherit] in-data-[ui~='notice']:underline in-data-[ui~='notice']:underline-offset-[3px] in-data-[ui~='notice']:ml-1.25 in-data-[ui~='switcher-error']:mt-1.25 in-data-[ui~='switcher-error']:text-[13px] in-data-[ui~='switcher-error']:text-accent text-[12px] [[data-ui~='settings-section']_>_&]:text-[14px] in-data-[ui~='notification-error']:ml-auto in-data-[ui~='notification-error']:text-[12px] [[data-ui~='organization-settings']_>_&:first-child]:mb-4.5 [[data-ui~='organization-settings']_>_&:first-child]:text-[12px] [[data-ui~='dashboard-main']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='dashboard-main']_>_section_>_&:first-child]:text-[12px]" disabled={busy}
+                <button type="button" className="text-danger inline-flex items-center font-medium gap-2 [&:hover]:underline [&:hover]:underline-offset-4 text-[12px] [[data-ui~='settings-section']_>_&]:text-[14px] [[data-ui~='organization-settings']_>_&:first-child]:mb-4.5 [[data-ui~='organization-settings']_>_&:first-child]:text-[12px] [[data-ui~='dashboard-main']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='dashboard-main']_>_section_>_&:first-child]:text-[12px]" disabled={busy}
                   onClick={() => { revoke.reset(); resend.reset(); setTarget(item); }}>Revoke</button>
               </div>}</td>
             </tr>;
           })}</tbody>
-        </table></div> : <p data-ui="notice" className="rounded-lg bg-surface text-muted text-[13px] leading-[1.7] my-4 py-3.5 px-4.25 border border-solid border-border">No invitations yet.</p>}
+        </table></div> : <p className="rounded-lg bg-surface text-muted text-[13px] leading-[1.7] my-4 py-3.5 px-4.25 border border-solid border-border">No invitations yet.</p>}
         <LoadMore query={list} />
       </QueryState>
       {open && <Modal data-ui="confirmation-dialog invitation-dialog" className="w-[min(480px,calc(100vw-32px))] max-h-[calc(100svh-48px)] rounded-xl bg-surface text-foreground shadow-floating overflow-y-auto m-auto p-0 border border-solid border-border [&_h2]:text-[22px] [&_h2]:tracking-[-0.03em] [&_p]:mt-4 [&_p]:text-muted [&_p]:text-[14px] [&_p]:leading-[1.8] backdrop:bg-[#0008] max-[32.5rem]:p-5.75" aria-labelledby={headingId} onDismiss={() => setOpen(false)}>
@@ -134,12 +138,12 @@ export function InvitationManagement({ organization }: { organization: Organizat
         </div>
         <form onSubmit={submit} aria-busy={invite.isPending}>
           <div className="grid pt-0 pb-6 gap-4.5 px-6">
-            <label data-ui="form-field" className="grid [&_>_label]:text-[13px] [&_>_label]:font-medium in-data-[ui~='danger-zone']:max-w-115 min-w-0 gap-1.75 m-0 [&_>_span]:text-[12px] [&_>_span]:font-medium [&_>_span]:m-0 [&_small]:block [&_small]:text-muted [&_small]:m-0 [&_small]:text-xs/normal">
+            <label className={fieldGroup}>
               <span>Email address</span>
-              <Input className="[[data-ui~='workspace-create-dialog']_&]:bg-surface-hover [[data-ui~='workspace-create-dialog']_&]:border-0 [[data-ui~='workspace-create-dialog']_&]:border-none [[data-ui~='workspace-create-dialog']_&]:border-current [[data-ui~='dashboard-main']_&]:min-h-10 [[data-ui~='dashboard-main']_&]:text-[14px] [[data-ui~='dashboard-main']_&]:py-2.25 [[data-ui~='dashboard-main']_&]:px-3 [[data-ui~='workspace-create-dialog']_&]:focus-visible:outline-hidden [[data-ui~='workspace-create-dialog']_&]:focus-visible:shadow-[inset_0_-2px_var(--accent)] max-[37.5rem]:[[data-ui~='dashboard-main']_&]:text-[16px] placeholder:text-muted w-full min-h-11 rounded-md bg-background text-foreground shadow-[inset_0_-2px_transparent] py-2.5 px-3 border-0 border-none border-current text-sm/normal focus-visible:outline-hidden focus-visible:shadow-[inset_0_-2px_var(--accent)] max-[27.5rem]:text-[16px]" name="email" type="email" required maxLength={254} autoComplete="email" placeholder="teammate@example.com" disabled={busy} />
+              <Input className="in-data-[ui~='workspace-create-dialog']:bg-surface-hover in-data-[ui~='workspace-create-dialog']:border-0 in-data-[ui~='workspace-create-dialog']:border-none in-data-[ui~='workspace-create-dialog']:border-current in-data-[ui~='dashboard-main']:min-h-10 in-data-[ui~='dashboard-main']:text-[14px] in-data-[ui~='dashboard-main']:py-2.25 in-data-[ui~='dashboard-main']:px-3 in-data-[ui~='workspace-create-dialog']:focus-visible:outline-hidden in-data-[ui~='workspace-create-dialog']:focus-visible:shadow-[inset_0_-2px_var(--accent)] max-[37.5rem]:in-data-[ui~='dashboard-main']:text-[16px] placeholder:text-muted w-full min-h-11 rounded-md bg-background text-foreground shadow-[inset_0_-2px_transparent] py-2.5 px-3 border-0 border-none border-current text-sm/normal focus-visible:outline-hidden focus-visible:shadow-[inset_0_-2px_var(--accent)] max-[27.5rem]:text-[16px]" name="email" type="email" required maxLength={254} autoComplete="email" placeholder="teammate@example.com" disabled={busy} />
             </label>
             <div className="grid grid-cols-2 gap-3.5 max-[27.5rem]:grid-cols-[minmax(0,1fr)] max-[27.5rem]:gap-4">
-              <label data-ui="form-field" className="grid [&_>_label]:text-[13px] [&_>_label]:font-medium in-data-[ui~='danger-zone']:max-w-115 min-w-0 gap-1.75 m-0 [&_>_span]:text-[12px] [&_>_span]:font-medium [&_>_span]:m-0 [&_small]:block [&_small]:text-muted [&_small]:m-0 [&_small]:text-xs/normal">
+              <label className={fieldGroup}>
                 <span>Organization role</span>
                 <Select className="bg-position-[right_12px_center] w-full min-h-11 rounded-md bg-background text-foreground shadow-[inset_0_-2px_transparent] py-2.5 px-3 border-0 border-none border-current text-sm/normal focus-visible:outline-hidden focus-visible:shadow-[inset_0_-2px_var(--accent)] max-[27.5rem]:text-[16px]" name="role" defaultValue="member" disabled={busy} aria-describedby={headingId + "-role"}>
                   <option value="member">Member</option>
@@ -147,7 +151,7 @@ export function InvitationManagement({ organization }: { organization: Organizat
                 </Select>
                 <small id={headingId + "-role"}>Applies to all projects.</small>
               </label>
-              <label data-ui="form-field" className="grid [&_>_label]:text-[13px] [&_>_label]:font-medium in-data-[ui~='danger-zone']:max-w-115 min-w-0 gap-1.75 m-0 [&_>_span]:text-[12px] [&_>_span]:font-medium [&_>_span]:m-0 [&_small]:block [&_small]:text-muted [&_small]:m-0 [&_small]:text-xs/normal">
+              <label className={fieldGroup}>
                 <span>Start in</span>
                 <Select className="bg-position-[right_12px_center] w-full min-h-11 rounded-md bg-background text-foreground shadow-[inset_0_-2px_transparent] py-2.5 px-3 border-0 border-none border-current text-sm/normal focus-visible:outline-hidden focus-visible:shadow-[inset_0_-2px_var(--accent)] max-[27.5rem]:text-[16px]" name="project" defaultValue="" disabled={busy || projects.isPending} aria-describedby={headingId + "-project"}>
                   <option value="">{projects.isPending ? "Loading projects…" : "All projects"}</option>
@@ -164,7 +168,7 @@ export function InvitationManagement({ organization }: { organization: Organizat
             </p>
             {invite.error && <p className="text-[12px] leading-[1.6] text-danger m-0" role="alert">{invite.error.message}</p>}
           </div>
-          <div data-ui="form-actions" className="flex items-center flex-wrap in-data-[ui~='workspace-create-dialog']:flex-row-reverse in-data-[ui~='workspace-create-dialog']:mt-6 in-data-[ui~='data-table']:gap-3.5 justify-end border-t [border-top-style:solid] border-t-border bg-surface gap-2 m-0 py-4 px-6">
+          <div data-ui="form-actions" className="flex items-center flex-wrap in-data-[ui~='workspace-create-dialog']:flex-row-reverse in-data-[ui~='workspace-create-dialog']:mt-6 justify-end border-t border-t-border bg-surface gap-2 m-0 py-4 px-6">
             <Button type="button" data-ui="button" variant="quiet" onClick={() => setOpen(false)}>Cancel</Button>
             <Button type="submit" data-ui="button" disabled={busy}>
               {invite.isPending ? "Sending…" : "Send invitation"}
@@ -175,7 +179,7 @@ export function InvitationManagement({ organization }: { organization: Organizat
       {target && <ConfirmDialog title="Revoke this invitation?" confirmLabel="Revoke invitation" pending={revoke.isPending}
         onConfirm={() => revoke.mutate(target)} onCancel={() => setTarget(null)}>
         <p>{target.email} will no longer be able to join using this invitation.</p>
-        {revoke.error && <p className="text-danger text-[13px] my-3 in-data-[ui~='invitation-dialog']:text-[12px] in-data-[ui~='invitation-dialog']:leading-[1.6] in-data-[ui~='invitation-dialog']:text-danger in-data-[ui~='invitation-dialog']:m-0" role="alert">{revoke.error.message}</p>}
+        {revoke.error && <p className={errorText} role="alert">{revoke.error.message}</p>}
       </ConfirmDialog>}
     </section>
   );

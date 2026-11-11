@@ -172,12 +172,7 @@ func (s *Store) BeginDeliveryAttempt(ctx context.Context, job deliveries.Job) (d
 	attempt.RetryDelaysSeconds = held.RetryDelaysSeconds
 	attempt.Timeout = min(timeout, held.RetryDeadline.Sub(attempt.StartedAt))
 	attempt.UsePreviousSecret = len(job.PreviousSigningSecret) > 0 && job.PreviousSecretExpiresAt != nil && job.PreviousSecretExpiresAt.After(attempt.StartedAt)
-	if err := recordUsage(
-		ctx,
-		tx,
-		job.ProjectID,
-		usageDelta{attempts: 1},
-	); err != nil {
+	if err := recordUsage(ctx, tx, job.ProjectID, usageDelta{attempts: 1}); err != nil {
 		return deliveries.Attempt{}, err
 	}
 	if err := tx.Commit(ctx); err != nil {
@@ -293,12 +288,7 @@ func appendDeliveryAttempt(ctx context.Context, tx pgx.Tx, held lockedDelivery, 
 	if result.Outcome == deliveries.OutcomeSucceeded {
 		delta = usageDelta{succeeded: 1}
 	}
-	if err := recordUsage(
-		ctx,
-		tx,
-		held.ProjectID,
-		delta,
-	); err != nil {
+	if err := recordUsage(ctx, tx, held.ProjectID, delta); err != nil {
 		return err
 	}
 	return nil

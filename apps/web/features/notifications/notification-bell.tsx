@@ -57,7 +57,7 @@ export function NotificationBell({ organization }: { organization: Organization;
         {open && <div className="min-h-0 overflow-y-auto overscroll-contain">
           <NotificationFeed organizationId={organization.id} filters={{ state: "unread" }} compact onNavigate={close} />
         </div>}
-        <Link className="flex items-center justify-between shrink-0 border-t [border-top-style:solid] border-t-border text-accent text-[13px] font-medium gap-3 py-3.25 px-4.5 [&:hover]:bg-surface-hover" href={notificationInboxHref(organization.id)} onNavigate={close}>
+        <Link className="flex items-center justify-between shrink-0 border-t border-t-border text-accent text-[13px] font-medium gap-3 py-3.25 px-4.5 [&:hover]:bg-surface-hover" href={notificationInboxHref(organization.id)} onNavigate={close}>
           Manage notifications<ArrowRightIcon size={16} aria-hidden="true" />
         </Link>
       </div>

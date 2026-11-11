@@ -41,16 +41,7 @@ func (s *Store) GetUsage(ctx context.Context, organizationID, projectID uuid.UUI
 		return accounts.Usage{}, fmt.Errorf("read usage limits: %w", err)
 	}
 	usage.Period = period.Format("2006-01")
-	usage.ResetsAt = time.Date(
-		period.Year(),
-		period.Month()+1,
-		1,
-		0,
-		0,
-		0,
-		0,
-		time.UTC,
-	)
+	usage.ResetsAt = time.Date(period.Year(), period.Month()+1, 1, 0, 0, 0, 0, time.UTC)
 	if projectID != uuid.Nil {
 		usage.ProjectID = &projectID
 	}
@@ -72,12 +63,7 @@ func (s *Store) GetUsage(ctx context.Context, organizationID, projectID uuid.UUI
 			FROM project_usage_months WHERE project_id = $1 AND period = $2`
 		id = projectID
 	}
-	err = tx.QueryRow(
-		ctx,
-		query,
-		id,
-		period,
-	).Scan(
+	err = tx.QueryRow(ctx, query, id, period).Scan(
 		&usage.Counters.Events,
 		&usage.Counters.Deliveries,
 		&usage.Counters.PayloadBytes,
@@ -100,12 +86,7 @@ func (s *Store) GetUsage(ctx context.Context, organizationID, projectID uuid.UUI
 		AND ($2::uuid IS NULL OR p.id = $2)`,
 		organizationID,
 		nullableUUID(projectID),
-	).Scan(
-		&usage.Projects,
-		&usage.StoredBytes,
-		&usage.Endpoints,
-		&usage.APIKeys,
-	)
+	).Scan(&usage.Projects, &usage.StoredBytes, &usage.Endpoints, &usage.APIKeys)
 	if err != nil {
 		return accounts.Usage{}, fmt.Errorf("read resource usage: %w", err)
 	}

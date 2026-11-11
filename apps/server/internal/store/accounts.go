@@ -209,11 +209,7 @@ func (s *Store) RenameOrganization(
 
 // Active-user locks precede organization writes. A separate query after the
 // parent lock observes role changes committed while that lock waited.
-func lockOrganizationAccess(
-	ctx context.Context,
-	tx pgx.Tx,
-	userID, organizationID uuid.UUID,
-) (accounts.Role, error) {
+func lockOrganizationAccess(ctx context.Context, tx pgx.Tx, userID, organizationID uuid.UUID) (accounts.Role, error) {
 	if err := setAuditActor(ctx, tx, auth.Principal{UserID: userID}); err != nil {
 		return "", err
 	}

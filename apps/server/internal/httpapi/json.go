@@ -66,3 +66,13 @@ func (field *optional[T]) UnmarshalJSON(data []byte) error {
 	field.Set = true
 	return json.Unmarshal(data, &field.Value)
 }
+
+// emptyBody rejects any request body on action routes that take no input.
+func emptyBody(w http.ResponseWriter, r *http.Request) bool {
+	body, err := io.ReadAll(http.MaxBytesReader(w, r.Body, 1))
+	if err != nil || len(body) != 0 {
+		writeProblem(w, r, http.StatusBadRequest, "unexpected_request_body")
+		return false
+	}
+	return true
+}

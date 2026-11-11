@@ -21,7 +21,7 @@ export function ReferenceTabs({ label, tabs }: { label: string; tabs: { id: stri
 
   return (
     <div>
-      <div role="tablist" aria-label={label} onKeyDown={navigate} className="flex flex-wrap gap-1 border-b [border-bottom-style:solid] border-b-border">
+      <div role="tablist" aria-label={label} onKeyDown={navigate} className="flex flex-wrap gap-1 border-b border-b-border">
         {tabs.map((tab) => (
           <button
             key={tab.id}

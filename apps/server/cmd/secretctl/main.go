@@ -8,13 +8,12 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-	"os/signal"
-	"syscall"
 	"time"
 
 	"github.com/google/uuid"
 
 	"cascadehook/internal/config"
+	"cascadehook/internal/process"
 	"cascadehook/internal/signing"
 	"cascadehook/internal/store"
 )
@@ -27,7 +26,7 @@ func main() {
 }
 
 func run() error {
-	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stderr, nil)).With("service", "secretctl"))
+	process.StartLogging("secretctl", os.Stderr)
 	flags := flag.NewFlagSet("secretctl", flag.ContinueOnError)
 	preview := flags.Bool("dry-run", false, "inspect ciphertext without changes")
 	limit := flags.Int("batch-size", 100, "endpoints per batch, 1-1000")
@@ -57,7 +56,7 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	signalCtx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	signalCtx, stop := process.SignalContext()
 	defer stop()
 	ctx, cancel := context.WithTimeout(signalCtx, 5*time.Minute)
 	defer cancel()

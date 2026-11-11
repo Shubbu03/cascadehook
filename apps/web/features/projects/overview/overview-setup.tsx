@@ -197,11 +197,11 @@ export function OverviewSetup({
           Review steps <CaretDownIcon size={14} aria-hidden="true" />
         </span>
       </summary>
-      <div data-ui="overview-setup-body" className="pt-0 pb-4 border-t [border-top-style:solid] border-t-border px-5 @max-[27.5rem]/project-overview:px-4">
+      <div className="pt-0 pb-4 border-t border-t-border px-5 @max-[27.5rem]/project-overview:px-4">
         {endpoints.length > 1 ? (
-          <label data-ui="filter-field" className="grid max-w-150 mt-3.5 gap-1.75 [&_>_span]:text-[12px] [&_>_span]:font-medium in-data-[ui~='dashboard-main']:flex-[0_1_auto] in-data-[ui~='dashboard-main']:gap-1.5">
+          <label className="grid max-w-150 mt-3.5 gap-1.75 [&_>_span]:text-[12px] [&_>_span]:font-medium in-data-[ui~='dashboard-main']:flex-[0_1_auto] in-data-[ui~='dashboard-main']:gap-1.5">
             <span>Setup endpoint</span>
-            <Select className="[[data-ui~='dashboard-main']_&]:w-full [[data-ui~='dashboard-main']_&]:min-w-0 [[data-ui~='dashboard-main']_&]:min-h-9 [[data-ui~='dashboard-main']_&]:pr-10.5 [[data-ui~='dashboard-main']_&]:pl-3.5 [[data-ui~='dashboard-main']_&]:py-1.75 [[data-ui~='dashboard-main']_&]:text-[13px]/5 max-[37.5rem]:[[data-ui~='dashboard-main']_&]:w-full max-[37.5rem]:[[data-ui~='dashboard-main']_&]:min-w-0 max-[37.5rem]:[[data-ui~='dashboard-main']_&]:text-[16px] min-h-10.5 rounded-md text-foreground text-[14px] max-w-full py-2.25 px-2.75 max-[32.5rem]:text-[16px]"
+            <Select className="in-data-[ui~='dashboard-main']:w-full in-data-[ui~='dashboard-main']:min-w-0 in-data-[ui~='dashboard-main']:min-h-9 in-data-[ui~='dashboard-main']:pr-10.5 in-data-[ui~='dashboard-main']:pl-3.5 in-data-[ui~='dashboard-main']:py-1.75 in-data-[ui~='dashboard-main']:text-[13px]/5 max-[37.5rem]:in-data-[ui~='dashboard-main']:w-full max-[37.5rem]:in-data-[ui~='dashboard-main']:min-w-0 max-[37.5rem]:in-data-[ui~='dashboard-main']:text-[16px] min-h-10.5 rounded-md text-foreground text-[14px] max-w-full py-2.25 px-2.75 max-[32.5rem]:text-[16px]"
               value={endpoint?.id ?? ""}
               onChange={(event) => setSelectedId(event.target.value)}
             >
@@ -217,7 +217,7 @@ export function OverviewSetup({
         ) : null}
         {loadMore}
         {next && (
-          <div data-ui="overview-next-step" className="flex items-center justify-between flex-wrap gap-y-3 gap-x-5 mt-3.5 mb-3 rounded-md bg-accent-subtle py-3.5 px-4 [&_>_div]:flex-[1_1_240px] [&_h2]:mt-0.75 [&_h2]:text-[14px] [&_h2]:font-medium [&_p]:mt-1 [&_p]:text-muted [&_p]:text-[12px] [&_p]:leading-[1.65]">
+          <div className="flex items-center justify-between flex-wrap gap-y-3 gap-x-5 mt-3.5 mb-3 rounded-md bg-accent-subtle py-3.5 px-4 [&_>_div]:flex-[1_1_240px] [&_h2]:mt-0.75 [&_h2]:text-[14px] [&_h2]:font-medium [&_p]:mt-1 [&_p]:text-muted [&_p]:text-[12px] [&_p]:leading-[1.65]">
             <div>
               <span className="font-medium font-mono tracking-[0.02em] text-accent text-[10px]">Next step</span>
               <h2>{next.title}</h2>
@@ -232,7 +232,7 @@ export function OverviewSetup({
             {next.state === "todo" && stepAction(next, true)}
           </div>
         )}
-        <ol data-ui="overview-checklist" className="grid grid-cols-2 gap-y-0 gap-x-7 list-none p-0 my-2 mx-0 [&_li]:grid [&_li]:grid-cols-[22px_minmax(0,1fr)_auto] [&_li]:items-center [&_li]:min-w-0 [&_li]:border-b [&_li]:[border-bottom-style:solid] [&_li]:border-b-border [&_li]:gap-2 [&_li]:py-2.5 @max-[45rem]/project-overview:grid-cols-[1fr] @max-[27.5rem]/project-overview:[&_li]:grid-cols-[22px_minmax(0,1fr)]">
+        <ol data-ui="overview-checklist" className="grid grid-cols-2 gap-y-0 gap-x-7 list-none p-0 my-2 mx-0 [&_li]:grid [&_li]:grid-cols-[22px_minmax(0,1fr)_auto] [&_li]:items-center [&_li]:min-w-0 [&_li]:border-b [&_li]:border-b-border [&_li]:gap-2 [&_li]:py-2.5 @max-[45rem]/project-overview:grid-cols-[1fr] @max-[27.5rem]/project-overview:[&_li]:grid-cols-[22px_minmax(0,1fr)]">
           {checks.map((check, index) => (
             <li
               key={check.id}

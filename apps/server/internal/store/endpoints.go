@@ -40,12 +40,7 @@ func (s *Store) CreateEndpoint(ctx context.Context, actor auth.Principal, input 
 	if err := requireActiveProject(ctx, tx, projectID); err != nil {
 		return endpoints.Endpoint{}, err
 	}
-	if err := checkResourceQuota(
-		ctx,
-		tx,
-		projectID,
-		"endpoints",
-	); err != nil {
+	if err := checkResourceQuota(ctx, tx, projectID, "endpoints"); err != nil {
 		return endpoints.Endpoint{}, err
 	}
 

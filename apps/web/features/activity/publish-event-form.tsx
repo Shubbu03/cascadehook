@@ -20,6 +20,7 @@ import {
   type PublicationErrors,
   type PublicationReceipt,
 } from "./publication";
+import { queryKeys } from "@/lib/query-keys";
 
 type PublishState =
   | { status: "draft"; }
@@ -137,11 +138,11 @@ export function PublishEventForm({
       setState({ status: "accepted", publication, receipt });
       void Promise.allSettled(
         [
-          ["events", userId, project.id],
-          ["deliveries", userId, project.id],
+          queryKeys.events(userId, project.id),
+          queryKeys.deliveries(userId, project.id),
           ["project-overview", userId, project.id],
-          ["usage", userId, "project", project.id],
-          ["usage", userId, "organization", project.organization_id],
+          queryKeys.projectUsage(userId, project.id),
+          queryKeys.organizationUsage(userId, project.organization_id),
         ].map((queryKey) =>
           client.invalidateQueries({ queryKey, refetchType: "all" }),
         ),
@@ -171,9 +172,9 @@ export function PublishEventForm({
       aria-busy={busy}
       noValidate
     >
-      <label data-ui="form-field" className="grid gap-2 [&_>_span]:text-[13px] [&_>_span]:font-medium [&_>_label]:text-[13px] [&_>_label]:font-medium mb-3.5" htmlFor={id + "-type"}>
+      <label className="grid gap-2 [&_>_span]:text-[13px] [&_>_span]:font-medium [&_>_label]:text-[13px] [&_>_label]:font-medium mb-3.5" htmlFor={id + "-type"}>
         <span>Event type</span>
-        <Input className="[[data-ui~='workspace-create-dialog']_&]:bg-surface-hover [[data-ui~='workspace-create-dialog']_&]:border-0 [[data-ui~='workspace-create-dialog']_&]:border-none [[data-ui~='workspace-create-dialog']_&]:border-current [[data-ui~='dashboard-main']_&]:min-h-10 [[data-ui~='dashboard-main']_&]:text-[14px] [[data-ui~='dashboard-main']_&]:py-2.25 [[data-ui~='dashboard-main']_&]:px-3 [[data-ui~='workspace-create-dialog']_&]:focus-visible:outline-hidden [[data-ui~='workspace-create-dialog']_&]:focus-visible:shadow-[inset_0_-2px_var(--accent)] max-[37.5rem]:[[data-ui~='dashboard-main']_&]:text-[16px] w-full min-h-11.5 rounded-md text-foreground text-[16px] py-2.75 px-3 placeholder:text-muted font-mono"
+        <Input className="in-data-[ui~='workspace-create-dialog']:bg-surface-hover in-data-[ui~='workspace-create-dialog']:border-0 in-data-[ui~='workspace-create-dialog']:border-none in-data-[ui~='workspace-create-dialog']:border-current in-data-[ui~='dashboard-main']:min-h-10 in-data-[ui~='dashboard-main']:text-[14px] in-data-[ui~='dashboard-main']:py-2.25 in-data-[ui~='dashboard-main']:px-3 in-data-[ui~='workspace-create-dialog']:focus-visible:outline-hidden in-data-[ui~='workspace-create-dialog']:focus-visible:shadow-[inset_0_-2px_var(--accent)] max-[37.5rem]:in-data-[ui~='dashboard-main']:text-[16px] w-full min-h-11.5 rounded-md text-foreground text-[16px] py-2.75 px-3 placeholder:text-muted font-mono"
           id={id + "-type"}
           value={type}
           onChange={(event) => setType(event.target.value)}
@@ -201,7 +202,7 @@ export function PublishEventForm({
           {errors.type}
         </p>
       )}
-      <label data-ui="form-field" className="grid gap-2 [&_>_span]:text-[13px] [&_>_span]:font-medium [&_>_label]:text-[13px] [&_>_label]:font-medium mb-3.5" htmlFor={id + "-payload"}>
+      <label className="grid gap-2 [&_>_span]:text-[13px] [&_>_span]:font-medium [&_>_label]:text-[13px] [&_>_label]:font-medium mb-3.5" htmlFor={id + "-payload"}>
         <span>JSON payload</span>
         <Textarea className="w-full resize-y rounded-md text-foreground font-normal text-[14px] leading-[1.7] font-mono p-3 max-[32.5rem]:text-[16px] min-h-40 tab-2 bg-surface-hover"
           id={id + "-payload"}
@@ -225,11 +226,11 @@ export function PublishEventForm({
         {errors.payload ??
           "Sent as the event’s data. Maximum complete event size: 256 KiB."}
       </p>
-      <label data-ui="form-field" className="grid mt-5 gap-2 [&_>_span]:text-[13px] [&_>_span]:font-medium [&_>_label]:text-[13px] [&_>_label]:font-medium mb-3.5" htmlFor={id + "-key"}>
+      <label className="grid mt-5 gap-2 [&_>_span]:text-[13px] [&_>_span]:font-medium [&_>_label]:text-[13px] [&_>_label]:font-medium mb-3.5" htmlFor={id + "-key"}>
         <span>
           Idempotency key <span className="text-muted text-[13px]">(optional)</span>
         </span>
-        <Input className="[[data-ui~='workspace-create-dialog']_&]:bg-surface-hover [[data-ui~='workspace-create-dialog']_&]:border-0 [[data-ui~='workspace-create-dialog']_&]:border-none [[data-ui~='workspace-create-dialog']_&]:border-current [[data-ui~='dashboard-main']_&]:min-h-10 [[data-ui~='dashboard-main']_&]:text-[14px] [[data-ui~='dashboard-main']_&]:py-2.25 [[data-ui~='dashboard-main']_&]:px-3 [[data-ui~='workspace-create-dialog']_&]:focus-visible:outline-hidden [[data-ui~='workspace-create-dialog']_&]:focus-visible:shadow-[inset_0_-2px_var(--accent)] max-[37.5rem]:[[data-ui~='dashboard-main']_&]:text-[16px] w-full min-h-11.5 rounded-md text-foreground text-[16px] py-2.75 px-3 placeholder:text-muted font-mono"
+        <Input className="in-data-[ui~='workspace-create-dialog']:bg-surface-hover in-data-[ui~='workspace-create-dialog']:border-0 in-data-[ui~='workspace-create-dialog']:border-none in-data-[ui~='workspace-create-dialog']:border-current in-data-[ui~='dashboard-main']:min-h-10 in-data-[ui~='dashboard-main']:text-[14px] in-data-[ui~='dashboard-main']:py-2.25 in-data-[ui~='dashboard-main']:px-3 in-data-[ui~='workspace-create-dialog']:focus-visible:outline-hidden in-data-[ui~='workspace-create-dialog']:focus-visible:shadow-[inset_0_-2px_var(--accent)] max-[37.5rem]:in-data-[ui~='dashboard-main']:text-[16px] w-full min-h-11.5 rounded-md text-foreground text-[16px] py-2.75 px-3 placeholder:text-muted font-mono"
           id={id + "-key"}
           value={requestKey}
           onChange={(event) => setRequestKey(event.target.value)}
@@ -251,7 +252,7 @@ export function PublishEventForm({
         </p>
       )}
       {blockedReason && (
-        <p data-ui="notice" className="rounded-lg bg-warning-subtle text-warning text-[13px] leading-[1.7] my-4 py-3.5 px-4.25 border border-solid border-border" role="status">
+        <p className="rounded-lg bg-warning-subtle text-warning text-[13px] leading-[1.7] my-4 py-3.5 px-4.25 border border-solid border-border" role="status">
           {blockedReason}
         </p>
       )}
@@ -265,7 +266,7 @@ export function PublishEventForm({
         </div>
       )}
       {state.status === "accepted" && (
-        <div data-ui="event-publish-result" className="rounded-[7px] bg-accent-subtle p-4 my-5 [&_h3]:text-[14px] [&_p]:mt-1.5 [&_p]:mb-3 [&_p]:text-foreground" role="status">
+        <div className="rounded-[7px] bg-accent-subtle p-4 my-5 [&_h3]:text-[14px] [&_p]:mt-1.5 [&_p]:mb-3 [&_p]:text-foreground" role="status">
           <h3>Event accepted</h3>
           <p>
             {state.receipt.delivery_count === 0
@@ -275,15 +276,15 @@ export function PublishEventForm({
                 ? " delivery created. View deliveries for the outcome."
                 : " deliveries created. View deliveries for their outcomes.")}
           </p>
-          <div data-ui="form-actions" className="flex items-center flex-wrap in-data-[ui~='confirmation-dialog']:mt-6 in-data-[ui~='workspace-create-dialog']:flex-row-reverse in-data-[ui~='workspace-create-dialog']:mt-6 in-data-[ui~='data-table']:gap-3.5 mt-3 gap-4">
+          <div data-ui="form-actions" className="flex items-center flex-wrap in-data-[ui~='confirmation-dialog']:mt-6 in-data-[ui~='workspace-create-dialog']:flex-row-reverse in-data-[ui~='workspace-create-dialog']:mt-6 mt-3 gap-4">
             <Link
-              className="inline-flex items-center font-medium gap-2 [&:hover]:underline [&:hover]:underline-offset-4 in-data-[ui~='notice']:[font-size:inherit] in-data-[ui~='notice']:underline in-data-[ui~='notice']:underline-offset-[3px] in-data-[ui~='notice']:ml-1.25 in-data-[ui~='onboarding-header']:min-h-11 in-data-[ui~='onboarding-header']:text-muted in-data-[ui~='onboarding-header']:text-[13px] in-data-[ui~='switcher-error']:mt-1.25 in-data-[ui~='switcher-error']:text-[13px] in-data-[ui~='switcher-error']:text-accent in-data-[ui~='activity-filters']:min-h-9.5 in-data-[ui~='activity-filters']:text-[13px] in-data-[ui~='data-table']:text-[12px] in-data-[ui~='workspace-banner']:[font-size:inherit] in-data-[ui~='workspace-banner']:underline in-data-[ui~='project-overview']:text-[12px] text-[12px] text-accent in-data-[ui~='notification-error']:ml-auto in-data-[ui~='notification-error']:text-[12px] [[data-ui~='dashboard-main']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='dashboard-main']_>_section_>_&:first-child]:text-[12px] [[data-ui~='project-content']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='project-content']_>_section_>_&:first-child]:text-[12px] max-[37.5rem]:in-data-[ui~='onboarding-header']:text-[12px]"
+              className="inline-flex items-center font-medium gap-2 [&:hover]:underline [&:hover]:underline-offset-4 in-data-[ui~='project-overview']:text-[12px] text-[12px] text-accent [[data-ui~='dashboard-main']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='dashboard-main']_>_section_>_&:first-child]:text-[12px] [[data-ui~='project-content']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='project-content']_>_section_>_&:first-child]:text-[12px]"
               href={href + "/events/" + state.receipt.id}
             >
               View event <ArrowRightIcon size={14} aria-hidden="true" />
             </Link>
             <Link
-              className="inline-flex items-center font-medium gap-2 [&:hover]:underline [&:hover]:underline-offset-4 in-data-[ui~='notice']:[font-size:inherit] in-data-[ui~='notice']:underline in-data-[ui~='notice']:underline-offset-[3px] in-data-[ui~='notice']:ml-1.25 in-data-[ui~='onboarding-header']:min-h-11 in-data-[ui~='onboarding-header']:text-muted in-data-[ui~='onboarding-header']:text-[13px] in-data-[ui~='switcher-error']:mt-1.25 in-data-[ui~='switcher-error']:text-[13px] in-data-[ui~='switcher-error']:text-accent in-data-[ui~='activity-filters']:min-h-9.5 in-data-[ui~='activity-filters']:text-[13px] in-data-[ui~='data-table']:text-[12px] in-data-[ui~='workspace-banner']:[font-size:inherit] in-data-[ui~='workspace-banner']:underline in-data-[ui~='project-overview']:text-[12px] text-[12px] text-accent in-data-[ui~='notification-error']:ml-auto in-data-[ui~='notification-error']:text-[12px] [[data-ui~='dashboard-main']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='dashboard-main']_>_section_>_&:first-child]:text-[12px] [[data-ui~='project-content']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='project-content']_>_section_>_&:first-child]:text-[12px] max-[37.5rem]:in-data-[ui~='onboarding-header']:text-[12px]"
+              className="inline-flex items-center font-medium gap-2 [&:hover]:underline [&:hover]:underline-offset-4 in-data-[ui~='project-overview']:text-[12px] text-[12px] text-accent [[data-ui~='dashboard-main']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='dashboard-main']_>_section_>_&:first-child]:text-[12px] [[data-ui~='project-content']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='project-content']_>_section_>_&:first-child]:text-[12px]"
               href={
                 href +
                 "/deliveries?event_id=" +
@@ -295,7 +296,7 @@ export function PublishEventForm({
           </div>
         </div>
       )}
-      <div data-ui="form-actions" className="flex items-center flex-wrap gap-2.5 in-data-[ui~='confirmation-dialog']:mt-6 in-data-[ui~='workspace-create-dialog']:flex-row-reverse in-data-[ui~='workspace-create-dialog']:mt-6 in-data-[ui~='data-table']:gap-3.5 in-data-[ui~='event-publish-result']:mt-3 in-data-[ui~='event-publish-result']:gap-4 [[data-ui~='event-publish-form']_>_&]:mt-5">
+      <div data-ui="form-actions" className="flex items-center flex-wrap gap-2.5 in-data-[ui~='confirmation-dialog']:mt-6 in-data-[ui~='workspace-create-dialog']:flex-row-reverse in-data-[ui~='workspace-create-dialog']:mt-6 [[data-ui~='event-publish-form']_>_&]:mt-5">
         {state.status !== "accepted" && (
           <Button
             type="submit"

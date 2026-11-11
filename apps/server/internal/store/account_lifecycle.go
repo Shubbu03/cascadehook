@@ -132,12 +132,7 @@ func (s *Store) RequestOrganizationDeletion(
 	if err != nil {
 		return accounts.OrganizationDeletion{}, fmt.Errorf("lock organization deletion: %w", err)
 	}
-	role, err := organizationRole(
-		ctx,
-		tx,
-		userID,
-		organizationID,
-	)
+	role, err := organizationRole(ctx, tx, userID, organizationID)
 	if err != nil {
 		return accounts.OrganizationDeletion{}, err
 	}

@@ -88,8 +88,7 @@ func allowPreferencesMethod(w http.ResponseWriter, r *http.Request) bool {
 	case http.MethodGet, http.MethodHead, http.MethodPatch:
 		return true
 	default:
-		w.Header().Set("Allow", "GET, HEAD, PATCH")
-		writeProblem(w, r, http.StatusMethodNotAllowed, "method_not_allowed")
+		methodNotAllowed(w, r, "GET, HEAD, PATCH")
 		return false
 	}
 }

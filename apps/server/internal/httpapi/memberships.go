@@ -10,8 +10,7 @@ import (
 
 func (api *api) membershipCollection(w http.ResponseWriter, r *http.Request, user accounts.User) {
 	if r.Method != http.MethodGet && r.Method != http.MethodHead && r.Method != http.MethodPost {
-		w.Header().Set("Allow", "GET, HEAD, POST")
-		writeProblem(w, r, http.StatusMethodNotAllowed, "method_not_allowed")
+		methodNotAllowed(w, r, "GET, HEAD, POST")
 		return
 	}
 	organizationID, ok := readResourceID(w, r, "organization_id")
@@ -88,8 +87,7 @@ func (api *api) memberProfiles(r *http.Request, members []accounts.Membership) {
 
 func (api *api) membershipResource(w http.ResponseWriter, r *http.Request, user accounts.User) {
 	if r.Method != http.MethodPatch && r.Method != http.MethodDelete {
-		w.Header().Set("Allow", "PATCH, DELETE")
-		writeProblem(w, r, http.StatusMethodNotAllowed, "method_not_allowed")
+		methodNotAllowed(w, r, "PATCH, DELETE")
 		return
 	}
 	organizationID, ok := readResourceID(w, r, "organization_id")

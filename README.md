@@ -38,7 +38,7 @@ Dashboard: `http://localhost:3000`. Docs: `http://localhost:3001/docs`.
 
 | Command | Purpose |
 | --- | --- |
-| `bun run check` | Lint, type checks, Go vet, and Go build |
+| `bun run check` | Lint, type checks, Go vet, Go build, and Go tests |
 | `bun run build:cloudflare:web` | Build the web Worker |
 | `bun run build:cloudflare:docs` | Build the docs Worker |
 | `bun run db:cleanup` | Run retention and account cleanup |

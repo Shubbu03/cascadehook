@@ -78,12 +78,7 @@ func cleanupOrganizationData(ctx context.Context, tx pgx.Tx, limit int, preview 
 			table: "organizations", lockAlias: "o", match: `t.id = c.id`, args: []any{id, limit},
 		}},
 	}...)
-	return cleanupLifecycleSelections(
-		ctx,
-		tx,
-		selections,
-		preview,
-	)
+	return cleanupLifecycleSelections(ctx, tx, selections, preview)
 }
 
 func cleanupAccountData(ctx context.Context, tx pgx.Tx, limit int, preview bool) (int64, error) {
@@ -128,12 +123,7 @@ func cleanupAccountData(ctx context.Context, tx pgx.Tx, limit int, preview bool)
 			table: "users", lockAlias: "u", match: `t.id = c.id`, args: []any{id, limit},
 		}},
 	}
-	return cleanupLifecycleSelections(
-		ctx,
-		tx,
-		selections,
-		preview,
-	)
+	return cleanupLifecycleSelections(ctx, tx, selections, preview)
 }
 
 type lifecycleCleanupSelection struct {

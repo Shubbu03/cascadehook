@@ -8,12 +8,11 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-	"os/signal"
-	"syscall"
 	"time"
 
 	"cascadehook/internal/clerk"
 	"cascadehook/internal/config"
+	"cascadehook/internal/process"
 	"cascadehook/internal/retention"
 	"cascadehook/internal/store"
 )
@@ -27,7 +26,7 @@ func main() {
 
 func run() error {
 	// stdout is a machine-readable report; operational logs go to stderr.
-	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stderr, nil)).With("service", "janitor"))
+	process.StartLogging("janitor", os.Stderr)
 	flags := flag.NewFlagSet("janitor", flag.ContinueOnError)
 	dryRun := flags.Bool("dry-run", false,
 		"preview current per-phase candidate counts, capped by batch size, without changing data")
@@ -44,10 +43,8 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	logger := slog.New(slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{Level: cfg.LogLevel})).
-		With("service", "janitor")
-	slog.SetDefault(logger)
-	signalCtx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	logger := process.Logger("janitor", os.Stderr, cfg.LogLevel)
+	signalCtx, stop := process.SignalContext()
 	defer stop()
 	// Include startup connectivity in the one-shot job's overall budget.
 	ctx, cancel := context.WithTimeout(signalCtx, cfg.Retention.RunTimeout)

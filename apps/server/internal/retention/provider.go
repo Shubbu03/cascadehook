@@ -52,24 +52,11 @@ func (options Options) cleanupProvider(
 		delay = max(delay, failure.RetryAfter)
 		status, code = failure.Status, failure.Code
 	}
-	if err := db.CompleteAccountDeletion(
-		ctx,
-		job,
-		deleteErr == nil,
-		delay,
-	); err != nil {
+	if err := db.CompleteAccountDeletion(ctx, job, deleteErr == nil, delay); err != nil {
 		return BatchResult{}, fmt.Errorf("acknowledge provider deletion; lease expiry permits retry: %w", err)
 	}
 	if deleteErr != nil {
-		logger.Warn(
-			"Clerk account deletion deferred",
-			"status",
-			status,
-			"code",
-			code,
-			"retry_delay",
-			delay.String(),
-		)
+		logger.Warn("Clerk account deletion deferred", "status", status, "code", code, "retry_delay", delay.String())
 	}
 	pending, err := db.HasPendingAccountDeletion(ctx)
 	return BatchResult{Rows: 1, ProviderFailed: deleteErr != nil, ProviderPending: pending}, err

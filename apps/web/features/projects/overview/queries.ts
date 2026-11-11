@@ -15,6 +15,7 @@ import type { Page } from "@/features/workspace/types";
 import type { Usage } from "@/features/settings/types";
 import { apiRequest } from "@/lib/api";
 import type { Activity } from "./setup";
+import { queryKeys } from "@/lib/query-keys";
 
 type GetToken = () => Promise<string | null>;
 const freshness = {
@@ -109,7 +110,7 @@ export function overviewDeliveriesQuery(
   getToken: GetToken,
 ) {
   return queryOptions({
-    queryKey: ["deliveries", userId, projectId, "overview-recent"],
+    queryKey: [...queryKeys.deliveries(userId, projectId), "overview-recent"],
     queryFn: ({ signal }) =>
       apiRequest<Page<Delivery>>(
         projectPath(projectId, "deliveries"),
@@ -126,7 +127,7 @@ export function overviewEventsQuery(
   getToken: GetToken,
 ) {
   return queryOptions({
-    queryKey: ["events", userId, projectId, "overview-recent"],
+    queryKey: [...queryKeys.events(userId, projectId), "overview-recent"],
     queryFn: ({ signal }) =>
       apiRequest<Page<EventSummary>>(
         projectPath(projectId, "events"),
@@ -144,7 +145,7 @@ export function overviewUsageQuery(
   getToken: GetToken,
 ) {
   return queryOptions({
-    queryKey: ["usage", userId, "project", projectId],
+    queryKey: queryKeys.projectUsage(userId, projectId),
     queryFn: canManage
       ? ({ signal }) =>
           apiRequest<Usage>(projectPath(projectId, "usage"), getToken, {

@@ -10,6 +10,9 @@ import { endpointState, type Endpoint } from "@/features/endpoints/types";
 import { useFormatTime } from "@/lib/display-preferences";
 import type { Delivery } from "./types";
 
+const contextSection =
+  "min-w-0 py-4.5 px-5 [[data-ui~='delivery-context-section']+&]:border-t [[data-ui~='delivery-context-section']+&]:[border-top-style:solid] [[data-ui~='delivery-context-section']+&]:border-t-border @max-[27.5rem]/delivery-detail:px-4 @max-[55rem]/delivery-detail:[[data-ui~='delivery-context-section']+&]:border-t-0 @max-[55rem]/delivery-detail:[[data-ui~='delivery-context-section']+&]:border-l @max-[55rem]/delivery-detail:[[data-ui~='delivery-context-section']+&]:[border-left-style:solid] @max-[55rem]/delivery-detail:[[data-ui~='delivery-context-section']+&]:border-l-border @max-[55rem]/delivery-detail:last:col-span-full @max-[55rem]/delivery-detail:last:border-t @max-[55rem]/delivery-detail:last:[border-top-style:solid] @max-[55rem]/delivery-detail:last:border-t-border @max-[55rem]/delivery-detail:last:border-l-0 @max-[37.5rem]/delivery-detail:[[data-ui~='delivery-context-section']+&]:border-t @max-[37.5rem]/delivery-detail:[[data-ui~='delivery-context-section']+&]:[border-top-style:solid] @max-[37.5rem]/delivery-detail:[[data-ui~='delivery-context-section']+&]:border-t-border @max-[37.5rem]/delivery-detail:[[data-ui~='delivery-context-section']+&]:border-l-0";
+
 export function DeliveryContext({
   delivery,
   endpoint,
@@ -35,7 +38,7 @@ export function DeliveryContext({
   return (
     <aside data-ui="delivery-context" className="min-w-0 rounded-[9px] bg-surface border border-solid border-border [&_h2]:text-[14px] [&_h2]:font-medium [&_h2]:tracking-[-0.01em] @max-[55rem]/delivery-detail:grid @max-[55rem]/delivery-detail:grid-cols-2 @max-[37.5rem]/delivery-detail:grid-cols-[1fr]" aria-label="Delivery details">
       <section
-        data-ui="delivery-context-section" className="min-w-0 py-4.5 px-5 [[data-ui~='delivery-context-section']+&]:border-t [[data-ui~='delivery-context-section']+&]:[border-top-style:solid] [[data-ui~='delivery-context-section']+&]:border-t-border @max-[27.5rem]/delivery-detail:px-4 @max-[55rem]/delivery-detail:[[data-ui~='delivery-context-section']+&]:border-t-0 @max-[55rem]/delivery-detail:[[data-ui~='delivery-context-section']+&]:[border-top-style:none] @max-[55rem]/delivery-detail:[[data-ui~='delivery-context-section']+&]:border-t-[currentColor] @max-[55rem]/delivery-detail:[[data-ui~='delivery-context-section']+&]:border-l @max-[55rem]/delivery-detail:[[data-ui~='delivery-context-section']+&]:[border-left-style:solid] @max-[55rem]/delivery-detail:[[data-ui~='delivery-context-section']+&]:border-l-border @max-[55rem]/delivery-detail:last:col-span-full @max-[55rem]/delivery-detail:last:border-t @max-[55rem]/delivery-detail:last:[border-top-style:solid] @max-[55rem]/delivery-detail:last:border-t-border @max-[55rem]/delivery-detail:last:border-l-0 @max-[55rem]/delivery-detail:last:[border-left-style:none] @max-[55rem]/delivery-detail:last:border-l-[currentColor] @max-[37.5rem]/delivery-detail:[[data-ui~='delivery-context-section']+&]:border-t @max-[37.5rem]/delivery-detail:[[data-ui~='delivery-context-section']+&]:[border-top-style:solid] @max-[37.5rem]/delivery-detail:[[data-ui~='delivery-context-section']+&]:border-t-border @max-[37.5rem]/delivery-detail:[[data-ui~='delivery-context-section']+&]:border-l-0 @max-[37.5rem]/delivery-detail:[[data-ui~='delivery-context-section']+&]:[border-left-style:none] @max-[37.5rem]/delivery-detail:[[data-ui~='delivery-context-section']+&]:border-l-[currentColor]"
+        data-ui="delivery-context-section" className={contextSection}
         aria-labelledby="delivery-endpoint-title"
       >
         <div className="flex items-center justify-between flex-wrap gap-2">
@@ -50,7 +53,7 @@ export function DeliveryContext({
         </div>
         {loading ? (
           <SkeletonRegion label="Loading endpoint…" className="mt-3">
-            <div className="grid min-w-0 gap-2.5 in-data-[ui~='skeleton-table-row']:gap-1.75 [[data-ui~='skeleton-list-row']_>_&]:flex-1 in-data-[ui~='notification-item-skeleton']:gap-2.5">
+            <div className="grid min-w-0 gap-2.5">
               <Skeleton width="95%" height={12} />
               <Skeleton width="80%" height={12} />
               <Skeleton width="65%" height={10} />
@@ -58,7 +61,7 @@ export function DeliveryContext({
           </SkeletonRegion>
         ) : (
           <Link
-            className="font-mono text-accent underline decoration-transparent underline-offset-[3px] wrap-anywhere block mt-2.5 text-[12px] leading-[1.8] [&_>_svg]:inline [&_>_svg]:ml-1.25 [&_>_svg]:align-middle [&:hover]:decoration-current [[data-ui~='delivery-copy-value']_>_&]:min-w-0 [[data-ui~='delivery-copy-value']_>_&]:wrap-anywhere [[data-ui~='delivery-copy-value']_>_&]:text-[11px]"
+            className="font-mono text-accent underline decoration-transparent underline-offset-[3px] wrap-anywhere block mt-2.5 text-[12px] leading-[1.8] [&_>_svg]:inline [&_>_svg]:ml-1.25 [&_>_svg]:align-middle [&:hover]:decoration-current"
             href={href + "/endpoints/" + delivery.endpoint_id}
           >
             {endpoint?.url ?? delivery.endpoint_id}
@@ -81,7 +84,7 @@ export function DeliveryContext({
         )}
       </section>
       <section
-        data-ui="delivery-context-section" className="min-w-0 py-4.5 px-5 [[data-ui~='delivery-context-section']+&]:border-t [[data-ui~='delivery-context-section']+&]:[border-top-style:solid] [[data-ui~='delivery-context-section']+&]:border-t-border @max-[27.5rem]/delivery-detail:px-4 @max-[55rem]/delivery-detail:[[data-ui~='delivery-context-section']+&]:border-t-0 @max-[55rem]/delivery-detail:[[data-ui~='delivery-context-section']+&]:[border-top-style:none] @max-[55rem]/delivery-detail:[[data-ui~='delivery-context-section']+&]:border-t-[currentColor] @max-[55rem]/delivery-detail:[[data-ui~='delivery-context-section']+&]:border-l @max-[55rem]/delivery-detail:[[data-ui~='delivery-context-section']+&]:[border-left-style:solid] @max-[55rem]/delivery-detail:[[data-ui~='delivery-context-section']+&]:border-l-border @max-[55rem]/delivery-detail:last:col-span-full @max-[55rem]/delivery-detail:last:border-t @max-[55rem]/delivery-detail:last:[border-top-style:solid] @max-[55rem]/delivery-detail:last:border-t-border @max-[55rem]/delivery-detail:last:border-l-0 @max-[55rem]/delivery-detail:last:[border-left-style:none] @max-[55rem]/delivery-detail:last:border-l-[currentColor] @max-[37.5rem]/delivery-detail:[[data-ui~='delivery-context-section']+&]:border-t @max-[37.5rem]/delivery-detail:[[data-ui~='delivery-context-section']+&]:[border-top-style:solid] @max-[37.5rem]/delivery-detail:[[data-ui~='delivery-context-section']+&]:border-t-border @max-[37.5rem]/delivery-detail:[[data-ui~='delivery-context-section']+&]:border-l-0 @max-[37.5rem]/delivery-detail:[[data-ui~='delivery-context-section']+&]:[border-left-style:none] @max-[37.5rem]/delivery-detail:[[data-ui~='delivery-context-section']+&]:border-l-[currentColor]"
+        data-ui="delivery-context-section" className={contextSection}
         aria-labelledby="delivery-event-title"
       >
         <h2 id="delivery-event-title">Event</h2>
@@ -98,13 +101,13 @@ export function DeliveryContext({
         </div>
         <Link
           href={href + "/events/" + delivery.event_id}
-          className="inline-flex items-center text-[14px] font-medium mt-2.5 gap-2 [&:hover]:underline [&:hover]:underline-offset-4 in-data-[ui~='onboarding-header']:min-h-11 in-data-[ui~='onboarding-header']:text-muted in-data-[ui~='onboarding-header']:text-[13px] in-data-[ui~='switcher-error']:mt-1.25 in-data-[ui~='switcher-error']:text-[13px] in-data-[ui~='switcher-error']:text-accent in-data-[ui~='delivery-detail']:text-[12px] in-data-[ui~='workspace-banner']:[font-size:inherit] in-data-[ui~='workspace-banner']:underline in-data-[ui~='notification-error']:ml-auto in-data-[ui~='notification-error']:text-[12px] [[data-ui~='dashboard-main']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='dashboard-main']_>_section_>_&:first-child]:text-[12px] [[data-ui~='project-content']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='project-content']_>_section_>_&:first-child]:text-[12px] [[data-ui~='project-content']_>_[data-ui~='delivery-detail']_>_&:first-child]:mb-3 max-[37.5rem]:in-data-[ui~='onboarding-header']:text-[12px]"
+          className="inline-flex items-center text-[14px] font-medium mt-2.5 gap-2 [&:hover]:underline [&:hover]:underline-offset-4 in-data-[ui~='delivery-detail']:text-[12px] [[data-ui~='dashboard-main']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='dashboard-main']_>_section_>_&:first-child]:text-[12px] [[data-ui~='project-content']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='project-content']_>_section_>_&:first-child]:text-[12px] [[data-ui~='project-content']_>_[data-ui~='delivery-detail']_>_&:first-child]:mb-3"
         >
           View event and payload <ArrowRightIcon size={13} aria-hidden="true" />
         </Link>
       </section>
       <section
-        data-ui="delivery-context-section" className="min-w-0 py-4.5 px-5 [[data-ui~='delivery-context-section']+&]:border-t [[data-ui~='delivery-context-section']+&]:[border-top-style:solid] [[data-ui~='delivery-context-section']+&]:border-t-border @max-[27.5rem]/delivery-detail:px-4 @max-[55rem]/delivery-detail:[[data-ui~='delivery-context-section']+&]:border-t-0 @max-[55rem]/delivery-detail:[[data-ui~='delivery-context-section']+&]:[border-top-style:none] @max-[55rem]/delivery-detail:[[data-ui~='delivery-context-section']+&]:border-t-[currentColor] @max-[55rem]/delivery-detail:[[data-ui~='delivery-context-section']+&]:border-l @max-[55rem]/delivery-detail:[[data-ui~='delivery-context-section']+&]:[border-left-style:solid] @max-[55rem]/delivery-detail:[[data-ui~='delivery-context-section']+&]:border-l-border @max-[55rem]/delivery-detail:last:col-span-full @max-[55rem]/delivery-detail:last:border-t @max-[55rem]/delivery-detail:last:[border-top-style:solid] @max-[55rem]/delivery-detail:last:border-t-border @max-[55rem]/delivery-detail:last:border-l-0 @max-[55rem]/delivery-detail:last:[border-left-style:none] @max-[55rem]/delivery-detail:last:border-l-[currentColor] @max-[37.5rem]/delivery-detail:[[data-ui~='delivery-context-section']+&]:border-t @max-[37.5rem]/delivery-detail:[[data-ui~='delivery-context-section']+&]:[border-top-style:solid] @max-[37.5rem]/delivery-detail:[[data-ui~='delivery-context-section']+&]:border-t-border @max-[37.5rem]/delivery-detail:[[data-ui~='delivery-context-section']+&]:border-l-0 @max-[37.5rem]/delivery-detail:[[data-ui~='delivery-context-section']+&]:[border-left-style:none] @max-[37.5rem]/delivery-detail:[[data-ui~='delivery-context-section']+&]:border-l-[currentColor]"
+        data-ui="delivery-context-section" className={contextSection}
         aria-labelledby="delivery-timing-title"
       >
         <h2 id="delivery-timing-title">Timing</h2>

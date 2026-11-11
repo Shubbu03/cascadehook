@@ -11,6 +11,7 @@ import { NameForm } from "./name-form";
 import { organizationHref } from "./queries";
 import { useSessionUserId } from "./session";
 import type { Organization, Project } from "./types";
+import { queryKeys } from "@/lib/query-keys";
 
 type CreateTarget =
   | { kind: "organization"; }
@@ -109,22 +110,22 @@ function CreateDialog({
       if (resource.kind === "organization") {
         const { organization } = resource;
         queryClient.setQueryData(
-          ["organization", userId, organization.id],
+          queryKeys.organization(userId, organization.id),
           organization,
         );
         void queryClient.invalidateQueries({
-          queryKey: ["organizations", userId],
+          queryKey: queryKeys.organizations(userId),
         });
         notify("Organization created.", "success");
         onOrganizationCreated(organization);
       } else {
         const { project } = resource;
-        queryClient.setQueryData(["project", userId, project.id], project);
+        queryClient.setQueryData(queryKeys.project(userId, project.id), project);
         void queryClient.invalidateQueries({
-          queryKey: ["projects", userId, project.organization_id],
+          queryKey: queryKeys.projects(userId, project.organization_id),
         });
         void queryClient.invalidateQueries({
-          queryKey: ["usage", userId, "organization", project.organization_id],
+          queryKey: queryKeys.organizationUsage(userId, project.organization_id),
           refetchType: "all",
         });
         notify("Project created.", "success");

@@ -16,6 +16,11 @@ import (
 	"cascadehook/internal/pagination"
 )
 
+const (
+	maxDailyInvitationsPerUser = 100
+	maxRetainedInvitations     = 1000
+)
+
 const invitationColumns = `id, organization_id, email, role, created_at, expires_at, accepted_at, revoked_at, project_id,
 	coalesce((SELECT e.state FROM email_outbox e WHERE e.invitation_id = organization_invitations.id
 	ORDER BY e.created_at DESC,e.id DESC LIMIT 1),'not_sent'),
@@ -66,12 +71,7 @@ func (s *Store) CreateInvitation(
 		return accounts.Invitation{}, fmt.Errorf("begin invitation: %w", err)
 	}
 	defer rollbackTransaction(tx)
-	role, err := lockOrganizationAccess(
-		ctx,
-		tx,
-		actorID,
-		params.OrganizationID,
-	)
+	role, err := lockOrganizationAccess(ctx, tx, actorID, params.OrganizationID)
 	if err != nil {
 		return accounts.Invitation{}, err
 	}
@@ -88,12 +88,7 @@ func (s *Store) CreateInvitation(
 			return accounts.Invitation{}, accounts.ErrNotFound
 		}
 	}
-	if err := checkResourceQuota(
-		ctx,
-		tx,
-		params.OrganizationID,
-		"members",
-	); err != nil {
+	if err := checkResourceQuota(ctx, tx, params.OrganizationID, "members"); err != nil {
 		return accounts.Invitation{}, err
 	}
 	rateKey := sha256.Sum256([]byte("invitation-rate:" + actorID.String()))
@@ -106,7 +101,7 @@ func (s *Store) CreateInvitation(
 		actorID).Scan(&dailyCount); err != nil {
 		return accounts.Invitation{}, fmt.Errorf("check invitation creation budget: %w", err)
 	}
-	if dailyCount >= 100 {
+	if dailyCount >= maxDailyInvitationsPerUser {
 		return accounts.Invitation{}, &accounts.QuotaError{Resource: "daily_invitations"}
 	}
 	var hasSlot bool
@@ -135,7 +130,7 @@ func (s *Store) CreateInvitation(
 		params.OrganizationID).Scan(&count); err != nil {
 		return accounts.Invitation{}, fmt.Errorf("count retained invitations: %w", err)
 	}
-	if count >= 1000 {
+	if count >= maxRetainedInvitations {
 		return accounts.Invitation{}, &accounts.QuotaError{Resource: "retained_invitations"}
 	}
 	var invitation accounts.Invitation
@@ -208,12 +203,7 @@ func (s *Store) RevokeInvitation(ctx context.Context, actorID, organizationID, i
 		return fmt.Errorf("begin invitation revocation: %w", err)
 	}
 	defer rollbackTransaction(tx)
-	role, err := lockOrganizationAccess(
-		ctx,
-		tx,
-		actorID,
-		organizationID,
-	)
+	role, err := lockOrganizationAccess(ctx, tx, actorID, organizationID)
 	if err != nil {
 		return err
 	}
@@ -307,12 +297,7 @@ func (s *Store) AcceptInvitation(
 	if err := setAuditActor(ctx, tx, auth.Principal{UserID: userID}); err != nil {
 		return accounts.Membership{}, err
 	}
-	if err := lockActiveUsers(
-		ctx,
-		tx,
-		userID,
-		inviterID,
-	); err != nil {
+	if err := lockActiveUsers(ctx, tx, userID, inviterID); err != nil {
 		if errors.Is(err, accounts.ErrUserNotFound) {
 			return accounts.Membership{}, accounts.ErrInvitationInvalid
 		}
@@ -336,12 +321,7 @@ func (s *Store) AcceptInvitation(
 			WHERE m.organization_id = i.organization_id AND m.user_id = i.created_by_user_id
 			AND m.role = 'owner' AND u.deletion_requested_at IS NULL)
 		FROM organization_invitations i WHERE i.token_hash = $1 FOR UPDATE OF i`, hash[:]).
-		Scan(
-			&email,
-			&role,
-			&acceptedBy,
-			&valid,
-		)
+		Scan(&email, &role, &acceptedBy, &valid)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return accounts.Membership{}, accounts.ErrInvitationInvalid
 	}
@@ -384,12 +364,7 @@ func (s *Store) AcceptInvitation(
 		if err := checkUserOrganizationQuota(ctx, tx, userID); err != nil {
 			return accounts.Membership{}, err
 		}
-		if err := checkResourceQuota(
-			ctx,
-			tx,
-			organizationID,
-			"members",
-		); err != nil {
+		if err := checkResourceQuota(ctx, tx, organizationID, "members"); err != nil {
 			return accounts.Membership{}, err
 		}
 	}

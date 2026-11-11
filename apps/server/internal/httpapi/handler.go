@@ -3,6 +3,7 @@ package httpapi
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"log/slog"
 	"net/http"
@@ -134,7 +135,6 @@ func NewHandler(options HandlerOptions) (http.Handler, error) {
 	handle("/v1/organizations/{organization_id}/members", api.withSession(api.membershipCollection))
 	handle("/v1/organizations/{organization_id}/invitations", api.withSession(api.invitationCollection))
 	handle("/v1/organizations/{organization_id}/invitations/{invitation_id}", api.withSession(api.revokeInvitation))
-	handle("/v1/invitations/accept", api.withSession(api.acceptInvitation))
 	handle("/v1/organizations/{organization_id}/invitations/{invitation_id}/resend", api.withSession(api.resendInvitation))
 	handle("/v1/invitations/{invitation_id}/accept", api.withSession(api.acceptInvitationByID))
 	handle("/v1/organizations/{organization_id}/members/{user_id}", api.withSession(api.membershipResource))
@@ -181,9 +181,13 @@ func allowGetHead(w http.ResponseWriter, r *http.Request) bool {
 	if r.Method == http.MethodGet || r.Method == http.MethodHead {
 		return true
 	}
-	w.Header().Set("Allow", "GET, HEAD")
-	writeProblem(w, r, http.StatusMethodNotAllowed, "method_not_allowed")
+	methodNotAllowed(w, r, "GET, HEAD")
 	return false
+}
+
+func methodNotAllowed(w http.ResponseWriter, r *http.Request, allow string) {
+	w.Header().Set("Allow", allow)
+	writeProblem(w, r, http.StatusMethodNotAllowed, "method_not_allowed")
 }
 
 func writeProblem(w http.ResponseWriter, r *http.Request, status int, code string) {
@@ -203,4 +207,15 @@ func writeProblem(w http.ResponseWriter, r *http.Request, status int, code strin
 		Status: status,
 		Code:   code,
 	})
+}
+
+// unexpectedProblem ends every problem mapper: a canceled or timed-out request
+// is reported as such, and anything else is logged as an internal error.
+func (api *api) unexpectedProblem(w http.ResponseWriter, r *http.Request, message string, err error) {
+	if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) {
+		writeProblem(w, r, http.StatusServiceUnavailable, "request_timeout")
+		return
+	}
+	api.logger.Error(message, "error", err)
+	writeProblem(w, r, http.StatusInternalServerError, "internal_error")
 }

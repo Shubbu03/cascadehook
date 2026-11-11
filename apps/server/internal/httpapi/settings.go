@@ -15,8 +15,7 @@ import (
 
 func (api *api) projectDetails(w http.ResponseWriter, r *http.Request, user accounts.User) {
 	if r.Method != http.MethodPatch {
-		w.Header().Set("Allow", "PATCH")
-		writeProblem(w, r, http.StatusMethodNotAllowed, "method_not_allowed")
+		methodNotAllowed(w, r, "PATCH")
 		return
 	}
 	id, ok := readResourceID(w, r, "project_id")

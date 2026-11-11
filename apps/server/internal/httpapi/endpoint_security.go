@@ -133,18 +133,11 @@ func (api *api) verifyEndpoint(w http.ResponseWriter, r *http.Request, principal
 // challenge, URL, or verification result is accepted from the management API.
 func endpointAction(w http.ResponseWriter, r *http.Request) (uuid.UUID, bool) {
 	if r.Method != http.MethodPost {
-		w.Header().Set("Allow", "POST")
-		writeProblem(w, r, http.StatusMethodNotAllowed, "method_not_allowed")
+		methodNotAllowed(w, r, "POST")
 		return uuid.Nil, false
 	}
-	id, err := uuid.Parse(r.PathValue("endpoint_id"))
-	if err != nil {
-		writeProblem(w, r, http.StatusBadRequest, "invalid_endpoint_id")
-		return uuid.Nil, false
-	}
-	body, err := io.ReadAll(http.MaxBytesReader(w, r.Body, 1))
-	if err != nil || len(body) != 0 {
-		writeProblem(w, r, http.StatusBadRequest, "unexpected_request_body")
+	id, ok := readResourceID(w, r, "endpoint_id")
+	if !ok || !emptyBody(w, r) {
 		return uuid.Nil, false
 	}
 	return id, true

@@ -37,7 +37,7 @@ func (s *Store) ClaimEmail(ctx context.Context, dailyLimit int) (*mailoutbox.Job
 	}
 	var job mailoutbox.Job
 	err = tx.QueryRow(ctx, `SELECT e.id,e.invitation_id,e.organization_id,i.email,o.name,i.role,i.expires_at,
-		e.attempts,coalesce(e.first_attempt_at,clock_timestamp()),e.payload_ciphertext,coalesce(e.clerk_invitation_id,'')
+		e.attempts,coalesce(e.first_attempt_at,clock_timestamp()),e.payload_ciphertext
 		FROM email_outbox e JOIN organization_invitations i ON i.id=e.invitation_id
 		JOIN organizations o ON o.id=i.organization_id JOIN users u ON u.id=i.created_by_user_id
 		JOIN memberships m ON m.organization_id=i.organization_id AND m.user_id=u.id AND m.role='owner'
@@ -47,7 +47,7 @@ func (s *Store) ClaimEmail(ctx context.Context, dailyLimit int) (*mailoutbox.Job
 		AND o.deletion_requested_at IS NULL AND u.deletion_requested_at IS NULL
 		ORDER BY e.next_attempt_at,e.id LIMIT 1 FOR UPDATE OF e SKIP LOCKED`).Scan(
 		&job.ID, &job.InvitationID, &job.OrganizationID, &job.Email, &job.OrganizationName, &job.Role,
-		&job.ExpiresAt, &job.Attempts, &job.FirstAttemptAt, &job.Payload, &job.ClerkInvitationID,
+		&job.ExpiresAt, &job.Attempts, &job.FirstAttemptAt, &job.Payload,
 	)
 	if errors.Is(err, pgx.ErrNoRows) {
 		// Alerts never spend the last fifth of the shared daily budget, so a

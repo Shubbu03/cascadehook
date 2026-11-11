@@ -140,7 +140,7 @@ export function nowSeconds() {
   return String(Math.floor(Date.now() / 1000));
 }
 
-export function cleanHeaderValue(value: string, name: string) {
+function cleanHeaderValue(value: string, name: string) {
   const trimmed = value.trim();
   const prefix = name.toLowerCase() + ":";
   return trimmed.toLowerCase().startsWith(prefix) ? trimmed.slice(prefix.length).trim() : trimmed;
@@ -195,7 +195,7 @@ export async function findBodyVariant(
   return undefined;
 }
 
-export function encode(adapter: Pick<Adapter, "encoding">, mac: Uint8Array) {
+function encode(adapter: Pick<Adapter, "encoding">, mac: Uint8Array) {
   return adapter.encoding === "hex" ? bytesToHex(mac) : bytesToBase64(mac);
 }
 

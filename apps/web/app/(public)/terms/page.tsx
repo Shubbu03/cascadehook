@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { pageMetadata } from "@/lib/site";
 import { supportEmail } from "@/lib/support";
+import { prose } from "@/components/styles";
 
 export const metadata: Metadata = pageMetadata({
   path: "/terms",
@@ -11,7 +12,7 @@ export const metadata: Metadata = pageMetadata({
 
 export default function Page() {
   return (
-    <article data-ui="public-prose" className="max-w-185 leading-[1.85] mx-auto [&_h1]:mb-6.5 [&_h1]:text-[clamp(36px,5vw,56px)] [&_h1]:font-medium [&_h1]:leading-[1.12] [&_h1]:tracking-[-.045em] [&_h2]:mt-8 [&_h2]:text-[21px] [&_h2]:leading-[1.4] [&_h2]:tracking-[-.02em] [&_p]:mt-4 [&_p]:text-muted [&_p]:text-[14px] [&_ul]:mt-4 [&_ul]:text-muted [&_ul]:text-[14px] [&_ul]:pl-5.5 [&_ul]:[list-style:disc] [&_a]:underline [&_a]:underline-offset-[3px]">
+    <article className={prose}>
       <h1>Terms of use</h1>
       <p>Effective November 2, 2026. These terms govern your use of Cascadehook, an independently operated webhook delivery service based in India. Contact <a href={"mailto:" + supportEmail}>{supportEmail}</a> with questions.</p>
       <h2>Your account and content</h2>
