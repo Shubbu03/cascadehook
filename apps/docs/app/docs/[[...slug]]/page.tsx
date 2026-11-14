@@ -10,13 +10,17 @@ import { source } from "@/lib/source";
 import { getMDXComponents } from "@/mdx-components";
 
 type Props = { params: Promise<{ slug?: string[] }> };
+type Page = NonNullable<ReturnType<typeof source.getPage>>;
+
+const updatedFormat = new Intl.DateTimeFormat("en-US", { dateStyle: "long", timeZone: "UTC" });
 
 export default async function DocumentationPage({ params }: Props) {
   const page = source.getPage((await params).slug);
   if (!page) notFound();
+  const lastModified = page.type === "docs" ? page.data.lastModified : undefined;
   return (
     <DocsPage toc={page.data.toc} full={page.type === "openapi" || page.data.full}>
-      <JsonLd data={structuredData(page.url, page.data.title, page.data.description, page.type === "docs" ? page.data.lastModified : undefined)} />
+      <JsonLd data={structuredData(page.url, page.data.title, metaDescription(page), lastModified)} />
       <DocsTitle>{page.data.title}</DocsTitle>
       <DocsDescription>{page.data.description}</DocsDescription>
       <DocsBody>
@@ -26,6 +30,11 @@ export default async function DocumentationPage({ params }: Props) {
           <page.data.body components={getMDXComponents()} />
         )}
       </DocsBody>
+      {lastModified && (
+        <p className="mt-10 text-sm text-fd-muted-foreground">
+          Last updated <time dateTime={lastModified.toISOString()}>{updatedFormat.format(lastModified)}</time>
+        </p>
+      )}
     </DocsPage>
   );
 }
@@ -37,7 +46,8 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const page = source.getPage((await params).slug);
   if (!page) notFound();
-  const { title, description } = page.data;
+  const { title } = page.data;
+  const description = metaDescription(page);
   // Social cards don't apply the layout's title template, so spell it out.
   const fullTitle = `${title} · Cascadehook Docs`;
   return {
@@ -47,6 +57,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     openGraph: { type: "article", siteName, url: page.url, title: fullTitle, description, images: socialImage },
     twitter: { card: "summary_large_image", title: fullTitle, description, images: socialImage },
   };
+}
+
+// Operation descriptions in the OpenAPI file are written for agents and start
+// with scope rules, which make poor search snippets.
+function metaDescription(page: Page) {
+  if (page.type !== "openapi") return page.data.description;
+  const operation = page.data.getOpenAPIPageProps().operations?.[0];
+  if (!operation) return page.data.description;
+  const method = operation.method.toUpperCase();
+  const parts = ["GET", "DELETE"].includes(method) ? "Parameters, responses" : "Parameters, request body, responses";
+  return `${page.data.title}: ${method} ${operation.path} in the Cascadehook project API. ${parts}, and the API key scope it requires.`;
 }
 
 // Setting openGraph here drops the inherited file-based image from
@@ -71,7 +92,8 @@ function structuredData(url: string, title: string | undefined, description: str
       url: siteURL + url,
       dateModified: lastModified?.toISOString(),
       inLanguage: "en",
-      isPartOf: { "@type": "WebSite", name: siteName, url: siteURL },
+      // Site name markup belongs on the home page only, so reference it by ID.
+      isPartOf: { "@id": siteURL + "/#website" },
       publisher: { "@type": "Organization", "@id": siteURL + "/#organization", name: siteName, url: siteURL },
     },
   ];

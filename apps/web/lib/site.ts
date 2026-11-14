@@ -11,6 +11,19 @@ const socialImage = { url: "/opengraph-image", width: 1200, height: 630, alt: "C
 
 // Page titles are expanded by the root layout's template, but social cards don't
 // use that template, so they get the full title spelled out.
+// Mirrors the visible "Tools / …" trail on public pages.
+export function breadcrumbList(items: { name: string; path: string }[]) {
+  return {
+    "@type": "BreadcrumbList",
+    itemListElement: items.map((item, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: item.name,
+      item: siteURL + item.path,
+    })),
+  };
+}
+
 // Served by app/md through middleware.ts.
 function markdownPath(path: string) {
   return path === "/" ? "/index.md" : path + ".md";

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { JsonLd } from "@/components/json-ld";
-import { pageMetadata, siteName, siteURL } from "@/lib/site";
+import { breadcrumbList, pageMetadata, siteName, siteURL } from "@/lib/site";
 import { references } from "./catalog";
 import { comparisonChecked, comparisonNotes, comparisonPath, comparisonRows, comparisonSummary } from "./comparison";
 
@@ -20,13 +20,18 @@ const textLink = "text-foreground underline underline-offset-[3px]";
 export function ComparisonPage() {
   const structuredData = {
     "@context": "https://schema.org",
-    "@type": "TechArticle",
-    headline: reference.title,
-    description: reference.description,
-    url: siteURL + comparisonPath,
-    dateModified: reference.updated,
-    inLanguage: "en",
-    publisher: { "@type": "Organization", "@id": siteURL + "/#organization", name: siteName, url: siteURL },
+    "@graph": [
+      {
+        "@type": "TechArticle",
+        headline: reference.title,
+        description: reference.description,
+        url: siteURL + comparisonPath,
+        dateModified: reference.updated,
+        inLanguage: "en",
+        publisher: { "@type": "Organization", "@id": siteURL + "/#organization", name: siteName, url: siteURL },
+      },
+      breadcrumbList([{ name: "Tools", path: "/tools" }, { name: reference.title, path: comparisonPath }]),
+    ],
   };
 
   return (

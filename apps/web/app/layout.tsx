@@ -32,7 +32,6 @@ export const metadata: Metadata = {
   description:
     "Reliable outbound webhooks for your application. Publish events, deliver signed requests, and understand every attempt.",
   applicationName: siteName,
-  icons: { icon: "/icon.svg" },
   openGraph: { type: "website", siteName, locale: "en_US" },
   twitter: { card: "summary_large_image" },
 };

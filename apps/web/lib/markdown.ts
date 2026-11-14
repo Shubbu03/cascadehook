@@ -73,8 +73,8 @@ export function markdownResponse(body: string, canonicalPath: string) {
   return new Response(body.trim() + "\n", {
     headers: {
       "Content-Type": "text/markdown; charset=utf-8",
-      // Markdown copies stay out of search results and point back at the HTML page.
-      "X-Robots-Tag": "noindex",
+      // Folds the Markdown copy into the HTML page. Google advises against also
+      // sending noindex on a duplicate; it conflicts with the canonical.
       Link: `<${siteURL}${canonicalPath}>; rel="canonical"`,
     },
   });

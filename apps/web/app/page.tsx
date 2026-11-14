@@ -26,7 +26,8 @@ const structuredData = {
       "@id": organizationID,
       name: siteName,
       url: siteURL,
-      logo: siteURL + "/icon.svg",
+      // Google's logo guidelines ask for a raster image of at least 112px.
+      logo: siteURL + "/icon1.png",
       email: supportEmail,
       sameAs: ["https://github.com/Shubbu03/cascadehook"],
     },
@@ -34,6 +35,8 @@ const structuredData = {
       "@type": "WebSite",
       "@id": siteURL + "/#website",
       name: siteName,
+      // Google's fallback when it doesn't pick `name` as the site name.
+      alternateName: ["cascadehook.com"],
       url: siteURL,
       publisher: { "@id": organizationID },
     },
