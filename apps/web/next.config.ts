@@ -27,18 +27,21 @@ const apiOrigin = originOf(process.env.NEXT_PUBLIC_API_BASE_URL);
 const clerkOrigin = clerkFrontendOrigin();
 // Clerk's bot protection renders a Cloudflare Turnstile challenge on sign-up.
 const turnstileOrigin = "https://challenges.cloudflare.com";
-const analyticsOrigin = "https://datafa.st";
+// Cloudflare injects its Web Analytics beacon at the edge; it loads from one
+// host and reports to another.
+const cloudflareBeaconOrigin = "https://static.cloudflareinsights.com";
+const cloudflareInsightsOrigin = "https://cloudflareinsights.com";
 
 // No nonces: cacheComponents prerenders static shells, which cannot carry a
 // per-request nonce, so inline scripts need 'unsafe-inline'.
 const contentSecurityPolicy = [
   "default-src 'self'",
-  ["script-src 'self' 'unsafe-inline'", isDev && "'unsafe-eval'", clerkOrigin, turnstileOrigin, analyticsOrigin],
+  ["script-src 'self' 'unsafe-inline'", isDev && "'unsafe-eval'", clerkOrigin, turnstileOrigin, cloudflareBeaconOrigin],
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https://img.clerk.com",
   "font-src 'self'",
   // Clerk development instances send SDK telemetry to clerk-telemetry.com.
-  ["connect-src 'self'", apiOrigin, clerkOrigin, "https://clerk-telemetry.com", analyticsOrigin, isDev && "ws:"],
+  ["connect-src 'self'", apiOrigin, clerkOrigin, "https://clerk-telemetry.com", cloudflareInsightsOrigin, isDev && "ws:"],
   `frame-src ${turnstileOrigin}`,
   "worker-src 'self' blob:",
   "object-src 'none'",
@@ -90,6 +93,9 @@ const nextConfig: NextConfig = {
   experimental: {
     optimizePackageImports: ["@phosphor-icons/react"],
     turbopackPluginRuntimeStrategy: "workerThreads",
+    // The Tailwind stylesheet is small, and as a <link> it blocked first paint
+    // for about 0.7s on mobile in PageSpeed Insights.
+    inlineCss: true,
   },
   cacheComponents: true,
   partialPrefetching: true,

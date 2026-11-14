@@ -55,11 +55,11 @@ export function VerifierPage({ content }: { content: VerifierContent }) {
       <JsonLd data={structuredData} />
       <header className="flex flex-wrap items-end justify-between gap-x-10 gap-y-3">
         <div className="min-w-0">
-          <p className="text-[13px] leading-[1.6]">
-            <Link href="/tools" className="text-muted hover:text-foreground">Tools</Link>
+          <nav aria-label="Breadcrumb" className="text-[13px] leading-[1.6]">
+            <Link href="/tools" className="text-muted underline decoration-input-border underline-offset-[3px] hover:text-foreground hover:decoration-current">Tools</Link>
             <span className="text-muted" aria-hidden="true"> / </span>
             <span className="text-accent">Free tool</span>
-          </p>
+          </nav>
           <h1 className="mt-2 text-[clamp(30px,3.6vw,42px)] font-medium leading-[1.15] tracking-[-.04em]">{content.title}</h1>
         </div>
         <p className="max-w-120 text-muted text-[14px] leading-[1.7]">{content.intro}</p>

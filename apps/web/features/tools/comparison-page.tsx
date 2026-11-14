@@ -38,11 +38,11 @@ export function ComparisonPage() {
     <div>
       <JsonLd data={structuredData} />
       <header className="max-w-185">
-        <p className="text-[13px] leading-[1.6]">
-          <Link href="/tools" className="text-muted hover:text-foreground">Tools</Link>
+        <nav aria-label="Breadcrumb" className="text-[13px] leading-[1.6]">
+          <Link href="/tools" className="text-muted underline decoration-input-border underline-offset-[3px] hover:text-foreground hover:decoration-current">Tools</Link>
           <span className="text-muted" aria-hidden="true"> / </span>
           <span className="text-accent">Reference</span>
-        </p>
+        </nav>
         <h1 className="mt-2 text-[clamp(30px,3.6vw,42px)] font-medium leading-[1.15] tracking-[-.04em]">{reference.title}</h1>
         <p className="mt-3 text-muted text-[15px] leading-[1.8]">{comparisonSummary}</p>
       </header>
