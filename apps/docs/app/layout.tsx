@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
-import Script from "next/script";
 import { RootProvider } from "fumadocs-ui/provider/next";
 import { ThemeTransitionProvider } from "@/components/theme-transition-provider";
 import { siteName, siteURL } from "@/lib/site";
@@ -43,12 +42,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <RootProvider theme={{ attribute: "class", defaultTheme: "system", storageKey: "cascadehook-docs-theme", hotKey: false }}>
           <ThemeTransitionProvider>{children}</ThemeTransitionProvider>
         </RootProvider>
-        <Script
-          src="https://datafa.st/js/script.js"
-          data-website-id="dfid_u0z9CIgSsJ5oM1k3KJqkN"
-          data-domain="cascadehook.com"
-          strategy="afterInteractive"
-        />
       </body>
     </html>
   );

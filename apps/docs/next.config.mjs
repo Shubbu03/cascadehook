@@ -15,17 +15,20 @@ function originOf(value) {
 
 // The OpenAPI playground sends requests to the API from the browser.
 const apiOrigin = originOf(process.env.NEXT_PUBLIC_API_BASE_URL);
-const analyticsOrigin = "https://datafa.st";
+// Cloudflare injects its Web Analytics beacon at the edge; it loads from one
+// host and reports to another.
+const cloudflareBeaconOrigin = "https://static.cloudflareinsights.com";
+const cloudflareInsightsOrigin = "https://cloudflareinsights.com";
 
 // Docs share cascadehook.com with the dashboard but run as a separate worker,
 // so they need their own copy of the dashboard's headers (minus Clerk).
 const contentSecurityPolicy = [
   "default-src 'self'",
-  ["script-src 'self' 'unsafe-inline'", isDev && "'unsafe-eval'", analyticsOrigin],
+  ["script-src 'self' 'unsafe-inline'", isDev && "'unsafe-eval'", cloudflareBeaconOrigin],
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob:",
   "font-src 'self'",
-  ["connect-src 'self'", apiOrigin, analyticsOrigin, isDev && "ws:"],
+  ["connect-src 'self'", apiOrigin, cloudflareInsightsOrigin, isDev && "ws:"],
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",
@@ -53,6 +56,8 @@ const config = {
   assetPrefix: "/docs",
   experimental: {
     turbopackPluginRuntimeStrategy: "workerThreads",
+    // Inline the stylesheet so it doesn't block first paint.
+    inlineCss: true,
     // Keep simultaneous prerender workers bounded for the HTML and Markdown routes.
     cpus: 2,
   },

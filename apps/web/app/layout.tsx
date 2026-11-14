@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
-import Script from "next/script";
 import { ThemeProvider } from "@/components/theme-provider";
 import { siteName, siteURL } from "@/lib/site";
 import { themeScript } from "@/lib/theme";
@@ -56,12 +55,6 @@ export default function RootLayout({
           Skip to content
         </a>
         <ThemeProvider>{children}</ThemeProvider>
-        <Script
-          src="https://datafa.st/js/script.js"
-          data-website-id="dfid_u0z9CIgSsJ5oM1k3KJqkN"
-          data-domain="cascadehook.com"
-          strategy="afterInteractive"
-        />
       </body>
     </html>
   );
