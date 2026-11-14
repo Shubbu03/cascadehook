@@ -6,12 +6,12 @@ export function markdownPath(url: string) {
   return url === "/docs/agents" ? "/llms.mdx/docs/agents" : url + ".md";
 }
 
-// Markdown copies stay out of search results and point back at the HTML page.
+// The canonical header folds the Markdown copy into the HTML page. Google
+// advises against adding noindex to duplicates; it conflicts with the canonical.
 export function markdownResponse(body: string, canonicalPath: string) {
   return new Response(body, {
     headers: {
       "Content-Type": "text/markdown; charset=utf-8",
-      "X-Robots-Tag": "noindex",
       Link: `<${siteURL}${canonicalPath}>; rel="canonical"`,
     },
   });

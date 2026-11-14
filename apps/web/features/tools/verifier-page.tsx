@@ -3,7 +3,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { DocsLink } from "@/components/docs-link";
 import { JsonLd } from "@/components/json-ld";
-import { pageMetadata, siteName, siteURL } from "@/lib/site";
+import { breadcrumbList, pageMetadata, siteName, siteURL } from "@/lib/site";
 import { tools } from "./catalog";
 import { CodeTabs, type Snippet } from "./code-tabs";
 import { ReferenceTabs } from "./reference-tabs";
@@ -33,15 +33,20 @@ export function verifierMetadata(content: VerifierContent): Metadata {
 export function VerifierPage({ content }: { content: VerifierContent }) {
   const structuredData = {
     "@context": "https://schema.org",
-    "@type": "WebApplication",
-    name: content.metaTitle,
-    url: siteURL + content.path,
-    description: content.description,
-    applicationCategory: "DeveloperApplication",
-    operatingSystem: "Web",
-    isAccessibleForFree: true,
-    offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
-    publisher: { "@id": siteURL + "/#organization", name: siteName },
+    "@graph": [
+      {
+        "@type": "WebApplication",
+        name: content.metaTitle,
+        url: siteURL + content.path,
+        description: content.description,
+        applicationCategory: "DeveloperApplication",
+        operatingSystem: "Web",
+        isAccessibleForFree: true,
+        offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+        publisher: { "@id": siteURL + "/#organization", name: siteName },
+      },
+      breadcrumbList([{ name: "Tools", path: "/tools" }, { name: content.title, path: content.path }]),
+    ],
   };
   const related = tools.filter((tool) => tool.href !== content.path);
 
