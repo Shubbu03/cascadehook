@@ -22,9 +22,9 @@ import { OneTimeSecret, useOneTimeSecret } from "@/components/one-time-secret";
 import { LoadMore, QueryState, RefreshButton } from "@/components/query-state";
 import { projectPath, stateTone } from "@/features/activity/types";
 import { projectHref, useProject } from "@/features/projects/project-workspace";
+import { apiKeyKeys, apiKeyListQuery } from "@/features/projects/section-queries";
 import { AccessRedirect } from "@/features/workspace/access-redirect";
 import { useSessionUserId } from "@/features/workspace/session";
-import type { Page } from "@/features/workspace/types";
 import { apiRequest } from "@/lib/api";
 import { useFormatTime } from "@/lib/display-preferences";
 import { notify } from "@/lib/notify";
@@ -67,22 +67,10 @@ function KeyManagement() {
     process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "") ||
     "https://YOUR_API_HOST",
   );
-  const prefix = ["api-keys", userId, project.id];
-  const list = useInfiniteQuery({
-    queryKey: [...prefix, environment, status],
-    initialPageParam: null as string | null,
-    queryFn: ({ pageParam, signal }) =>
-      apiRequest<Page<APIKey>>(path, getToken, {
-        signal,
-        params: {
-          limit: 20,
-          ...(pageParam ? { cursor: pageParam } : {}),
-          ...(environment ? { environment } : {}),
-          ...(status ? { status } : {}),
-        },
-      }),
-    getNextPageParam: (page) => page.next_cursor ?? undefined,
-  });
+  const prefix = apiKeyKeys(userId, project.id);
+  const list = useInfiniteQuery(
+    apiKeyListQuery(userId, project.id, { environment, status }, getToken),
+  );
   const revoke = useMutation({
     mutationFn: (key: APIKey) =>
       apiRequest<void>(path + "/" + encodeURIComponent(key.id), getToken, {

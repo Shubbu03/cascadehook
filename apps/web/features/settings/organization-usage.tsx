@@ -1,6 +1,6 @@
 "use client";
 
-import { PageSkeleton, UsageSkeleton } from "@/features/workspace/skeletons";
+import { UsageSkeleton } from "@/features/workspace/skeletons";
 import { useAuth } from "@clerk/nextjs";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
@@ -36,7 +36,7 @@ export function OrganizationUsage({
       >
         ← Projects
       </Link>
-      <QueryState query={organization} loading={<PageSkeleton variant="usage" />}>
+      <QueryState query={organization} loading={<section><PageHeader title="Organization usage" /><UsageSkeleton /></section>}>
         {organization.data &&
           (organization.data.role === "member" ? (
             <AccessRedirect href={organizationHref(organizationId)} />

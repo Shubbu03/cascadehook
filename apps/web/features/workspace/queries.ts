@@ -21,11 +21,24 @@ export function organizationsQuery(userId: string, getToken: GetToken) {
   return infiniteQueryOptions({
     queryKey: queryKeys.organizations(userId),
     initialPageParam: null as string | null,
-    queryFn: ({ pageParam, signal }) =>
-      apiRequest<Page<Organization>>("/v1/organizations", getToken, {
-        signal,
-        params: { limit: 20, ...(pageParam ? { cursor: pageParam } : {}) },
-      }),
+    queryFn: async ({ client, pageParam, signal }) => {
+      const page = await apiRequest<Page<Organization>>(
+        "/v1/organizations",
+        getToken,
+        {
+          signal,
+          params: { limit: 20, ...(pageParam ? { cursor: pageParam } : {}) },
+        },
+      );
+      // List rows match the detail response, so an organization opened from
+      // the list doesn't wait on another round trip.
+      for (const organization of page.data)
+        client.setQueryData(
+          queryKeys.organization(userId, organization.id),
+          organization,
+        );
+      return page;
+    },
     getNextPageParam: (page) => page.next_cursor ?? undefined,
   });
 }
@@ -75,8 +88,8 @@ export function projectsQuery(
     queryKey: queryKeys.projects(userId, organizationId),
     initialPageParam: null as string | null,
     queryFn: organizationId
-      ? ({ pageParam, signal }) =>
-          apiRequest<Page<Project>>(
+      ? async ({ client, pageParam, signal }) => {
+          const page = await apiRequest<Page<Project>>(
             "/v1/organizations/" +
               encodeURIComponent(organizationId) +
               "/projects",
@@ -88,7 +101,11 @@ export function projectsQuery(
                 ...(pageParam ? { cursor: pageParam } : {}),
               },
             },
-          )
+          );
+          for (const project of page.data)
+            client.setQueryData(queryKeys.project(userId, project.id), project);
+          return page;
+        }
       : skipToken,
     getNextPageParam: (page) => page.next_cursor ?? undefined,
   });

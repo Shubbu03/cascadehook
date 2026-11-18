@@ -12,7 +12,9 @@ async function Session({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function AccountWorkspace({ children }: { children: React.ReactNode }) {
+// One session, query cache, and shell for every signed-in page, so moving
+// between the dashboard, organization pages, and account settings keeps both.
+export function SignedInWorkspace({ children }: { children: React.ReactNode }) {
   return (
     <Suspense fallback={<WorkspaceLoading />}>
       <Session>{children}</Session>

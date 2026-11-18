@@ -20,23 +20,26 @@ import { DocsLink } from "@/components/docs-link";
 import type { OrganizationRole } from "./types";
 import { organizationHref } from "./queries";
 import { notificationInboxHref } from "@/features/notifications/types";
+import { prefetchOnIntent, usePrefetch, type ProjectSection } from "@/features/projects/prefetch";
 
 const groups = [
   {
     label: "Activity",
     links: [
-      { path: "", label: "Overview", Icon: SquaresFourIcon, privileged: false },
+      { path: "", label: "Overview", Icon: SquaresFourIcon, privileged: false, section: "overview" },
       {
         path: "deliveries",
         label: "Deliveries",
         Icon: ListChecksIcon,
         privileged: false,
+        section: "deliveries",
       },
       {
         path: "events",
         label: "Events",
         Icon: LightningIcon,
         privileged: false,
+        section: "events",
       },
     ],
   },
@@ -48,14 +51,15 @@ const groups = [
         label: "Endpoints",
         Icon: PlugsConnectedIcon,
         privileged: false,
+        section: "endpoints",
       },
-      { path: "api-keys", label: "API keys", Icon: KeyIcon, privileged: true },
+      { path: "api-keys", label: "API keys", Icon: KeyIcon, privileged: true, section: "api-keys" },
     ],
   },
   {
     label: "Manage",
     links: [
-      { path: "usage", label: "Usage", Icon: ChartBarIcon, privileged: true },
+      { path: "usage", label: "Usage", Icon: ChartBarIcon, privileged: true, section: "usage" },
       {
         path: "settings",
         label: "Settings",
@@ -64,7 +68,10 @@ const groups = [
       },
     ],
   },
-];
+] satisfies {
+  label: string;
+  links: { path: string; label: string; Icon: unknown; privileged: boolean; section?: ProjectSection }[];
+}[];
 
 export function SidebarNavigation({
   projectId,
@@ -83,6 +90,7 @@ export function SidebarNavigation({
     ? "/dashboard/projects/" + encodeURIComponent(projectId)
     : "";
   const canManage = role === "owner" || role === "admin";
+  const prefetch = usePrefetch();
   const notificationsLink = organizationId && (
     <Link
       href={notificationInboxHref(organizationId)}
@@ -107,7 +115,7 @@ export function SidebarNavigation({
             <ul role="list">
               {group.links
                 .filter((link) => !link.privileged || canManage)
-                .map(({ path, label, Icon }) => (
+                .map(({ path, label, Icon, section }) => (
                   <li key={path}>
                     <Link
                       href={path ? href + "/" + path : href}
@@ -122,6 +130,10 @@ export function SidebarNavigation({
                           : undefined
                       }
                       onNavigate={onNavigate}
+                      {...(section &&
+                        prefetchOnIntent(() =>
+                          prefetch.section(projectId, section),
+                        ))}
                     >
                       <Icon size={18} aria-hidden="true" />
                       <span>{label}</span>
@@ -147,6 +159,8 @@ export function SidebarNavigation({
                 title="Projects"
                 aria-current={pathname === "/dashboard" ? "page" : undefined}
                 onNavigate={onNavigate}
+                {...(organizationId &&
+                  prefetchOnIntent(() => prefetch.projects(organizationId)))}
               >
                 <FolderSimpleIcon size={18} aria-hidden="true" />
                 <span>Projects</span>
@@ -199,6 +213,9 @@ export function SidebarNavigation({
                       : undefined
                   }
                   onNavigate={onNavigate}
+                  {...prefetchOnIntent(() =>
+                    prefetch.organizationUsage(organizationId),
+                  )}
                 >
                   <ChartBarIcon size={18} aria-hidden="true" />
                   <span>Usage</span>

@@ -1,8 +1,9 @@
 "use client";
 
 import { useAuth } from "@clerk/nextjs";
-import { useQuery } from "@tanstack/react-query";
-import { createContext, useContext } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useSelectedLayoutSegments } from "next/navigation";
+import { createContext, useContext, useEffect } from "react";
 import { apiRequest } from "@/lib/api";
 import { ConnectionError } from "@/features/workspace/connection-error";
 import { RouteContentLoading } from "@/features/workspace/route-loading";
@@ -11,6 +12,7 @@ import { projectQuery } from "@/features/workspace/queries";
 import type { Project } from "@/features/workspace/types";
 import { dashboardMain, warningBanner } from "@/components/styles";
 import { queryKeys } from "@/lib/query-keys";
+import { prefetchProjectSection, projectSectionAt, type ProjectSection } from "./prefetch";
 
 type ProjectStatus = { project_id: string; suspended: boolean; };
 type ProjectContextValue = {
@@ -40,7 +42,28 @@ export function ProjectWorkspace({
 }) {
   const userId = useSessionUserId();
   const { getToken } = useAuth();
+  const client = useQueryClient();
   const project = useQuery(projectQuery(userId, projectId, getToken));
+  const section = projectSectionAt(useSelectedLayoutSegments());
+  const role = project.data?.role;
+  // Start the open page's request alongside the project lookup instead of
+  // after it; the page picks it up from the cache when it mounts.
+  useEffect(() => {
+    if (section) void prefetchProjectSection(client, userId, projectId, section, getToken);
+  }, [client, userId, projectId, section, getToken]);
+  // Once the project is known, warm the other sections so their first visit
+  // doesn't show a skeleton.
+  useEffect(() => {
+    if (!role) return;
+    const manage = role === "owner" || role === "admin";
+    const others: ProjectSection[] = ["overview", "deliveries", "events", "endpoints"];
+    if (manage) others.push("api-keys", "usage");
+    const timer = setTimeout(() => {
+      for (const other of others)
+        void prefetchProjectSection(client, userId, projectId, other, getToken);
+    }, 1_000);
+    return () => clearTimeout(timer);
+  }, [client, userId, projectId, role, getToken]);
   const status = useQuery({
     queryKey: queryKeys.projectStatus(userId, projectId),
     enabled: project.isSuccess,
