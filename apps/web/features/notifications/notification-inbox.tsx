@@ -14,7 +14,7 @@ import { organizationQuery, projectsQuery } from "@/features/workspace/queries";
 import { useSessionUserId } from "@/features/workspace/session";
 import type { Organization } from "@/features/workspace/types";
 import { NotificationFeed } from "./notification-feed";
-import { NotificationPageSkeleton } from "./notification-skeleton";
+import { NotificationListSkeleton } from "./notification-skeleton";
 import { notificationCategories, type NotificationCategory, type NotificationState } from "./types";
 import { dashboardMain } from "@/components/styles";
 
@@ -24,7 +24,7 @@ export function NotificationInbox({ organizationId }: { organizationId: string; 
   const organization = useQuery(organizationQuery(userId, organizationId, getToken));
   return (
     <main id="main-content" data-ui="dashboard-main" className={dashboardMain}>
-      <QueryState query={organization} loading={<NotificationPageSkeleton />}>
+      <QueryState query={organization} loading={<div className="max-w-280"><PageHeader title="Notifications" /><div className="overflow-hidden rounded-lg bg-surface border border-solid border-border"><NotificationListSkeleton rows={6} /></div></div>}>
         {organization.data && <InboxContent key={organizationId} organization={organization.data} />}
       </QueryState>
     </main>

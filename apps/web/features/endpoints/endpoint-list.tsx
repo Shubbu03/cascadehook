@@ -20,18 +20,14 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useId, useState, type SubmitEvent } from "react";
 import { PageHeader } from "@/components/page-header";
 import { useProject, projectHref } from "@/features/projects/project-workspace";
+import { endpointListQuery } from "@/features/projects/section-queries";
 import { ConnectionError } from "@/features/workspace/connection-error";
 import { TableSkeleton } from "@/features/workspace/skeletons";
 import { useSessionUserId } from "@/features/workspace/session";
-import type { Page } from "@/features/workspace/types";
-import { apiRequest } from "@/lib/api";
 import { EndpointRegistrationDialog } from "./endpoint-registration-dialog";
 import {
-  endpointKeys,
-  endpointPath,
   endpointState,
   eventTypePattern,
-  type Endpoint,
 } from "./types";
 import { emptyState, errorText } from "@/components/styles";
 
@@ -48,24 +44,9 @@ export function EndpointList() {
   const [draftType, setDraftType] = useState("");
   const [filterError, setFilterError] = useState("");
   const href = projectHref(project.id) + "/endpoints";
-  const list = useInfiniteQuery({
-    queryKey: [
-      ...endpointKeys.lists(userId, project.id),
-      { enabled, eventType },
-    ],
-    initialPageParam: null as string | null,
-    queryFn: ({ pageParam, signal }) =>
-      apiRequest<Page<Endpoint>>(endpointPath(project.id), getToken, {
-        signal,
-        params: {
-          limit: 20,
-          ...(pageParam ? { cursor: pageParam } : {}),
-          ...(enabled ? { enabled } : {}),
-          ...(eventType ? { event_type: eventType } : {}),
-        },
-      }),
-    getNextPageParam: (page) => page.next_cursor ?? undefined,
-  });
+  const list = useInfiniteQuery(
+    endpointListQuery(userId, project.id, { enabled, eventType }, getToken),
+  );
   const items = list.data?.pages.flatMap((page) => page.data) ?? [];
   const filtered = Boolean(enabled || eventType);
   const registrationRequested = search.get("register") === "1";

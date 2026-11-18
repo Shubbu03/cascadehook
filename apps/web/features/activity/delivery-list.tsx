@@ -16,20 +16,16 @@ import { useState, type SubmitEvent } from "react";
 import { PageHeader } from "@/components/page-header";
 import { LoadMore, QueryState, RefreshButton } from "@/components/query-state";
 import { useProject, projectHref } from "@/features/projects/project-workspace";
+import { deliveryListQuery } from "@/features/projects/section-queries";
 import { useSessionUserId } from "@/features/workspace/session";
-import type { Page } from "@/features/workspace/types";
-import { apiRequest } from "@/lib/api";
 import { useFormatTime } from "@/lib/display-preferences";
 import {
   deliveryFilters,
   deliveryStates,
-  projectPath,
   stateTone,
   stateLabel,
-  type Delivery,
 } from "./types";
 import { dataTable, emptyState, errorText, filterBar, filterControl, filterField } from "@/components/styles";
-import { queryKeys } from "@/lib/query-keys";
 
 export function DeliveryList() {
   const formatTime = useFormatTime();
@@ -49,23 +45,8 @@ export function DeliveryList() {
   }
   const href = projectHref(project.id) + "/deliveries";
   const list = useInfiniteQuery({
-    queryKey: [...queryKeys.deliveries(userId, project.id), filters],
+    ...deliveryListQuery(userId, project.id, filters, getToken),
     enabled: !invalid,
-    initialPageParam: null as string | null,
-    queryFn: ({ pageParam, signal }) =>
-      apiRequest<Page<Delivery>>(
-        projectPath(project.id, "deliveries"),
-        getToken,
-        {
-          signal,
-          params: {
-            limit: 20,
-            ...filters,
-            ...(pageParam ? { cursor: pageParam } : {}),
-          },
-        },
-      ),
-    getNextPageParam: (page) => page.next_cursor ?? undefined,
     refetchInterval: live ? 15_000 : false,
   });
   const items = list.data?.pages.flatMap((page) => page.data) ?? [];
