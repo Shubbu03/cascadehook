@@ -30,6 +30,7 @@
     "vet:go": "cd apps/server && go vet ./...",
     "test:go": "cd apps/server && go test ./...",
     "vuln:go": "cd apps/server && go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./...",
+    "seo:indexnow": "bun scripts/indexnow.ts",
     "check": "bun run lint:web && bun run typecheck:web && bun run lint:docs && bun run typecheck:docs && bun run vet:go && bun run build:go && bun run test:go"
   },
   "devDependencies": {
