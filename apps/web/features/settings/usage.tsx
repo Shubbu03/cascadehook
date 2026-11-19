@@ -5,18 +5,15 @@ import { useAuth } from "@clerk/nextjs";
 import { useQuery } from "@tanstack/react-query";
 import { PageHeader } from "@/components/page-header";
 import { QueryState, RefreshButton } from "@/components/query-state";
-import { projectPath } from "@/features/activity/types";
 import { projectHref, useProject } from "@/features/projects/project-workspace";
+import { organizationUsageQuery, projectUsageQuery } from "@/features/projects/section-queries";
 import { AccessRedirect } from "@/features/workspace/access-redirect";
 import { useSessionUserId } from "@/features/workspace/session";
-import { apiRequest } from "@/lib/api";
 import {
   OrganizationUsageSummary,
   Quota,
   UsageActivity,
 } from "./usage-summary";
-import type { Usage } from "./types";
-import { queryKeys } from "@/lib/query-keys";
 
 export function ProjectUsage() {
   const { project, canManage } = useProject();
@@ -31,22 +28,10 @@ function UsageContent() {
   const { project } = useProject();
   const userId = useSessionUserId();
   const { getToken } = useAuth();
-  const projectUsage = useQuery({
-    queryKey: queryKeys.projectUsage(userId, project.id),
-    queryFn: ({ signal }) =>
-      apiRequest<Usage>(projectPath(project.id, "usage"), getToken, { signal }),
-  });
-  const organization = useQuery({
-    queryKey: queryKeys.organizationUsage(userId, project.organization_id),
-    queryFn: ({ signal }) =>
-      apiRequest<Usage>(
-        "/v1/organizations/" +
-        encodeURIComponent(project.organization_id) +
-        "/usage",
-        getToken,
-        { signal },
-      ),
-  });
+  const projectUsage = useQuery(projectUsageQuery(userId, project.id, getToken));
+  const organization = useQuery(
+    organizationUsageQuery(userId, project.organization_id, getToken),
+  );
   return (
     <section>
       <PageHeader

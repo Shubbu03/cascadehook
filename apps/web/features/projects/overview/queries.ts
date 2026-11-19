@@ -6,14 +6,10 @@ import {
 import type { Delivery, EventSummary } from "@/features/activity/types";
 import { projectPath } from "@/features/activity/types";
 import type { APIKey } from "@/features/api-keys/types";
-import {
-  endpointKeys,
-  endpointPath,
-  type Endpoint,
-} from "@/features/endpoints/types";
 import type { Page } from "@/features/workspace/types";
 import type { Usage } from "@/features/settings/types";
 import { apiRequest } from "@/lib/api";
+import { endpointListQuery, unfilteredEndpoints } from "@/features/projects/section-queries";
 import type { Activity } from "./setup";
 import { queryKeys } from "@/lib/query-keys";
 
@@ -29,15 +25,10 @@ export function setupEndpointsQuery(
   projectId: string,
   getToken: GetToken,
 ) {
+  // Same key as the Endpoints page's unfiltered list, so visiting either one
+  // fills the other.
   return infiniteQueryOptions({
-    queryKey: [...endpointKeys.lists(userId, projectId), "overview"],
-    initialPageParam: null as string | null,
-    queryFn: ({ pageParam, signal }) =>
-      apiRequest<Page<Endpoint>>(endpointPath(projectId), getToken, {
-        signal,
-        params: { limit: 20, ...(pageParam ? { cursor: pageParam } : {}) },
-      }),
-    getNextPageParam: (page) => page.next_cursor ?? undefined,
+    ...endpointListQuery(userId, projectId, unfilteredEndpoints, getToken),
     ...freshness,
   });
 }

@@ -1,9 +1,12 @@
 "use client";
 
 import { Button } from "@/components/button";
+import { useEffect } from "react";
+import { usePrefetch } from "@/features/projects/prefetch";
 
 import { ConnectionError } from "./connection-error";
-import { PageSkeleton } from "./skeletons";
+import { ProjectCardsSkeleton } from "./skeletons";
+import { PageHeader } from "@/components/page-header";
 import { Projects } from "./projects";
 import { useSessionUserId } from "./session";
 import { useWorkspaceSelection } from "./use-workspace-selection";
@@ -12,7 +15,13 @@ import { dashboardMain } from "@/components/styles";
 
 export function WorkspaceHome() {
   const userId = useSessionUserId();
-  const { organization, organizations } = useWorkspaceSelection();
+  const { organization, organizationId, organizations } = useWorkspaceSelection();
+  const { projects: prefetchProjects } = usePrefetch();
+  // Load the project list as soon as the organization ID is known rather than
+  // after its details arrive.
+  useEffect(() => {
+    if (organizationId) prefetchProjects(organizationId);
+  }, [organizationId, prefetchProjects]);
   const { createOrganization } = useWorkspaceCreation();
   const error =
     organization.error ??
@@ -33,7 +42,10 @@ export function WorkspaceHome() {
           pending={organization.isFetching || organizations.isFetching}
         />
       ) : loading ? (
-        <PageSkeleton variant="projects" />
+        <section>
+          <PageHeader title="Projects" />
+          <ProjectCardsSkeleton />
+        </section>
       ) : organization.data ? (
         <Projects
           key={organization.data.id}

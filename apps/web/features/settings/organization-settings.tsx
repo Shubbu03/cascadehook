@@ -10,7 +10,7 @@ import { PageHeader } from "@/components/page-header";
 import { QueryState } from "@/components/query-state";
 import { organizationHref, organizationQuery } from "@/features/workspace/queries";
 import { useSessionUserId } from "@/features/workspace/session";
-import { PageSkeleton } from "@/features/workspace/skeletons";
+import { SettingsSkeleton } from "@/features/workspace/skeletons";
 import { useFormatTime } from "@/lib/display-preferences";
 import { OrganizationNotificationPreferences } from "./notification-preferences";
 import { AuditHistory } from "./audit-history";
@@ -37,7 +37,7 @@ export function OrganizationSettings({ organizationId }: { organizationId: strin
         href={returnTo !== "/dashboard" ? returnTo : organizationHref(organizationId)}>
         {returnTo !== "/dashboard" ? "← Account settings" : "← Projects"}
       </Link>
-      <QueryState query={organization} loading={<PageSkeleton variant="settings" />}>
+      <QueryState query={organization} loading={<><PageHeader title="Organization settings" /><SettingsSkeleton /></>}>
         {organization.data && <>
           <PageHeader title="Organization settings" description={<>Manage <strong>{organization.data.name}</strong>, its members, and your notification preferences.</>} />
           <SettingsTabs sections={[

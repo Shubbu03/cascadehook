@@ -93,9 +93,8 @@ const nextConfig: NextConfig = {
   experimental: {
     optimizePackageImports: ["@phosphor-icons/react"],
     turbopackPluginRuntimeStrategy: "workerThreads",
-    // The Tailwind stylesheet is small, and as a <link> it blocked first paint
-    // for about 0.7s on mobile in PageSpeed Insights.
-    inlineCss: true,
+    // No inlineCss: it embeds the 162 KB stylesheet in every HTML response
+    // about four times, which pushed the Worker past its CPU limit.
   },
   cacheComponents: true,
   partialPrefetching: true,

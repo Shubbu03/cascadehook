@@ -15,14 +15,11 @@ import { PageHeader } from "@/components/page-header";
 import { LoadMore, QueryState, RefreshButton } from "@/components/query-state";
 import { eventTypePattern } from "@/features/endpoints/types";
 import { useProject, projectHref } from "@/features/projects/project-workspace";
+import { eventListQuery } from "@/features/projects/section-queries";
 import { useSessionUserId } from "@/features/workspace/session";
-import type { Page } from "@/features/workspace/types";
-import { apiRequest } from "@/lib/api";
 import { useFormatTime } from "@/lib/display-preferences";
-import { projectPath, type EventSummary } from "./types";
 import { PublishEventDialog } from "./publish-event-dialog";
 import { dataTable, emptyState, errorText, filterBar, filterControl, filterField } from "@/components/styles";
-import { queryKeys } from "@/lib/query-keys";
 
 export function EventList() {
   const formatTime = useFormatTime();
@@ -37,23 +34,8 @@ export function EventList() {
   const valid = !type || eventTypePattern.test(type);
   const href = projectHref(project.id) + "/events";
   const list = useInfiniteQuery({
-    queryKey: [...queryKeys.events(userId, project.id), type],
+    ...eventListQuery(userId, project.id, type, getToken),
     enabled: valid,
-    initialPageParam: null as string | null,
-    queryFn: ({ pageParam, signal }) =>
-      apiRequest<Page<EventSummary>>(
-        projectPath(project.id, "events"),
-        getToken,
-        {
-          signal,
-          params: {
-            limit: 20,
-            ...(type ? { event_type: type } : {}),
-            ...(pageParam ? { cursor: pageParam } : {}),
-          },
-        },
-      ),
-    getNextPageParam: (page) => page.next_cursor ?? undefined,
   });
   const items = list.data?.pages.flatMap((page) => page.data) ?? [];
 
