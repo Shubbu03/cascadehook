@@ -118,7 +118,7 @@ export const standardWebhooksContent: VerifierContent = {
   title: "Webhook signature verifier",
   metaTitle: "Webhook Signature Verifier",
   description:
-    "Free webhook signature verifier for Standard Webhooks (webhook-id, webhook-timestamp, webhook-signature). Paste a request to see if its HMAC-SHA256 signature is valid and why it fails. Runs entirely in your browser.",
+    "Free Standard Webhooks signature verifier. Paste the headers and raw body to see if the HMAC signature is valid and why it fails. Runs in your browser.",
   intro: (
     <>
       Check a <a className="underline underline-offset-[3px] hover:text-foreground" href="https://www.standardwebhooks.com/" target="_blank" rel="noopener noreferrer">Standard Webhooks</a> signature and see why it fails. Works with {siteName} and any sender that follows the spec.

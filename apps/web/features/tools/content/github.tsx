@@ -72,7 +72,7 @@ export const githubContent: VerifierContent = {
   title: "GitHub webhook signature verifier",
   metaTitle: "GitHub Webhook Signature Verifier",
   description:
-    "Free GitHub webhook signature checker for X-Hub-Signature-256. Paste the webhook secret, the header, and the raw payload to see if it's valid and why it fails. Runs in your browser.",
+    "Free GitHub webhook signature checker. Paste X-Hub-Signature-256, the secret, and the raw payload to see why verification fails. Runs in your browser.",
   intro: "Check an X-Hub-Signature-256 header against your webhook's secret and see why verification fails. Nothing you paste leaves your browser.",
   trademark: { name: "GitHub", owner: "GitHub, Inc." },
   failures: (
