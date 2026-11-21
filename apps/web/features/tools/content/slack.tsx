@@ -93,7 +93,7 @@ export const slackContent: VerifierContent = {
   title: "Slack request signature verifier",
   metaTitle: "Slack Request Signature Verifier",
   description:
-    "Free Slack request signature checker. Paste X-Slack-Signature, the request timestamp, your signing secret, and the raw body to see why verification fails. Runs in your browser.",
+    "Free Slack request signature checker. Paste X-Slack-Signature, the timestamp, secret, and raw body to see why verification fails. Runs in your browser.",
   intro: "Check an X-Slack-Signature header for slash commands, interactivity, and Events API requests, and see why verification fails. Nothing you paste leaves your browser.",
   trademark: { name: "Slack", owner: "Slack Technologies, LLC" },
   failures: (

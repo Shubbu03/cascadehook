@@ -121,7 +121,7 @@ export const stripeContent: VerifierContent = {
   title: "Stripe webhook signature verifier",
   metaTitle: "Stripe Webhook Signature Verifier",
   description:
-    "Free Stripe webhook signature checker. Paste the Stripe-Signature header, the endpoint's signing secret, and the raw body to see why verification fails. Runs in your browser.",
+    "Free Stripe webhook signature checker. Paste the Stripe-Signature header, signing secret, and raw body to see why verification fails. Runs in your browser.",
   intro: "Check a Stripe-Signature header against your endpoint's signing secret and see exactly why verification fails. Nothing you paste leaves your browser.",
   trademark: { name: "Stripe", owner: "Stripe, Inc." },
   failures: (
