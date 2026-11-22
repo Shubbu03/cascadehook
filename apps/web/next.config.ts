@@ -24,6 +24,8 @@ function clerkFrontendOrigin() {
 }
 
 const apiOrigin = originOf(process.env.NEXT_PUBLIC_API_BASE_URL);
+const inboxOrigin = originOf(process.env.NEXT_PUBLIC_INBOX_BASE_URL);
+const inboxSocketOrigin = inboxOrigin?.replace(/^http/, "ws");
 const clerkOrigin = clerkFrontendOrigin();
 // Clerk's bot protection renders a Cloudflare Turnstile challenge on sign-up.
 const turnstileOrigin = "https://challenges.cloudflare.com";
@@ -41,7 +43,7 @@ const contentSecurityPolicy = [
   "img-src 'self' data: blob: https://img.clerk.com",
   "font-src 'self'",
   // Clerk development instances send SDK telemetry to clerk-telemetry.com.
-  ["connect-src 'self'", apiOrigin, clerkOrigin, "https://clerk-telemetry.com", cloudflareInsightsOrigin, isDev && "ws:"],
+  ["connect-src 'self'", apiOrigin, inboxOrigin, inboxSocketOrigin, clerkOrigin, "https://clerk-telemetry.com", cloudflareInsightsOrigin, isDev && "ws:"],
   `frame-src ${turnstileOrigin}`,
   "worker-src 'self' blob:",
   "object-src 'none'",
@@ -66,6 +68,8 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // The webhook tester imports the inbox Worker's protocol constants from TypeScript source.
+  transpilePackages: ["inbox"],
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

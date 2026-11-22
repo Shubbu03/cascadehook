@@ -1,9 +1,11 @@
 import { comparisonMarkdown, comparisonPath } from "@/features/tools/comparison";
 import { verifierContents } from "@/features/tools/content";
-import { verifierMarkdown } from "@/features/tools/markdown";
+import { webhookTesterContent } from "@/features/tools/content/webhook-tester";
+import { verifierMarkdown, webhookTesterMarkdown } from "@/features/tools/markdown";
 import { markdownResponse } from "@/lib/markdown";
 
 const pages = new Map<string, () => string>([
+  [webhookTesterContent.path, () => webhookTesterMarkdown(webhookTesterContent)],
   ...verifierContents.map((content) => [content.path, () => verifierMarkdown(content)] as const),
   [comparisonPath, comparisonMarkdown],
 ]);

@@ -10,7 +10,8 @@
     "preview:cloudflare": "opennextjs-cloudflare preview",
     "start": "next start",
     "lint": "eslint",
-    "typecheck": "next typegen && tsc --noEmit"
+    "typecheck": "next typegen && tsc --noEmit",
+    "test": "bun test features"
   },
   "dependencies": {
     "@clerk/nextjs": "^7.9.19",
@@ -26,11 +27,13 @@
   },
   "devDependencies": {
     "@tailwindcss/turbopack": "^4",
+    "@types/bun": "1.3.13",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.4.6",
+    "inbox": "workspace:*",
     "tailwindcss": "^4",
     "typescript": "^5"
   },

@@ -1,4 +1,4 @@
-import { ArrowRightIcon, SealCheckIcon, TableIcon } from "@phosphor-icons/react/dist/ssr";
+import { ArrowRightIcon, SealCheckIcon, TableIcon, TrayArrowDownIcon } from "@phosphor-icons/react/dist/ssr";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { references, tools } from "@/features/tools/catalog";
@@ -7,7 +7,7 @@ import { pageMetadata } from "@/lib/site";
 export const metadata: Metadata = pageMetadata({
   path: "/tools",
   title: "Free Webhook Tools",
-  description: "Free tools for debugging webhooks: signature verifiers for Standard Webhooks, Stripe, GitHub, Shopify, and Slack that run entirely in your browser.",
+  description: "Free tools for debugging webhooks: a live webhook tester, plus signature verifiers for Standard Webhooks, Stripe, GitHub, Shopify, and Slack.",
   markdown: true,
 });
 
@@ -17,7 +17,7 @@ export default function Page() {
       <header className="max-w-185">
         <p data-ui="landing-eyebrow" className="text-accent text-[13px] leading-[1.6]">Free tools</p>
         <h1 className="mt-2 text-[clamp(30px,3.6vw,42px)] font-medium leading-[1.15] tracking-[-.04em]">Webhook tools</h1>
-        <p className="mt-3 text-muted text-[15px] leading-[1.8]">Small, free utilities for debugging webhooks. No sign-up, and nothing you paste leaves your browser.</p>
+        <p className="mt-3 text-muted text-[15px] leading-[1.8]">Small, free utilities for debugging webhooks. No sign-up, and signature checks run in your browser, so secrets you paste never leave it.</p>
       </header>
       <ul className="mt-8 grid grid-cols-3 gap-5 max-[68.75rem]:grid-cols-2 max-[53.125rem]:grid-cols-1">
         {tools.map((tool) => (
@@ -27,7 +27,7 @@ export default function Page() {
               className="group flex h-full flex-col rounded-[14px] border border-solid border-border bg-surface p-6 transition-colors duration-150 hover:border-input-border hover:bg-surface-hover focus-visible:border-accent max-[37.5rem]:p-5 motion-reduce:transition-none"
             >
               <span className="flex size-11 items-center justify-center rounded-[10px] bg-accent-subtle text-accent">
-                <SealCheckIcon size={24} aria-hidden="true" />
+                {"icon" in tool && tool.icon === "inbox" ? <TrayArrowDownIcon size={24} aria-hidden="true" /> : <SealCheckIcon size={24} aria-hidden="true" />}
               </span>
               <h2 className="mt-5 text-[19px] font-medium leading-[1.35] tracking-[-.015em]">{tool.title}</h2>
               <p className="mt-2 text-muted text-[14px] leading-[1.75]">{tool.description}</p>

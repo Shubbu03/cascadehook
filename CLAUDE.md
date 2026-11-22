@@ -16,11 +16,16 @@ history, and replay. Setup, commands, and deployment are in `README.md`.
 - `apps/web`: Next.js 16 dashboard and landing page (Clerk, React Query, Tailwind v4).
   Route files under `app/` are thin. Logic lives in `features/*`.
 - `apps/docs`: Fumadocs site, including the OpenAPI reference (`openapi/project-api.json`).
+- `apps/inbox`: Cloudflare Worker for the public webhook tester on
+  `in.cascadehook.com`, with one SQLite Durable Object per 24h inbox. Its
+  `src/protocol.ts` is imported by the web app.
 - `deploy/`: Docker Compose for API, worker, and Postgres on the VM, plus the systemd janitor timer.
 
 ## Checks
 
-Run `bun run check` (web and docs lint and typecheck, `go vet`, `go build`, `go test`).
+Run `bun run check` (web and docs lint and typecheck, web unit tests, inbox
+typecheck and Workers tests, `go vet`, `go build`, `go test`). After changing
+`apps/inbox/wrangler.jsonc`, run `bun run --cwd apps/inbox types`.
 Run migration regression tests with `go test ./migrations` from `apps/server`.
 Set `CASCADEHOOK_TEST_DATABASE_URL` to a disposable PostgreSQL database to
 enable them; fixtures use a private schema and are rolled back.
@@ -70,6 +75,10 @@ enable them; fixtures use a private schema and are rolled back.
 - **Never log or persist secrets, API keys, payloads, destination URLs, raw
   outbound errors, or response bodies.** Secret types implement redacting
   `String`, `GoString`, and `LogValue` methods.
+  - The one scoped exception is the webhook tester inbox (`apps/inbox`). It
+    stores visitors' test requests on its own Worker and Durable Objects, away
+    from the Go API and Postgres, and deletes them after 24h. It still never
+    logs request contents or tokens.
 - **Config:** env vars are parsed and bounded in `internal/config`. An
   explicitly empty value is an error, not a default.
 - **Schema:**
