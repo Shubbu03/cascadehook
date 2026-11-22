@@ -5,7 +5,7 @@
   "engines": {
     "node": ">=22.16.0"
   },
-  "workspaces": ["apps/web", "apps/docs"],
+  "workspaces": ["apps/web", "apps/docs", "apps/inbox"],
   "scripts": {
     "dev:web": "bun run --cwd apps/web dev",
     "build:web": "bun run --cwd apps/web build",
@@ -17,6 +17,11 @@
     "build:cloudflare:docs": "bun run --cwd apps/docs build:cloudflare",
     "lint:docs": "bun run --cwd apps/docs lint",
     "typecheck:docs": "bun run --cwd apps/docs typecheck",
+    "dev:inbox": "bun run --cwd apps/inbox dev",
+    "deploy:inbox": "bun run --cwd apps/inbox deploy",
+    "typecheck:inbox": "bun run --cwd apps/inbox typecheck",
+    "test:inbox": "bun run --cwd apps/inbox test",
+    "test:web": "bun run --cwd apps/web test",
     "dev:api": "cd apps/server && bun --env-file=../../.env run go run ./cmd/api",
     "dev:worker": "cd apps/server && bun --env-file=../../.env run go run ./cmd/worker",
     "db:migrate": "cd apps/server && bun --env-file=../../.env run go run ./cmd/migrate",
@@ -31,7 +36,7 @@
     "test:go": "cd apps/server && go test ./...",
     "vuln:go": "cd apps/server && go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./...",
     "seo:indexnow": "bun scripts/indexnow.ts",
-    "check": "bun run lint:web && bun run typecheck:web && bun run lint:docs && bun run typecheck:docs && bun run vet:go && bun run build:go && bun run test:go"
+    "check": "bun run lint:web && bun run typecheck:web && bun run test:web && bun run lint:docs && bun run typecheck:docs && bun run typecheck:inbox && bun run test:inbox && bun run vet:go && bun run build:go && bun run test:go"
   },
   "devDependencies": {
     "@opennextjs/cloudflare": "1.20.15",

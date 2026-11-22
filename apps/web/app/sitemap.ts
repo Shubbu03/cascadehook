@@ -7,7 +7,7 @@ const pages = [
   { path: "", updated: "2026-11-05", priority: 1 },
   { path: "/support", updated: "2026-11-04", priority: 0.5 },
   { path: "/terms", updated: "2026-11-04", priority: 0.2 },
-  { path: "/privacy", updated: "2026-11-04", priority: 0.2 },
+  { path: "/privacy", updated: "2026-11-22", priority: 0.2 },
 ];
 
 // Documentation pages are listed in /docs/sitemap.xml, served by the docs app.

@@ -13,7 +13,7 @@ export default function Page() {
   return (
     <article className={prose}>
       <h1>Privacy policy</h1>
-      <p>Effective November 2, 2026. This policy describes how Cascadehook, independently operated from India, processes information while providing webhook delivery.</p>
+      <p>Effective November 22, 2026. This policy describes how Cascadehook, independently operated from India, processes information while providing webhook delivery.</p>
       <h2>Information we process</h2>
       <ul>
         <li>Account identifiers, authentication information supplied by Clerk, organization memberships, and profile details needed for account and invitation features.</li>
@@ -29,8 +29,10 @@ export default function Page() {
       <h2>Retention and deletion</h2>
       <p>Event payloads and delivery history are removed by scheduled retention cleanup. Active deliveries and recent replay work can delay cleanup. Aggregate usage and operational records can remain after event payloads are removed. Notification history is normally retained for 90 days.</p>
       <p>Account and organization deletion request background cleanup. Provider records and backups may persist under their retention policies. Email us for questions about support-message retention or deletion.</p>
+      <h2>Webhook tester</h2>
+      <p>The free webhook tester at /tools/webhook-tester stores the requests sent to each temporary URL so the browser that created it can show them: method, path, query string, headers, body, source IP address, and country. They are stored on Cloudflare infrastructure kept separate from the webhook delivery service, and the URL and its requests are deleted 24 hours after creation, or earlier when you delete them. Request contents are not logged. Signing secrets entered for signature checks stay in your browser and are never sent or saved. Use the tester only for test data.</p>
       <h2>Browser storage</h2>
-      <p>Authentication uses Clerk-managed session mechanisms. Cascadehook also stores preferences such as theme choice. Application code does not save project API keys or signing secrets in browser storage.</p>
+      <p>Authentication uses Clerk-managed session mechanisms. Cascadehook also stores preferences such as theme choice. Application code does not save project API keys or signing secrets in browser storage. The webhook tester keeps its temporary URL and private viewing key in local storage until the URL expires.</p>
       <h2>Your choices and contact</h2>
       <p>You can manage resources and request account deletion in the dashboard. Contact <a href={"mailto:" + supportEmail}>{supportEmail}</a> for access, correction, or deletion requests, or questions about this policy. We may verify your identity before acting on a request.</p>
       <h2>Policy updates</h2>

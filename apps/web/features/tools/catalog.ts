@@ -2,6 +2,14 @@
 // Bump `updated` when a page's content changes.
 export const tools = [
   {
+    href: "/tools/webhook-tester",
+    title: "Webhook tester",
+    description: "Get a free webhook URL, watch requests arrive live, and see whether Stripe, GitHub, Shopify, Slack, and Standard Webhooks signatures are valid.",
+    tags: ["Live requests", "Signature checks", "No sign-up"],
+    icon: "inbox",
+    updated: "2026-11-22",
+  },
+  {
     href: "/tools/webhook-signature-verifier",
     title: "Webhook signature verifier",
     description: "Check a Standard Webhooks signature and find out why it fails: a re-encoded body, the wrong key encoding, a stale timestamp, and more.",
@@ -47,4 +55,4 @@ export const references = [
   },
 ] as const;
 
-export const toolsIndexUpdated = "2026-11-07";
+export const toolsIndexUpdated = "2026-11-22";
