@@ -1,3 +1,4 @@
+import { CaretDownIcon } from "@phosphor-icons/react/dist/ssr";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { JsonLd } from "@/components/json-ld";
@@ -47,16 +48,7 @@ export function WebhookTesterPage({ content }: { content: WebhookTesterContent }
             {
               id: "faq",
               label: "FAQ",
-              content: (
-                <div className={prose}>
-                  {content.faq.map((item) => (
-                    <div key={item.question}>
-                      <h3>{item.question}</h3>
-                      <p>{item.answer}</p>
-                    </div>
-                  ))}
-                </div>
-              ),
+              content: <FaqList items={content.faq} />,
             },
           ]}
         />
@@ -69,5 +61,24 @@ export function WebhookTesterPage({ content }: { content: WebhookTesterContent }
         {" "}<Link href="/login" className={textLink}>Create a project</Link> or compare <Link href="/tools/webhook-signature-comparison" className={textLink}>signature schemes</Link>.
       </p>
     </div>
+  );
+}
+
+// Native <details> works without JavaScript and keeps closed answers in the HTML for search engines.
+function FaqList({ items }: { items: WebhookTesterContent["faq"] }) {
+  return (
+    <ul className="max-w-185 overflow-hidden rounded-[14px] border border-solid border-border">
+      {items.map((item) => (
+        <li key={item.question} className="border-t border-solid border-border first:border-t-0">
+          <details className="group">
+            <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-4 px-5 py-3.5 transition-colors duration-150 hover:bg-surface-hover focus-visible:-outline-offset-2 motion-reduce:transition-none [&::-webkit-details-marker]:hidden">
+              <h3 className="text-[15px] font-medium leading-normal">{item.question}</h3>
+              <CaretDownIcon size={16} aria-hidden="true" className="shrink-0 text-muted motion-safe:transition-transform motion-safe:duration-150 group-open:rotate-180" />
+            </summary>
+            <p className="px-5 pb-4.5 pt-0.5 text-muted text-[14px] leading-[1.75]">{item.answer}</p>
+          </details>
+        </li>
+      ))}
+    </ul>
   );
 }
