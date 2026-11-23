@@ -11,15 +11,18 @@ export function DeliveryExample() {
         <code>invoice.paid <span aria-hidden="true">→</span> /webhooks/billing</code>
         <span>Example delivery</span>
       </figcaption>
-      <ol className={"list-none m-0 p-0 [&_li]:grid [&_li]:grid-cols-[7px_auto_minmax(0,1fr)_auto] [&_li]:items-center [&_li]:min-h-13.5 [&_li]:border-t [&_li]:[border-top-style:dashed] [&_li]:border-t-border [&_li]:text-muted [&_li]:text-[12px] [&_li]:gap-3 [&_code]:text-foreground [&_code]:text-[11px] [&_code]:wrap-anywhere max-[68.75rem]:[&_li]:gap-2 max-[37.5rem]:[&_li]:grid-cols-[6px_auto_minmax(0,1fr)_auto] max-[37.5rem]:[&_li]:text-[11px] max-[37.5rem]:[&_li]:gap-1.75 max-[37.5rem]:[&_code]:text-[11px] [&_[data-outcome=\"success\"]_code]:text-success"} aria-label="Example delivery attempts">
-        {attempts.map((attempt, index) => (
-          <li key={index} data-outcome={attempt.status === 200 ? "success" : "failed"}>
-            <span className={"rounded-full bg-input-border size-1.75 max-[37.5rem]:size-1.5 [[data-outcome=\"success\"]_>_&]:bg-success [[data-outcome=\"failed\"]_>_&]:bg-danger"} aria-hidden="true" />
+      <ol className={"list-none m-0 p-0 [&_li]:grid [&_li]:grid-cols-[7px_auto_minmax(0,1fr)_auto] [&_li]:items-center [&_li]:min-h-13.5 [&_li]:border-t [&_li]:[border-top-style:dashed] [&_li]:border-t-border [&_li]:text-muted [&_li]:text-[12px] [&_li]:gap-3 [&_code]:text-foreground [&_code]:text-[11px] [&_code]:wrap-anywhere max-[68.75rem]:[&_li]:gap-2 max-[37.5rem]:[&_li]:grid-cols-[6px_auto_minmax(0,1fr)_auto] max-[37.5rem]:[&_li]:text-[11px] max-[37.5rem]:[&_li]:gap-1.75 max-[37.5rem]:[&_code]:text-[11px]"} aria-label="Example delivery attempts">
+        {attempts.map((attempt, index) => {
+          const delivered = attempt.status < 300;
+          return (
+          <li key={index}>
+            <span className={`rounded-full size-1.75 max-[37.5rem]:size-1.5 ${delivered ? "bg-success" : "bg-danger"}`} aria-hidden="true" />
             <span>Attempt {index + 1}</span>
-            <code>{attempt.status} {attempt.label}</code>
+            <code className={delivered ? "text-success!" : undefined}>{attempt.status} {attempt.label}</code>
             <span className="font-mono text-[11px] text-right whitespace-nowrap max-[37.5rem]:text-[11px]">{attempt.duration} ms</span>
           </li>
-        ))}
+          );
+        })}
       </ol>
       <div className="pt-5.75 border-t border-t-border max-[37.5rem]:pt-4.5 [&_p]:text-[17px] [&_p]:leading-normal [&_p]:tracking-tight [&_>_span]:block [&_>_span]:mt-1.25 [&_>_span]:text-muted [&_>_span]:text-[11px] max-[37.5rem]:[&_p]:text-[16px]">
         <p>Delivered on attempt 3.</p>

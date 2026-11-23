@@ -112,7 +112,7 @@ export function InvitationManagement({ organization }: { organization: Organizat
             const coolingDown = !!item.last_email_at && now < Date.parse(item.last_email_at) + 60_000;
             return <tr key={item.id}>
               <td>{item.email}</td><td>{item.role}</td><td>{status}</td>
-              <td><span className={"text-muted text-[12px] data-[state=\"delivered\"]:text-success data-[state=\"failed\"]:text-danger data-[state=\"bounced\"]:text-danger data-[state=\"suppressed\"]:text-danger data-[state=\"complained\"]:text-danger"} data-state={item.email_status}>{emailLabels[item.email_status]}</span></td>
+              <td><span className={"text-muted text-[12px] data-[state='delivered']:text-success data-[state='failed']:text-danger data-[state='bounced']:text-danger data-[state='suppressed']:text-danger data-[state='complained']:text-danger"} data-state={item.email_status}>{emailLabels[item.email_status]}</span></td>
               <td>{formatTime(item.expires_at)}</td>
               <td>{status === "Pending" && <div className="flex flex-wrap gap-3.5">
                 <button type="button" className="inline-flex items-center font-medium gap-2 [&:hover]:underline [&:hover]:underline-offset-4 text-[12px] [[data-ui~='settings-section']_>_&]:text-[14px] [[data-ui~='organization-settings']_>_&:first-child]:mb-4.5 [[data-ui~='organization-settings']_>_&:first-child]:text-[12px] [[data-ui~='dashboard-main']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='dashboard-main']_>_section_>_&:first-child]:text-[12px]" disabled={busy || coolingDown}

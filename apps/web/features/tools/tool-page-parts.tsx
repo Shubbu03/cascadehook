@@ -1,3 +1,4 @@
+import { ArrowRightIcon } from "@phosphor-icons/react/dist/ssr";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { siteName, siteURL } from "@/lib/site";
@@ -51,5 +52,24 @@ export function RelatedTools({ current }: { current: string }) {
         ))}
       </ul>
     </nav>
+  );
+}
+
+export function ProductCallout({ standardWebhooks = false }: { standardWebhooks?: boolean }) {
+  return (
+    <aside aria-labelledby="product-callout-heading" className="mt-12 flex flex-wrap items-center justify-between gap-x-10 gap-y-4 rounded-[14px] border border-solid border-border bg-surface p-6 max-[37.5rem]:p-5">
+      <div className="max-w-150">
+        <h2 id="product-callout-heading" className="text-[17px] font-medium tracking-[-.015em]">Sending webhooks from your own app?</h2>
+        <p className="mt-1.5 text-muted text-[14px] leading-[1.75]">
+          {siteName} signs every delivery {standardWebhooks ? "with this exact scheme" : "with Standard Webhooks"}, retries failures for up to 72 hours, and keeps every attempt for replay. Free during early access.
+        </p>
+      </div>
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-1">
+        <Link href="/" className="inline-flex min-h-11 items-center gap-2 text-[14px] font-medium text-accent hover:underline hover:underline-offset-4">
+          See how it works <ArrowRightIcon size={15} aria-hidden="true" />
+        </Link>
+        <Link href="/compare" className="inline-flex min-h-11 items-center text-[14px] hover:underline hover:underline-offset-4">Compare webhook services</Link>
+      </div>
+    </aside>
   );
 }

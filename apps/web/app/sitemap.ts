@@ -1,10 +1,12 @@
 import type { MetadataRoute } from "next";
+import { comparePath, compareUpdated } from "@/features/marketing/compare/content";
 import { references, tools, toolsIndexUpdated } from "@/features/tools/catalog";
 import { siteURL } from "@/lib/site";
 
 // Bump these when the page's content changes.
 const pages = [
-  { path: "", updated: "2026-11-05", priority: 1 },
+  { path: "", updated: "2026-11-23", priority: 1 },
+  { path: comparePath, updated: compareUpdated, priority: 0.8 },
   { path: "/support", updated: "2026-11-04", priority: 0.5 },
   { path: "/terms", updated: "2026-11-04", priority: 0.2 },
   { path: "/privacy", updated: "2026-11-22", priority: 0.2 },

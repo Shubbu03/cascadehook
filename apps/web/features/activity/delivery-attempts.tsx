@@ -18,7 +18,7 @@ export function DeliveryAttempts({ records }: { records: Attempt[]; }) {
       {records.map((attempt) => (
         <li key={attempt.id} data-outcome={attempt.outcome}>
           <div data-ui="delivery-attempt-heading" className="flex items-center flex-wrap gap-y-2 gap-x-2.5 [&_h3]:flex [&_h3]:items-baseline [&_h3]:flex-wrap [&_h3]:flex-1 [&_h3]:gap-y-1 [&_h3]:gap-x-2.5 [&_h3]:text-[13px] [&_h3]:font-medium [&_h3_>_span]:text-muted [&_h3_>_span]:text-[11px] [&_h3_>_span]:font-normal">
-            <span className={"flex text-muted [[data-outcome=\"succeeded\"]_>_[data-ui~='delivery-attempt-heading']_&]:text-success [[data-outcome=\"terminal\"]_>_[data-ui~='delivery-attempt-heading']_&]:text-danger [[data-outcome=\"retryable\"]_>_[data-ui~='delivery-attempt-heading']_&]:text-warning"} aria-hidden="true">
+            <span className={"flex text-muted [[data-outcome='succeeded']_>_[data-ui~='delivery-attempt-heading']_&]:text-success [[data-outcome='terminal']_>_[data-ui~='delivery-attempt-heading']_&]:text-danger [[data-outcome='retryable']_>_[data-ui~='delivery-attempt-heading']_&]:text-warning"} aria-hidden="true">
               {attempt.outcome === "succeeded" ? (
                 <CheckCircleIcon size={20} />
               ) : (
