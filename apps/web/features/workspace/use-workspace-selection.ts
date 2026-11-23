@@ -25,5 +25,5 @@ export function useWorkspaceSelection() {
     organizationQuery(userId, organizationId, getToken),
   );
 
-  return { organization, organizations, project, projectId };
+  return { organization, organizationId, organizations, project, projectId };
 }

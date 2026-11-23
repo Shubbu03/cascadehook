@@ -1,14 +1,12 @@
 package main
 
 import (
-	"context"
 	"log/slog"
 	"os"
-	"os/signal"
-	"syscall"
 
 	"cascadehook/internal/config"
 	"cascadehook/internal/httpapi"
+	"cascadehook/internal/process"
 	"cascadehook/internal/store"
 )
 
@@ -21,17 +19,14 @@ func main() {
 
 func run() error {
 	// Configuration failures also use structured logging.
-	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)).With("service", "api"))
+	process.StartLogging("api", os.Stdout)
 	cfg, err := config.LoadAPI()
 	if err != nil {
 		return err
 	}
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-		Level: cfg.LogLevel,
-	})).With("service", "api")
-	slog.SetDefault(logger)
+	logger := process.Logger("api", os.Stdout, cfg.LogLevel)
 
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	ctx, stop := process.SignalContext()
 	defer stop()
 	go func() {
 		<-ctx.Done()

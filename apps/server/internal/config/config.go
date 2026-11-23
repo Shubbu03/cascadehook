@@ -193,12 +193,7 @@ func requestLimits() (limits.Config, error) {
 		{name: "API_PROJECT_BURST", value: &cfg.Project.Burst, maximum: limits.MaxBurst},
 	}
 	for _, setting := range settings {
-		value, err := boundedInt(
-			setting.name,
-			*setting.value,
-			1,
-			setting.maximum,
-		)
+		value, err := boundedInt(setting.name, *setting.value, 1, setting.maximum)
 		if err != nil {
 			return limits.Config{}, err
 		}
@@ -263,8 +258,11 @@ func emailConfig() (mailoutbox.Config, error) {
 		return mailoutbox.Config{}, err
 	}
 	cfg := mailoutbox.Config{
-		APIKey: os.Getenv("RESEND_API_KEY"), From: os.Getenv("EMAIL_FROM"),
+		APIKey: os.Getenv("RESEND_API_KEY"), From: os.Getenv("EMAIL_FROM"), ReplyTo: "support@mail.cascadehook.com",
 		WebhookSecret: os.Getenv("RESEND_WEBHOOK_SECRET"), InvitationURL: os.Getenv("INVITATION_ACCEPT_URL"), DailyLimit: limit,
+	}
+	if value := os.Getenv("EMAIL_REPLY_TO"); value != "" {
+		cfg.ReplyTo = value
 	}
 	return cfg, cfg.Validate()
 }
@@ -317,12 +315,7 @@ func LoadJanitor() (JanitorConfig, error) {
 		},
 	}
 	for _, setting := range settings {
-		value, err := boundedInt(
-			setting.name,
-			*setting.value,
-			setting.minimum,
-			setting.maximum,
-		)
+		value, err := boundedInt(setting.name, *setting.value, setting.minimum, setting.maximum)
 		if err != nil {
 			return JanitorConfig{}, err
 		}

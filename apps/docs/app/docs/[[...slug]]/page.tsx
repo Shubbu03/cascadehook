@@ -1,36 +1,33 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { DocsBody, DocsDescription, DocsPage, DocsTitle } from "fumadocs-ui/layouts/docs/page";
-import { OpenAPIPage } from "@/components/api-page";
+import { DocArticle, docMetadata } from "@/lib/docs-page";
 import { source } from "@/lib/source";
 import { getMDXComponents } from "@/mdx-components";
 
 type Props = { params: Promise<{ slug?: string[] }> };
 
-export default async function DocumentationPage({ params }: Props) {
-  const page = source.getPage((await params).slug);
+// API operation pages are served by app/docs/api/[group]/[operation].
+function guidePage(slug: string[] | undefined) {
+  const page = source.getPage(slug);
+  return page?.type === "docs" ? page : undefined;
+}
+
+export default async function GuidePage({ params }: Props) {
+  const page = guidePage((await params).slug);
   if (!page) notFound();
   return (
-    <DocsPage toc={page.data.toc} full={page.type === "openapi" || page.data.full}>
-      <DocsTitle>{page.data.title}</DocsTitle>
-      <DocsDescription>{page.data.description}</DocsDescription>
-      <DocsBody>
-        {page.type === "openapi" ? (
-          <OpenAPIPage {...page.data.getOpenAPIPageProps()} />
-        ) : (
-          <page.data.body components={getMDXComponents()} />
-        )}
-      </DocsBody>
-    </DocsPage>
+    <DocArticle page={page}>
+      <page.data.body components={getMDXComponents()} />
+    </DocArticle>
   );
 }
 
 export function generateStaticParams() {
-  return source.generateParams();
+  return source.generateParams().filter((params) => guidePage(params.slug));
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const page = source.getPage((await params).slug);
+  const page = guidePage((await params).slug);
   if (!page) notFound();
-  return { title: page.data.title, description: page.data.description };
+  return docMetadata(page);
 }

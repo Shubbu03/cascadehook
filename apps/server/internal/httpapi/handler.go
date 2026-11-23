@@ -3,6 +3,7 @@ package httpapi
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"log/slog"
 	"net/http"
@@ -106,21 +107,23 @@ func NewHandler(options HandlerOptions) (http.Handler, error) {
 			_, _ = io.WriteString(w, "{\"status\":\"ok\"}\n")
 		}
 	})
-	handle("/v1/endpoints", api.withProjectKey(api.endpointCollection))
-	handle("/v1/endpoints/{endpoint_id}", api.withProjectKey(api.endpointResource))
-	handle("/v1/endpoints/{endpoint_id}/signing-secret", api.withProjectKey(api.rotateEndpointSecret))
-	handle("/v1/endpoints/{endpoint_id}/verify", api.withProjectKey(api.verifyEndpoint))
-	handle("/v1/events", api.withProjectKey(api.eventCollection))
-	handle("/v1/events/{event_id}", api.withProjectKey(api.eventResource))
-	handle("/v1/deliveries", api.withProjectKey(api.deliveryCollection))
-	handle("/v1/deliveries/{delivery_id}", api.withProjectKey(api.deliveryResource))
-	handle("/v1/deliveries/{delivery_id}/attempts", api.withProjectKey(api.deliveryAttempts))
-	handle("/v1/deliveries/{delivery_id}/replay", api.withProjectKey(api.replayDelivery))
-	handle("/v1/api-keys", api.withProjectKey(api.apiKeyCollection))
-	handle("/v1/api-keys/{api_key_id}", api.withProjectKey(api.apiKeyResource))
-	handle("/v1/api-keys/{api_key_id}/rotate", api.withProjectKey(api.rotateAPIKey))
-	handle("/v1/project-status", api.withProjectKey(api.projectStatus))
+	handle("/v1/endpoints", api.withProjectKey(readOrManage, api.endpointCollection))
+	handle("/v1/endpoints/{endpoint_id}", api.withProjectKey(readOrManage, api.endpointResource))
+	handle("/v1/endpoints/{endpoint_id}/signing-secret", api.withProjectKey(readOrManage, api.rotateEndpointSecret))
+	handle("/v1/endpoints/{endpoint_id}/verify", api.withProjectKey(readOrManage, api.verifyEndpoint))
+	handle("/v1/events", api.withProjectKey(readOrPublish, api.eventCollection))
+	handle("/v1/events/{event_id}", api.withProjectKey(readOrManage, api.eventResource))
+	handle("/v1/deliveries", api.withProjectKey(readOrManage, api.deliveryCollection))
+	handle("/v1/deliveries/{delivery_id}", api.withProjectKey(readOrManage, api.deliveryResource))
+	handle("/v1/deliveries/{delivery_id}/attempts", api.withProjectKey(readOrManage, api.deliveryAttempts))
+	handle("/v1/deliveries/{delivery_id}/replay", api.withProjectKey(readOrManage, api.replayDelivery))
+	handle("/v1/api-keys", api.withProjectKey(manageAccess, api.apiKeyCollection))
+	handle("/v1/api-keys/{api_key_id}", api.withProjectKey(manageAccess, api.apiKeyResource))
+	handle("/v1/api-keys/{api_key_id}/rotate", api.withProjectKey(manageAccess, api.rotateAPIKey))
+	handle("/v1/project-status", api.withProjectKey(statusAccess, api.projectStatus))
 	handle("/v1/me", api.accountResource)
+	handle("/v1/settings/retention-policy", api.withSession(api.retentionPolicy))
+	handle("/v1/me/notification-preferences", api.withSession(api.notificationPreferences))
 	handle("/v1/webhooks/clerk", api.clerkWebhook)
 	handle("/v1/webhooks/resend", api.resendWebhook)
 	handle("/v1/webhooks/dodo", api.dodoWebhook)
@@ -132,6 +135,10 @@ func NewHandler(options HandlerOptions) (http.Handler, error) {
 	handle("/v1/organizations", api.withSession(api.organizationCollection))
 	handle("/v1/organizations/{organization_id}", api.withSession(api.organizationResource))
 	handle("/v1/organizations/{organization_id}/usage", api.withSession(api.organizationUsage))
+	handle("/v1/organizations/{organization_id}/audit-log", api.withSession(api.auditLog))
+	handle("/v1/organizations/{organization_id}/notification-preferences", api.withSession(api.organizationNotificationPreferences))
+	handle("/v1/organizations/{organization_id}/notification-email-test", api.withSession(api.testNotificationEmail))
+	handle("/v1/organizations/{organization_id}/notification-email-test/{email_id}", api.withSession(api.testNotificationEmailStatus))
 	handle("/v1/organizations/{organization_id}/notifications", api.withSession(api.notificationCollection))
 	handle("/v1/organizations/{organization_id}/notifications/unread-count", api.withSession(api.notificationUnreadCount))
 	handle("/v1/organizations/{organization_id}/notifications/read-all", api.withSession(api.notificationReadAll))
@@ -139,12 +146,14 @@ func NewHandler(options HandlerOptions) (http.Handler, error) {
 	handle("/v1/organizations/{organization_id}/members", api.withSession(api.membershipCollection))
 	handle("/v1/organizations/{organization_id}/invitations", api.withSession(api.invitationCollection))
 	handle("/v1/organizations/{organization_id}/invitations/{invitation_id}", api.withSession(api.revokeInvitation))
-	handle("/v1/invitations/accept", api.withSession(api.acceptInvitation))
 	handle("/v1/organizations/{organization_id}/invitations/{invitation_id}/resend", api.withSession(api.resendInvitation))
 	handle("/v1/invitations/{invitation_id}/accept", api.withSession(api.acceptInvitationByID))
 	handle("/v1/organizations/{organization_id}/members/{user_id}", api.withSession(api.membershipResource))
 	handle("/v1/organizations/{organization_id}/projects", api.withSession(api.projectCollection))
 	handle("/v1/projects/{project_id}", api.withSession(api.projectResource))
+	handle("/v1/projects/{project_id}/settings", api.withSession(api.projectDetails))
+	handle("/v1/projects/{project_id}/delivery-policy", api.withSession(api.deliveryPolicy))
+	handle("/v1/projects/{project_id}/notification-preferences", api.withSession(api.projectNotificationPreferences))
 	handle("/v1/projects/{project_id}/status", api.withSessionProject(api.projectStatus, false))
 	handle("/v1/projects/{project_id}/usage", api.withSessionProject(api.projectUsage, true))
 	handle("/v1/projects/{project_id}/endpoints", api.withSessionProject(api.endpointCollection, false))
@@ -183,9 +192,13 @@ func allowGetHead(w http.ResponseWriter, r *http.Request) bool {
 	if r.Method == http.MethodGet || r.Method == http.MethodHead {
 		return true
 	}
-	w.Header().Set("Allow", "GET, HEAD")
-	writeProblem(w, r, http.StatusMethodNotAllowed, "method_not_allowed")
+	methodNotAllowed(w, r, "GET, HEAD")
 	return false
+}
+
+func methodNotAllowed(w http.ResponseWriter, r *http.Request, allow string) {
+	w.Header().Set("Allow", allow)
+	writeProblem(w, r, http.StatusMethodNotAllowed, "method_not_allowed")
 }
 
 func writeProblem(w http.ResponseWriter, r *http.Request, status int, code string) {
@@ -205,4 +218,15 @@ func writeProblem(w http.ResponseWriter, r *http.Request, status int, code strin
 		Status: status,
 		Code:   code,
 	})
+}
+
+// unexpectedProblem ends every problem mapper: a canceled or timed-out request
+// is reported as such, and anything else is logged as an internal error.
+func (api *api) unexpectedProblem(w http.ResponseWriter, r *http.Request, message string, err error) {
+	if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) {
+		writeProblem(w, r, http.StatusServiceUnavailable, "request_timeout")
+		return
+	}
+	api.logger.Error(message, "error", err)
+	writeProblem(w, r, http.StatusInternalServerError, "internal_error")
 }

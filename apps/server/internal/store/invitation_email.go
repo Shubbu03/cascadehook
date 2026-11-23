@@ -19,7 +19,8 @@ func enqueueInvitationEmail(ctx context.Context, tx pgx.Tx, actorID uuid.UUID, i
 	}
 	var count int
 	if err := tx.QueryRow(ctx, `SELECT count(*) FROM email_outbox
-		WHERE created_by_user_id=$1 AND created_at > clock_timestamp()-interval '24 hours'`, actorID).Scan(&count); err != nil {
+		WHERE created_by_user_id=$1 AND invitation_id IS NOT NULL
+		AND created_at > clock_timestamp()-interval '24 hours'`, actorID).Scan(&count); err != nil {
 		return fmt.Errorf("check invitation email budget: %w", err)
 	}
 	if count >= 100 {

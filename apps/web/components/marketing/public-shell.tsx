@@ -1,25 +1,15 @@
 import Link from "next/link";
-import { Brand } from "@/components/brand";
-import { DocsLink } from "@/components/docs-link";
-import { ThemeSwitcher } from "@/components/theme-switcher";
+import { MarketingHeader } from "./marketing-header";
 
 export function PublicShell({ children, showPricing = false }: { children: React.ReactNode; showPricing?: boolean }) {
   return (
-    <div className="public-page">
-      <header className="landing-header landing-container">
-        <Brand href="/" />
-        <nav className="public-nav" aria-label="Main navigation">
-          {showPricing && <Link href="/pricing">Pricing</Link>}
-          <DocsLink>Docs</DocsLink>
-          <Link href="/support">Support</Link>
-        </nav>
-        <ThemeSwitcher />
-        <Link className="landing-header-cta" href="/login">Get started</Link>
-      </header>
-      <main id="main-content" className="landing-container public-main">{children}</main>
-      <footer className="public-footer landing-container">
+    <div className={"[--landing-header-height:96px] min-h-svh bg-background text-foreground flex flex-col max-[53.125rem]:[--landing-header-height:88px] max-[37.5rem]:[--landing-header-height:80px] motion-safe:[&_[data-motion=\"reveal\"][data-visible=\"true\"]]:animate-landing-content-reveal"}>
+      <MarketingHeader showPricing={showPricing} />
+      <main id="main-content" className="w-[min(1320px,calc(100%-clamp(40px,6vw,96px)))] flex-1 mx-auto pt-[clamp(28px,3.5vw,48px)] pb-[clamp(48px,8vw,100px)]">{children}</main>
+      <footer className="w-[min(1320px,calc(100%-clamp(40px,6vw,96px)))] flex items-center justify-between flex-wrap border-t border-t-border text-muted text-[12px] mx-auto py-7.5 gap-6 [&_nav]:flex [&_nav]:flex-wrap [&_nav]:gap-4.5">
         <Link href="/">Cascadehook</Link>
-        <nav aria-label="Legal and support">
+        <nav aria-label="Footer navigation">
+          <Link href="/tools/webhook-signature-verifier">Signature verifier</Link>
           <Link href="/support">Contact</Link>
           <Link href="/terms">Terms</Link>
           <Link href="/privacy">Privacy</Link>

@@ -71,12 +71,7 @@ func (s *Store) RecoverOrganizationOwner(
 		if err := checkUserOrganizationQuota(ctx, tx, userID); err != nil {
 			return OwnershipRecovery{}, err
 		}
-		if err := checkResourceQuota(
-			ctx,
-			tx,
-			organizationID,
-			"members",
-		); err != nil {
+		if err := checkResourceQuota(ctx, tx, organizationID, "members"); err != nil {
 			return OwnershipRecovery{}, err
 		}
 	}

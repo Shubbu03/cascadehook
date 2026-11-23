@@ -5,6 +5,7 @@ import {
 } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/api";
 import type { Account, Organization, Page, Project } from "./types";
+import { queryKeys } from "@/lib/query-keys";
 
 type GetToken = () => Promise<string | null>;
 
@@ -18,13 +19,26 @@ export function accountQuery(userId: string, getToken: GetToken) {
 
 export function organizationsQuery(userId: string, getToken: GetToken) {
   return infiniteQueryOptions({
-    queryKey: ["organizations", userId],
+    queryKey: queryKeys.organizations(userId),
     initialPageParam: null as string | null,
-    queryFn: ({ pageParam, signal }) =>
-      apiRequest<Page<Organization>>("/v1/organizations", getToken, {
-        signal,
-        params: { limit: 20, ...(pageParam ? { cursor: pageParam } : {}) },
-      }),
+    queryFn: async ({ client, pageParam, signal }) => {
+      const page = await apiRequest<Page<Organization>>(
+        "/v1/organizations",
+        getToken,
+        {
+          signal,
+          params: { limit: 20, ...(pageParam ? { cursor: pageParam } : {}) },
+        },
+      );
+      // List rows match the detail response, so an organization opened from
+      // the list doesn't wait on another round trip.
+      for (const organization of page.data)
+        client.setQueryData(
+          queryKeys.organization(userId, organization.id),
+          organization,
+        );
+      return page;
+    },
     getNextPageParam: (page) => page.next_cursor ?? undefined,
   });
 }
@@ -35,7 +49,7 @@ export function organizationQuery(
   getToken: GetToken,
 ) {
   return queryOptions({
-    queryKey: ["organization", userId, organizationId],
+    queryKey: queryKeys.organization(userId, organizationId),
     queryFn: organizationId
       ? ({ signal }) =>
           apiRequest<Organization>(
@@ -53,7 +67,7 @@ export function projectQuery(
   getToken: GetToken,
 ) {
   return queryOptions({
-    queryKey: ["project", userId, projectId],
+    queryKey: queryKeys.project(userId, projectId),
     queryFn: projectId
       ? ({ signal }) =>
           apiRequest<Project>(
@@ -71,11 +85,11 @@ export function projectsQuery(
   getToken: GetToken,
 ) {
   return infiniteQueryOptions({
-    queryKey: ["projects", userId, organizationId],
+    queryKey: queryKeys.projects(userId, organizationId),
     initialPageParam: null as string | null,
     queryFn: organizationId
-      ? ({ pageParam, signal }) =>
-          apiRequest<Page<Project>>(
+      ? async ({ client, pageParam, signal }) => {
+          const page = await apiRequest<Page<Project>>(
             "/v1/organizations/" +
               encodeURIComponent(organizationId) +
               "/projects",
@@ -87,7 +101,11 @@ export function projectsQuery(
                 ...(pageParam ? { cursor: pageParam } : {}),
               },
             },
-          )
+          );
+          for (const project of page.data)
+            client.setQueryData(queryKeys.project(userId, project.id), project);
+          return page;
+        }
       : skipToken,
     getNextPageParam: (page) => page.next_cursor ?? undefined,
   });

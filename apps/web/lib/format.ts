@@ -4,8 +4,13 @@ const timestamp = new Intl.DateTimeFormat("en-GB", {
   timeZone: "UTC",
 });
 
-export function formatTime(value: string | null | undefined) {
+const localTimestamp = new Intl.DateTimeFormat("en-GB", {
+  dateStyle: "medium", timeStyle: "short",
+});
+
+export function formatTime(value: string | null | undefined, timezone: "utc" | "local" = "utc") {
   if (!value || !Number.isFinite(Date.parse(value))) return "—";
+  if (timezone === "local") return localTimestamp.format(new Date(value)) + " " + localTimestamp.resolvedOptions().timeZone;
   return timestamp.format(new Date(value)) + " UTC";
 }
 

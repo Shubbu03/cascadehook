@@ -1,5 +1,11 @@
 "use client";
 
+import { Status } from "@/components/status";
+
+import { Input } from "@/components/input";
+
+import { Button } from "@/components/button";
+
 import { Select } from "@/components/select";
 import { useAuth } from "@clerk/nextjs";
 import {
@@ -14,19 +20,16 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useId, useState, type SubmitEvent } from "react";
 import { PageHeader } from "@/components/page-header";
 import { useProject, projectHref } from "@/features/projects/project-workspace";
+import { endpointListQuery } from "@/features/projects/section-queries";
 import { ConnectionError } from "@/features/workspace/connection-error";
 import { TableSkeleton } from "@/features/workspace/skeletons";
 import { useSessionUserId } from "@/features/workspace/session";
-import type { Page } from "@/features/workspace/types";
-import { apiRequest } from "@/lib/api";
 import { EndpointRegistrationDialog } from "./endpoint-registration-dialog";
 import {
-  endpointKeys,
-  endpointPath,
   endpointState,
   eventTypePattern,
-  type Endpoint,
 } from "./types";
+import { emptyState, errorText } from "@/components/styles";
 
 export function EndpointList() {
   const { project, canManage, suspended, availabilityKnown } = useProject();
@@ -41,24 +44,9 @@ export function EndpointList() {
   const [draftType, setDraftType] = useState("");
   const [filterError, setFilterError] = useState("");
   const href = projectHref(project.id) + "/endpoints";
-  const list = useInfiniteQuery({
-    queryKey: [
-      ...endpointKeys.lists(userId, project.id),
-      { enabled, eventType },
-    ],
-    initialPageParam: null as string | null,
-    queryFn: ({ pageParam, signal }) =>
-      apiRequest<Page<Endpoint>>(endpointPath(project.id), getToken, {
-        signal,
-        params: {
-          limit: 20,
-          ...(pageParam ? { cursor: pageParam } : {}),
-          ...(enabled ? { enabled } : {}),
-          ...(eventType ? { event_type: eventType } : {}),
-        },
-      }),
-    getNextPageParam: (page) => page.next_cursor ?? undefined,
-  });
+  const list = useInfiniteQuery(
+    endpointListQuery(userId, project.id, { enabled, eventType }, getToken),
+  );
   const items = list.data?.pages.flatMap((page) => page.data) ?? [];
   const filtered = Boolean(enabled || eventType);
   const registrationRequested = search.get("register") === "1";
@@ -91,15 +79,15 @@ export function EndpointList() {
         title="Endpoints"
         actions={
           canManage && (
-            <button
+            <Button
               type="button"
-              className="button button-primary"
+              data-ui="button"
               disabled={suspended || !availabilityKnown}
               onClick={() => setRegistering(true)}
             >
               <PlusIcon size={17} aria-hidden="true" />
               Register endpoint
-            </button>
+            </Button>
           )
         }
       />
@@ -109,10 +97,10 @@ export function EndpointList() {
           onRegistered={() => setRegistering(false)}
         />
       )}
-      <div className="endpoint-toolbar">
-        <label className="filter-field">
+      <div data-ui="endpoint-toolbar" className="flex [align-items:end] flex-wrap pt-0.5 pb-6.25 gap-3.5 in-data-[ui~='dashboard-main']:mt-0 in-data-[ui~='dashboard-main']:mb-5 in-data-[ui~='dashboard-main']:pt-0 in-data-[ui~='dashboard-main']:pb-5 in-data-[ui~='dashboard-main']:border-b in-data-[ui~='dashboard-main']:border-b-border in-data-[ui~='dashboard-main']:gap-3 in-data-[ui~='dashboard-main']:mx-0 in-data-[ui~='dashboard-main']:px-0 max-[32.5rem]:gap-3.75 max-[37.5rem]:in-data-[ui~='dashboard-main']:gap-2.5">
+        <label className="grid gap-1.75 [&_>_span]:text-[12px] [&_>_span]:font-medium in-data-[ui~='dashboard-main']:flex-[0_1_auto] in-data-[ui~='dashboard-main']:gap-1.5 max-[32.5rem]:[[data-ui~='endpoint-toolbar']_>_&]:flex-1">
           <span>Status</span>
-          <Select
+          <Select className="in-data-[ui~='dashboard-main']:w-auto in-data-[ui~='dashboard-main']:min-w-37.5 in-data-[ui~='dashboard-main']:min-h-9 in-data-[ui~='dashboard-main']:pr-10.5 in-data-[ui~='dashboard-main']:pl-3.5 in-data-[ui~='dashboard-main']:py-1.75 in-data-[ui~='dashboard-main']:text-[13px]/5 max-[37.5rem]:in-data-[ui~='dashboard-main']:w-full max-[37.5rem]:in-data-[ui~='dashboard-main']:min-w-0 max-[37.5rem]:in-data-[ui~='dashboard-main']:text-[16px] min-h-10.5 rounded-md text-foreground text-[14px] max-w-full py-2.25 px-2.75 max-[32.5rem]:text-[16px]"
             value={enabled}
             onChange={(event) => setEnabled(event.target.value)}
           >
@@ -121,10 +109,10 @@ export function EndpointList() {
             <option value="false">Disabled</option>
           </Select>
         </label>
-        <form className="event-filter" onSubmit={applyFilter}>
-          <label className="filter-field" htmlFor={id}>
+        <form className="flex [align-items:end] min-w-0 gap-2 max-[32.5rem]:w-full max-[32.5rem]:order-3" onSubmit={applyFilter}>
+          <label className="grid gap-1.75 [&_>_span]:text-[12px] [&_>_span]:font-medium min-w-0 in-data-[ui~='dashboard-main']:flex-[0_1_auto] in-data-[ui~='dashboard-main']:gap-1.5 max-[32.5rem]:[[data-ui~='endpoint-toolbar']_>_&]:flex-1 max-[32.5rem]:flex-1" htmlFor={id}>
             <span>Event type</span>
-            <input
+            <Input className="in-data-[ui~='dashboard-main']:w-55 in-data-[ui~='dashboard-main']:min-h-9 in-data-[ui~='dashboard-main']:py-1.75 in-data-[ui~='dashboard-main']:px-2.5 in-data-[ui~='dashboard-main']:text-[13px]/5 max-[37.5rem]:in-data-[ui~='dashboard-main']:w-full max-[37.5rem]:in-data-[ui~='dashboard-main']:min-w-0 max-[37.5rem]:in-data-[ui~='dashboard-main']:text-[16px] max-[32.5rem]:w-full min-h-10.5 rounded-md text-foreground text-[14px] max-w-full min-w-0 w-52.5 py-2.25 px-2.75 max-[32.5rem]:text-[16px]"
               id={id}
               value={draftType}
               onChange={(event) => setDraftType(event.target.value)}
@@ -134,16 +122,16 @@ export function EndpointList() {
               aria-describedby={filterError ? id + "-error" : undefined}
             />
           </label>
-          <button
+          <Button
             type="submit"
-            className="button button-secondary button-small"
+            data-ui="button" variant="secondary" size="small" className="leading-[1.4]"
           >
             Apply
-          </button>
+          </Button>
         </form>
-        <button
+        <Button
           type="button"
-          className="button button-small button-quiet"
+          data-ui="button" variant="quiet" size="small" className="leading-[1.4]"
           onClick={() => {
             void list.refetch();
           }}
@@ -151,16 +139,16 @@ export function EndpointList() {
         >
           <ArrowClockwiseIcon size={16} aria-hidden="true" />
           {list.isFetching ? "Refreshing…" : "Refresh"}
-        </button>
+        </Button>
       </div>
       {filterError && (
-        <p id={id + "-error"} className="form-error" role="alert">
+        <p id={id + "-error"} className={errorText} role="alert">
           {filterError}
         </p>
       )}
       {filtered && (
-        <div className="active-filters">
-          <span className="workspace-muted">
+        <div className="flex items-center justify-between flex-wrap pb-4.5 gap-3">
+          <span className="text-muted text-[13px]">
             Showing{" "}
             {enabled === "true"
               ? "enabled endpoints"
@@ -171,7 +159,7 @@ export function EndpointList() {
           </span>
           <button
             type="button"
-            className="text-link"
+            className="inline-flex items-center text-[14px] font-medium gap-2 [&:hover]:underline [&:hover]:underline-offset-4 [[data-ui~='dashboard-main']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='dashboard-main']_>_section_>_&:first-child]:text-[12px] [[data-ui~='project-content']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='project-content']_>_section_>_&:first-child]:text-[12px]"
             onClick={() => {
               setEnabled("");
               setEventType("");
@@ -205,7 +193,7 @@ export function EndpointList() {
             />
           )}
           {items.length === 0 ? (
-            <div className="empty-state">
+            <div data-ui="empty-state" className={emptyState}>
               <PlugsConnectedIcon
                 size={30}
                 className="text-accent"
@@ -218,60 +206,57 @@ export function EndpointList() {
                   : "Add a destination to receive your events."}
               </p>
               {!filtered && canManage && availabilityKnown && !suspended && (
-                <button
+                <Button
                   type="button"
-                  className="button button-secondary"
+                  data-ui="button" variant="secondary"
                   onClick={() => setRegistering(true)}
                 >
                   Register an endpoint
-                </button>
+                </Button>
               )}
             </div>
           ) : (
-            <div className="endpoint-list">
-              <div className="endpoint-list-heading" aria-hidden="true">
+            <div className="rounded-[10px] bg-surface overflow-hidden border border-solid border-border">
+              <div className="grid grid-cols-[1fr_150px] pr-12.5 pl-5 bg-background text-[12px] text-muted border-b border-b-border gap-5 py-3.25 max-[65.625rem]:grid-cols-[1fr_120px] max-[32.5rem]:hidden" aria-hidden="true">
                 <span>Destination and subscriptions</span>
                 <span>Delivery</span>
               </div>
               {items.map((endpoint) => (
                 <Link
                   key={endpoint.id}
-                  className="endpoint-row"
+                  data-ui="endpoint-row" className="grid grid-cols-[minmax(0,1fr)_150px_17px] items-center gap-5 p-5 [&_>_svg]:text-muted [[data-ui~='endpoint-row']+&]:border-t [[data-ui~='endpoint-row']+&]:border-t-border [&:hover]:bg-surface-hover max-[65.625rem]:grid-cols-[minmax(0,1fr)_120px_17px] max-[65.625rem]:gap-3.5 max-[32.5rem]:grid-cols-[minmax(0,1fr)_17px] max-[32.5rem]:gap-3 max-[32.5rem]:p-4.5 max-[32.5rem]:[&_>_svg]:col-2 max-[32.5rem]:[&_>_svg]:row-[1/3]"
                   href={href + "/" + encodeURIComponent(endpoint.id)}
                 >
-                  <div className="endpoint-row-main">
-                    <span className="endpoint-url">{endpoint.url}</span>
-                    <span className="endpoint-subscription-summary">
+                  <div className="min-w-0 grid gap-2">
+                    <span className="block wrap-anywhere font-mono text-[13px] leading-[1.7]">{endpoint.url}</span>
+                    <span className="text-muted text-[12px] wrap-anywhere">
                       {endpoint.event_types.slice(0, 3).join(" · ")}
                       {endpoint.event_types.length > 3
                         ? " · +" + (endpoint.event_types.length - 3) + " more"
                         : ""}
                     </span>
                   </div>
-                  <span
-                    className={
-                      "status " +
-                      (endpoint.enabled ? "status-success" : "status-neutral")
-                    }
+                  <Status
+                    tone={(endpoint.enabled ? "success" : "neutral")}
                   >
                     {endpointState(endpoint)}
-                  </span>
+                  </Status>
                   <ArrowRightIcon size={17} aria-hidden="true" />
                 </Link>
               ))}
             </div>
           )}
           {list.hasNextPage && (
-            <button
+            <Button
               type="button"
-              className="button button-quiet endpoint-load-more"
+              data-ui="button" variant="quiet" className="mt-3.75"
               disabled={list.isFetching}
               onClick={() => {
                 void list.fetchNextPage();
               }}
             >
               {list.isFetchingNextPage ? "Loading…" : "Load more endpoints"}
-            </button>
+            </Button>
           )}
         </>
       )}

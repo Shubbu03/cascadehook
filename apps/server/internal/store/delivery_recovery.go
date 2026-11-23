@@ -90,8 +90,9 @@ func (s *Store) releaseDeliveryBatch(ctx context.Context, ownerID uuid.UUID, lim
 	if len(jobs) == 0 {
 		return 0, nil
 	}
-	// Recovery can finalize several tenants in one transaction. Acquire their
-	// shared accounting rows in a consistent tenant order to avoid mutual waits.
+	// Recovery can finalize several tenants in one transaction. Acquire project
+	// usage rows and endpoint incident rows in one global organization, project,
+	// endpoint order (shared with pending expiry) to avoid mutual waits.
 	projectIDs := make([]uuid.UUID, 0, len(jobs))
 	for _, job := range jobs {
 		projectIDs = append(projectIDs, job.ProjectID)
@@ -114,10 +115,13 @@ func (s *Store) releaseDeliveryBatch(ctx context.Context, ownerID uuid.UUID, lim
 	}
 	parents.Close()
 	sort.SliceStable(jobs, func(i, j int) bool {
-		if organizations[jobs[i].ProjectID] == organizations[jobs[j].ProjectID] {
-			return jobs[i].EndpointID.String() < jobs[j].EndpointID.String()
+		if organizations[jobs[i].ProjectID] != organizations[jobs[j].ProjectID] {
+			return organizations[jobs[i].ProjectID] < organizations[jobs[j].ProjectID]
 		}
-		return organizations[jobs[i].ProjectID] < organizations[jobs[j].ProjectID]
+		if jobs[i].ProjectID != jobs[j].ProjectID {
+			return jobs[i].ProjectID.String() < jobs[j].ProjectID.String()
+		}
+		return jobs[i].EndpointID.String() < jobs[j].EndpointID.String()
 	})
 	var databaseNow time.Time
 	if err := tx.QueryRow(ctx, `SELECT clock_timestamp()`).Scan(&databaseNow); err != nil {
@@ -158,19 +162,19 @@ func (s *Store) ExpirePendingDeliveries(ctx context.Context, limit int) (int64, 
 	}
 	defer rollbackTransaction(tx)
 	rows, err := tx.Query(ctx, `WITH expired AS (
-		SELECT d.id, e.deleted_at, d.attempt_count,o.id AS organization_id FROM deliveries d
+		SELECT d.id, e.deleted_at, d.attempt_count,d.max_attempts,o.id AS organization_id FROM deliveries d
 		JOIN endpoints e ON e.project_id = d.project_id AND e.id = d.endpoint_id
 		JOIN projects p ON p.id = d.project_id JOIN organizations o ON o.id = p.organization_id
 		WHERE d.state = 'pending' AND p.deletion_requested_at IS NULL AND o.deletion_requested_at IS NULL
-		AND (d.attempt_count >= $2 OR d.retry_deadline <= now())
+		AND (d.attempt_count >= d.max_attempts OR d.retry_deadline <= now())
 		ORDER BY d.next_attempt_at, d.id LIMIT $1
 		FOR UPDATE OF d SKIP LOCKED FOR SHARE OF o,p,e SKIP LOCKED
 	) UPDATE deliveries d SET state = CASE WHEN expired.deleted_at IS NOT NULL THEN 'canceled' ELSE 'failed' END,
 		terminal_reason = CASE WHEN expired.deleted_at IS NOT NULL THEN NULL
-			WHEN expired.attempt_count >= $2 THEN 'max_attempts' ELSE 'retry_horizon' END,
+			WHEN expired.attempt_count >= d.max_attempts THEN 'max_attempts' ELSE 'retry_horizon' END,
 		updated_at = clock_timestamp() FROM expired WHERE d.id = expired.id AND d.state = 'pending'
 		RETURNING d.project_id,d.endpoint_id,d.updated_at,d.state,expired.organization_id`,
-		limit, deliveries.MaxAttempts)
+		limit)
 	if err != nil {
 		return 0, fmt.Errorf("expire pending deliveries: %w", err)
 	}
@@ -187,12 +191,15 @@ func (s *Store) ExpirePendingDeliveries(ctx context.Context, limit int) (int64, 
 	if err != nil {
 		return 0, fmt.Errorf("read expired notification deliveries: %w", err)
 	}
-	// Match recovery's tenant/endpoint order when locking grouped incident rows.
+	// Match recovery's organization, project, endpoint order for incident rows.
 	sort.Slice(items, func(i, j int) bool {
-		if items[i].organizationID == items[j].organizationID {
-			return items[i].held.EndpointID.String() < items[j].held.EndpointID.String()
+		if items[i].organizationID != items[j].organizationID {
+			return items[i].organizationID.String() < items[j].organizationID.String()
 		}
-		return items[i].organizationID.String() < items[j].organizationID.String()
+		if items[i].held.ProjectID != items[j].held.ProjectID {
+			return items[i].held.ProjectID.String() < items[j].held.ProjectID.String()
+		}
+		return items[i].held.EndpointID.String() < items[j].held.EndpointID.String()
 	})
 	for _, item := range items {
 		if err := notifyDeliveryCompletion(ctx, tx, item.held, deliveries.Completion{State: item.state}); err != nil {

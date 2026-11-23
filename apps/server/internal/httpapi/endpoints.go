@@ -1,12 +1,9 @@
 package httpapi
 
 import (
-	"context"
 	"errors"
 	"net/http"
 	"strconv"
-
-	"github.com/google/uuid"
 
 	"cascadehook/internal/accounts"
 	"cascadehook/internal/auth"
@@ -37,8 +34,7 @@ func (api *api) endpointCollection(w http.ResponseWriter, r *http.Request, princ
 	case http.MethodGet, http.MethodHead:
 		api.listEndpoints(w, r, principal)
 	default:
-		w.Header().Set("Allow", "GET, HEAD, POST")
-		writeProblem(w, r, http.StatusMethodNotAllowed, "method_not_allowed")
+		methodNotAllowed(w, r, "GET, HEAD, POST")
 	}
 }
 
@@ -53,22 +49,15 @@ func (api *api) endpointResource(w http.ResponseWriter, r *http.Request, princip
 			api.endpointProblem(w, r, err)
 			return
 		}
-		writeJSON(
-			w,
-			r,
-			http.StatusOK,
-			endpoint,
-		)
+		writeJSON(w, r, http.StatusOK, endpoint)
 		return
 	}
 	if r.Method != http.MethodPatch && r.Method != http.MethodDelete {
-		w.Header().Set("Allow", "GET, HEAD, PATCH, DELETE")
-		writeProblem(w, r, http.StatusMethodNotAllowed, "method_not_allowed")
+		methodNotAllowed(w, r, "GET, HEAD, PATCH, DELETE")
 		return
 	}
-	id, err := uuid.Parse(r.PathValue("endpoint_id"))
-	if err != nil {
-		writeProblem(w, r, http.StatusBadRequest, "invalid_endpoint_id")
+	id, ok := readResourceID(w, r, "endpoint_id")
+	if !ok {
 		return
 	}
 	if r.Method == http.MethodDelete {
@@ -172,10 +161,7 @@ func (api *api) endpointProblem(w http.ResponseWriter, r *http.Request, err erro
 	case errors.Is(err, endpoints.ErrVerificationRateLimited):
 		w.Header().Set("Retry-After", strconv.Itoa(int(endpoints.VerificationCooldown.Seconds())))
 		writeProblem(w, r, http.StatusTooManyRequests, "endpoint_verification_rate_limited")
-	case errors.Is(err, context.DeadlineExceeded), errors.Is(err, context.Canceled):
-		writeProblem(w, r, http.StatusServiceUnavailable, "request_timeout")
 	default:
-		api.logger.Error("endpoint operation failed", "error", err)
-		writeProblem(w, r, http.StatusInternalServerError, "internal_error")
+		api.unexpectedProblem(w, r, "endpoint operation failed", err)
 	}
 }

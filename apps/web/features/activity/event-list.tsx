@@ -1,5 +1,9 @@
 "use client";
 
+import { Input } from "@/components/input";
+
+import { Button } from "@/components/button";
+
 import { TableSkeleton } from "@/features/workspace/skeletons";
 import { useAuth } from "@clerk/nextjs";
 import { PlusIcon } from "@phosphor-icons/react";
@@ -11,14 +15,14 @@ import { PageHeader } from "@/components/page-header";
 import { LoadMore, QueryState, RefreshButton } from "@/components/query-state";
 import { eventTypePattern } from "@/features/endpoints/types";
 import { useProject, projectHref } from "@/features/projects/project-workspace";
+import { eventListQuery } from "@/features/projects/section-queries";
 import { useSessionUserId } from "@/features/workspace/session";
-import type { Page } from "@/features/workspace/types";
-import { apiRequest } from "@/lib/api";
-import { formatTime } from "@/lib/format";
-import { projectPath, type EventSummary } from "./types";
+import { useFormatTime } from "@/lib/display-preferences";
 import { PublishEventDialog } from "./publish-event-dialog";
+import { dataTable, emptyState, errorText, filterBar, filterControl, filterField } from "@/components/styles";
 
 export function EventList() {
+  const formatTime = useFormatTime();
   const { project, canManage, availabilityKnown, suspended } = useProject();
   const userId = useSessionUserId();
   const { getToken } = useAuth();
@@ -30,23 +34,8 @@ export function EventList() {
   const valid = !type || eventTypePattern.test(type);
   const href = projectHref(project.id) + "/events";
   const list = useInfiniteQuery({
-    queryKey: ["events", userId, project.id, type],
+    ...eventListQuery(userId, project.id, type, getToken),
     enabled: valid,
-    initialPageParam: null as string | null,
-    queryFn: ({ pageParam, signal }) =>
-      apiRequest<Page<EventSummary>>(
-        projectPath(project.id, "events"),
-        getToken,
-        {
-          signal,
-          params: {
-            limit: 20,
-            ...(type ? { event_type: type } : {}),
-            ...(pageParam ? { cursor: pageParam } : {}),
-          },
-        },
-      ),
-    getNextPageParam: (page) => page.next_cursor ?? undefined,
   });
   const items = list.data?.pages.flatMap((page) => page.data) ?? [];
 
@@ -74,14 +63,14 @@ export function EventList() {
           <>
             <RefreshButton pending={list.isFetching} refresh={list.refetch} />
             {canManage && (
-              <button
+              <Button
                 type="button"
-                className="button button-small button-primary"
+                data-ui="button" size="small" className="leading-[1.4]"
                 disabled={!availabilityKnown || suspended}
                 onClick={() => setPublishing(true)}
               >
                 <PlusIcon size={16} aria-hidden="true" /> Publish event
-              </button>
+              </Button>
             )}
           </>
         }
@@ -92,23 +81,23 @@ export function EventList() {
           onClose={() => setPublishing(false)}
         />
       )}
-      <form key={type} className="activity-filters" onSubmit={apply}>
-        <label className="filter-field">
+      <form key={type} data-ui="activity-filters" className={filterBar} onSubmit={apply}>
+        <label className={filterField}>
           <span>Event type</span>
-          <input
+          <Input className={filterControl}
             name="event_type"
             defaultValue={type}
             placeholder="e.g. invoice.paid"
             spellCheck={false}
           />
         </label>
-        <button type="submit" className="button button-small button-secondary">
+        <Button type="submit" data-ui="button" variant="secondary" size="small" className="leading-[1.4]">
           Apply
-        </button>
+        </Button>
         {type && (
           <Link
             href={href}
-            className="text-link"
+            className="inline-flex items-center font-medium gap-2 [&:hover]:underline [&:hover]:underline-offset-4 min-h-9.5 text-[13px] [[data-ui~='dashboard-main']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='dashboard-main']_>_section_>_&:first-child]:text-[12px] [[data-ui~='project-content']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='project-content']_>_section_>_&:first-child]:text-[12px]"
             onClick={() => setValidation("")}
           >
             Clear filter
@@ -116,15 +105,15 @@ export function EventList() {
         )}
       </form>
       {(validation || !valid) && (
-        <p className="form-error" role="alert">
+        <p className={errorText} role="alert">
           {validation || "Enter a valid event type."}
         </p>
       )}
       {valid && (
         <QueryState query={list} loading={<TableSkeleton columns={4} label="Loading events…" />}>
           {items.length ? (
-            <div className="data-table-wrap">
-              <table className="data-table">
+            <div className="max-w-full overflow-x-auto rounded-[9px] bg-surface border border-solid border-border">
+              <table data-ui="data-table" className={dataTable}>
                 <caption className="sr-only">Accepted events</caption>
                 <thead>
                   <tr>
@@ -139,7 +128,7 @@ export function EventList() {
                     <tr key={event.id}>
                       <td>
                         <Link
-                          className="record-link mono"
+                          className="font-mono text-accent underline decoration-transparent underline-offset-[3px] text-[11px] wrap-anywhere [&:hover]:decoration-current [[data-ui~='dashboard-main']_[data-ui~='data-table']_&]:text-[12px]"
                           href={
                             href +
                             "/" +
@@ -163,7 +152,7 @@ export function EventList() {
               </table>
             </div>
           ) : (
-            <div className="empty-state">
+            <div data-ui="empty-state" className={emptyState}>
               <h3>{type ? "No matching events" : "No events yet"}</h3>
               <p>Events published with your project API key appear here.</p>
             </div>

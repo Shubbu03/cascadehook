@@ -48,12 +48,7 @@ func (s *Store) RewrapSigningSecrets(
 	}
 	result := RewrapResult{After: options.After, Done: len(ids) < options.Limit}
 	for _, id := range ids {
-		changed, err := s.rewrapEndpoint(
-			ctx,
-			vault,
-			id,
-			options.DryRun,
-		)
+		changed, err := s.rewrapEndpoint(ctx, vault, id, options.DryRun)
 		if err != nil {
 			return result, err
 		}

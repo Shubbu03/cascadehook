@@ -90,12 +90,7 @@ func (c *Client) PostJSON(ctx context.Context, address string, body []byte, head
 	case <-ctx.Done():
 		return Response{}, requestError{cause: ctx.Err()}
 	}
-	req, err := http.NewRequestWithContext(
-		ctx,
-		http.MethodPost,
-		address,
-		bytes.NewReader(body),
-	)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, address, bytes.NewReader(body))
 	if err != nil {
 		return Response{}, requestError{cause: err}
 	}

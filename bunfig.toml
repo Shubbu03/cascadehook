@@ -1,2 +1,5 @@
 [run]
 shell = "bun"
+
+[install]
+minimumReleaseAge = 604800

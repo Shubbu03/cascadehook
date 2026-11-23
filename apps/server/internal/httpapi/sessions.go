@@ -40,12 +40,7 @@ func (api *api) withAccountSession(next sessionHandler, allowDeleting bool) http
 		revoked, err := api.db.SessionRevoked(ctx, identity)
 		if err != nil {
 			api.logger.Error("session revocation lookup failed", "error", err)
-			writeProblem(
-				w,
-				r,
-				http.StatusServiceUnavailable,
-				"authentication_unavailable",
-			)
+			writeProblem(w, r, http.StatusServiceUnavailable, "authentication_unavailable")
 			return
 		}
 		if revoked {

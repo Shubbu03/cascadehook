@@ -118,6 +118,9 @@ func (s *Store) RequestOrganizationDeletion(
 		return accounts.OrganizationDeletion{}, fmt.Errorf("begin organization deletion: %w", err)
 	}
 	defer rollbackTransaction(tx)
+	if err := setAuditActor(ctx, tx, auth.Principal{UserID: userID}); err != nil {
+		return accounts.OrganizationDeletion{}, err
+	}
 	if err := lockActiveUsers(ctx, tx, userID); err != nil {
 		return accounts.OrganizationDeletion{}, err
 	}
@@ -130,12 +133,7 @@ func (s *Store) RequestOrganizationDeletion(
 	if err != nil {
 		return accounts.OrganizationDeletion{}, fmt.Errorf("lock organization deletion: %w", err)
 	}
-	role, err := organizationRole(
-		ctx,
-		tx,
-		userID,
-		organizationID,
-	)
+	role, err := organizationRole(ctx, tx, userID, organizationID)
 	if err != nil {
 		return accounts.OrganizationDeletion{}, err
 	}

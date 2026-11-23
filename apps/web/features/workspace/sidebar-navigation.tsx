@@ -8,6 +8,7 @@ import {
   FolderSimpleIcon,
   GearSixIcon,
   KeyIcon,
+  LifebuoyIcon,
   LightningIcon,
   ListChecksIcon,
   PlugsConnectedIcon,
@@ -16,28 +17,34 @@ import {
   UsersIcon,
 } from "@phosphor-icons/react";
 import Link from "next/link";
-import { billingHref } from "@/lib/plans";
 import { DocsLink } from "@/components/docs-link";
+import { billingHref } from "@/lib/plans";
 import type { OrganizationRole } from "./types";
 import { organizationHref } from "./queries";
 import { notificationInboxHref } from "@/features/notifications/types";
+import { prefetchOnIntent, usePrefetch, type ProjectSection } from "@/features/projects/prefetch";
+
+const sidebarLink =
+  "relative flex items-center w-full min-h-10 rounded-md bg-transparent text-muted text-left whitespace-nowrap [transition:background-color_0.12s,color_0.12s] p-2.5 gap-3 border-0 border-none border-current text-[13px]/5 [&:hover]:text-foreground [&:hover]:bg-surface-hover aria-[current]:text-accent aria-[current]:bg-[color-mix(in_srgb,var(--accent-subtle)_65%,transparent)] aria-[current]:font-medium [&[aria-current]::before]:absolute [&[aria-current]::before]:left-0 [&[aria-current]::before]:w-0.5 [&[aria-current]::before]:rounded-xs [&[aria-current]::before]:bg-accent [&[aria-current]::before]:content-[''] [&[aria-current]::before]:inset-y-2.5 [[data-ui~='dashboard-shell'][data-collapsed=true]_[data-ui~='dashboard-sidebar']_&]:justify-center [[data-ui~='dashboard-shell'][data-collapsed=true]_[data-ui~='dashboard-sidebar']_&]:px-0 [[data-ui~='dashboard-shell'][data-collapsed=true]_[data-ui~='dashboard-sidebar']_&_>_span]:hidden pointer-coarse:min-h-11 motion-reduce:transition-none";
 
 const groups = [
   {
     label: "Activity",
     links: [
-      { path: "", label: "Overview", Icon: SquaresFourIcon, privileged: false },
+      { path: "", label: "Overview", Icon: SquaresFourIcon, privileged: false, section: "overview" },
       {
         path: "deliveries",
         label: "Deliveries",
         Icon: ListChecksIcon,
         privileged: false,
+        section: "deliveries",
       },
       {
         path: "events",
         label: "Events",
         Icon: LightningIcon,
         privileged: false,
+        section: "events",
       },
     ],
   },
@@ -49,14 +56,15 @@ const groups = [
         label: "Endpoints",
         Icon: PlugsConnectedIcon,
         privileged: false,
+        section: "endpoints",
       },
-      { path: "api-keys", label: "API keys", Icon: KeyIcon, privileged: true },
+      { path: "api-keys", label: "API keys", Icon: KeyIcon, privileged: true, section: "api-keys" },
     ],
   },
   {
     label: "Manage",
     links: [
-      { path: "usage", label: "Usage", Icon: ChartBarIcon, privileged: true },
+      { path: "usage", label: "Usage", Icon: ChartBarIcon, privileged: true, section: "usage" },
       {
         path: "settings",
         label: "Settings",
@@ -65,7 +73,10 @@ const groups = [
       },
     ],
   },
-];
+] satisfies {
+  label: string;
+  links: { path: string; label: string; Icon: unknown; privileged: boolean; section?: ProjectSection }[];
+}[];
 
 export function SidebarNavigation({
   projectId,
@@ -84,10 +95,12 @@ export function SidebarNavigation({
     ? "/dashboard/projects/" + encodeURIComponent(projectId)
     : "";
   const canManage = role === "owner" || role === "admin";
+  const billingUrl = organizationId && canManage ? billingHref(organizationId) : undefined;
+  const prefetch = usePrefetch();
   const notificationsLink = organizationId && (
     <Link
       href={notificationInboxHref(organizationId)}
-      className="sidebar-link"
+      className={sidebarLink}
       aria-label="Notifications"
       title="Notifications"
       aria-current={
@@ -100,29 +113,33 @@ export function SidebarNavigation({
     </Link>
   );
   return (
-    <nav className="sidebar-navigation" aria-label="Main navigation">
+    <nav className="flex flex-col flex-1 min-h-0 overflow-y-auto py-4 px-3 [&_ul]:grid [&_ul]:list-none [&_ul]:gap-2 [&_ul]:m-0 [&_ul]:p-0" aria-label="Main navigation">
       {projectId ? (
         groups.map((group) => (
-          <div className="sidebar-group" key={group.label}>
-            <p className="sidebar-group-label">{group.label}</p>
+          <div data-ui="sidebar-group" className="[[data-ui~='sidebar-group']+&]:mt-6" key={group.label}>
+            <p className={"mt-0 mb-2 text-muted text-[11px] mx-2.5 [[data-ui~='dashboard-shell'][data-collapsed=true]_[data-ui~='dashboard-sidebar']_&]:hidden"}>{group.label}</p>
             <ul role="list">
               {group.links
                 .filter((link) => !link.privileged || canManage)
-                .map(({ path, label, Icon }) => (
+                .map(({ path, label, Icon, section }) => (
                   <li key={path}>
                     <Link
                       href={path ? href + "/" + path : href}
-                      className="sidebar-link"
+                      className={sidebarLink}
                       aria-label={label}
                       title={label}
                       aria-current={
                         pathname === (path ? href + "/" + path : href) ||
-                        (path !== "" &&
-                          pathname.startsWith(href + "/" + path + "/"))
+                          (path !== "" &&
+                            pathname.startsWith(href + "/" + path + "/"))
                           ? "page"
                           : undefined
                       }
                       onNavigate={onNavigate}
+                      {...(section &&
+                        prefetchOnIntent(() =>
+                          prefetch.section(projectId, section),
+                        ))}
                     >
                       <Icon size={18} aria-hidden="true" />
                       <span>{label}</span>
@@ -133,8 +150,8 @@ export function SidebarNavigation({
           </div>
         ))
       ) : (
-        <div className="sidebar-group">
-          <p className="sidebar-group-label">Workspace</p>
+        <div data-ui="sidebar-group" className="[[data-ui~='sidebar-group']+&]:mt-6">
+          <p className={"mt-0 mb-2 text-muted text-[11px] mx-2.5 [[data-ui~='dashboard-shell'][data-collapsed=true]_[data-ui~='dashboard-sidebar']_&]:hidden"}>Workspace</p>
           <ul role="list">
             <li>
               <Link
@@ -143,11 +160,13 @@ export function SidebarNavigation({
                     ? organizationHref(organizationId)
                     : "/dashboard"
                 }
-                className="sidebar-link"
+                className={sidebarLink}
                 aria-label="Projects"
                 title="Projects"
                 aria-current={pathname === "/dashboard" ? "page" : undefined}
                 onNavigate={onNavigate}
+                {...(organizationId &&
+                  prefetchOnIntent(() => prefetch.projects(organizationId)))}
               >
                 <FolderSimpleIcon size={18} aria-hidden="true" />
                 <span>Projects</span>
@@ -162,12 +181,12 @@ export function SidebarNavigation({
                     encodeURIComponent(organizationId) +
                     "/settings"
                   }
-                  className="sidebar-link"
+                  className={sidebarLink}
                   aria-label="Organization and team"
                   title="Organization and team"
                   aria-current={
                     pathname ===
-                    "/dashboard/organizations/" +
+                      "/dashboard/organizations/" +
                       encodeURIComponent(organizationId) +
                       "/settings"
                       ? "page"
@@ -188,18 +207,21 @@ export function SidebarNavigation({
                     encodeURIComponent(organizationId) +
                     "/usage"
                   }
-                  className="sidebar-link"
+                  className={sidebarLink}
                   aria-label="Organization usage"
                   title="Organization usage"
                   aria-current={
                     pathname ===
-                    "/dashboard/organizations/" +
+                      "/dashboard/organizations/" +
                       encodeURIComponent(organizationId) +
                       "/usage"
                       ? "page"
                       : undefined
                   }
                   onNavigate={onNavigate}
+                  {...prefetchOnIntent(() =>
+                    prefetch.organizationUsage(organizationId),
+                  )}
                 >
                   <ChartBarIcon size={18} aria-hidden="true" />
                   <span>Usage</span>
@@ -210,16 +232,30 @@ export function SidebarNavigation({
         </div>
       )}
       {projectId && notificationsLink && (
-        <div className="sidebar-group">
-          <p className="sidebar-group-label">Organization</p>
+        <div data-ui="sidebar-group" className="[[data-ui~='sidebar-group']+&]:mt-6">
+          <p className={"mt-0 mb-2 text-muted text-[11px] mx-2.5 [[data-ui~='dashboard-shell'][data-collapsed=true]_[data-ui~='dashboard-sidebar']_&]:hidden"}>Organization</p>
           {notificationsLink}
         </div>
       )}
-      {organizationId && canManage && <div className="sidebar-group"><Link href={billingHref(organizationId)} className="sidebar-link" aria-label="Billing" title="Billing" aria-current={pathname===billingHref(organizationId)?"page":undefined} onClick={onNavigate}><CreditCardIcon size={18} aria-hidden="true"/><span>Billing</span></Link></div>}
-      <div className="sidebar-guide">
+      {billingUrl && (
+        <div data-ui="sidebar-group" className="[[data-ui~='sidebar-group']+&]:mt-6">
+          <Link
+            href={billingUrl}
+            className={sidebarLink}
+            aria-label="Billing"
+            title="Billing"
+            aria-current={pathname === billingUrl ? "page" : undefined}
+            onNavigate={onNavigate}
+          >
+            <CreditCardIcon size={18} aria-hidden="true" />
+            <span>Billing</span>
+          </Link>
+        </div>
+      )}
+      <div className="mt-auto pt-8">
         <DocsLink
           path="/docs/quickstart"
-          className="sidebar-link"
+          className={sidebarLink}
           aria-label="Quickstart"
           title="Quickstart"
           onClick={onNavigate}
@@ -230,7 +266,7 @@ export function SidebarNavigation({
         {projectId && (
           <DocsLink
             path="/docs/receivers"
-            className="sidebar-link"
+            className={sidebarLink}
             aria-label="Receiver guide"
             title="Receiver guide"
             onClick={onNavigate}
@@ -239,6 +275,10 @@ export function SidebarNavigation({
             <span>Receiver guide</span>
           </DocsLink>
         )}
+        <Link href="/support" className={sidebarLink} aria-label="Support" title="Support" onClick={onNavigate}>
+          <LifebuoyIcon size={18} aria-hidden="true" />
+          <span>Support</span>
+        </Link>
       </div>
     </nav>
   );

@@ -1,7 +1,6 @@
 package httpapi
 
 import (
-	"context"
 	"errors"
 	"net/http"
 
@@ -13,8 +12,7 @@ import (
 
 func (api *api) replayDelivery(w http.ResponseWriter, r *http.Request, principal auth.Principal) {
 	if r.Method != http.MethodPost {
-		w.Header().Set("Allow", "POST")
-		writeProblem(w, r, http.StatusMethodNotAllowed, "method_not_allowed")
+		methodNotAllowed(w, r, "POST")
 		return
 	}
 	id, ok := readResourceID(w, r, "delivery_id")
@@ -74,10 +72,7 @@ func (api *api) replayProblem(w http.ResponseWriter, r *http.Request, err error)
 		writeProblem(w, r, http.StatusConflict, "replay_endpoint_not_ready")
 	case errors.Is(err, deliveries.ErrReplayCycleLimit):
 		writeProblem(w, r, http.StatusConflict, "delivery_cycle_limit_reached")
-	case errors.Is(err, context.DeadlineExceeded), errors.Is(err, context.Canceled):
-		writeProblem(w, r, http.StatusServiceUnavailable, "request_timeout")
 	default:
-		api.logger.Error("delivery replay failed", "error", err)
-		writeProblem(w, r, http.StatusInternalServerError, "internal_error")
+		api.unexpectedProblem(w, r, "delivery replay failed", err)
 	}
 }

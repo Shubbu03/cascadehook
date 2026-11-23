@@ -13,6 +13,7 @@ dist/
 .wrangler/
 .dev.vars
 .dev.vars.*
+!.dev.vars.example
 
 # Local configuration
 .env
@@ -22,6 +23,12 @@ received-events.ndjson
 !.env.*.example
 *.pem
 
+# Deployment recovery files
+cascadehook-backups/
+*.dump
+database.contents
+server-files.tar.gz
+
 # Go build output
 /apps/server/bin/
 
@@ -29,3 +36,5 @@ received-events.ndjson
 .DS_Store
 *.log
 plan.md
+video/
+assets/

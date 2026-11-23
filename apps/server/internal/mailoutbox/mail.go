@@ -15,6 +15,7 @@ import (
 type Config struct {
 	APIKey        string `json:"-"`
 	From          string
+	ReplyTo       string
 	WebhookSecret string `json:"-"`
 	InvitationURL string
 	DailyLimit    int
@@ -31,6 +32,11 @@ func (cfg Config) Validate() error {
 	}
 	if _, err := mail.ParseAddress(cfg.From); err != nil || strings.ContainsAny(cfg.From, "\r\n") {
 		return fmt.Errorf("EMAIL_FROM must be a valid sender address")
+	}
+	if cfg.ReplyTo != "" {
+		if _, err := mail.ParseAddress(cfg.ReplyTo); err != nil || strings.ContainsAny(cfg.ReplyTo, "\r\n") {
+			return fmt.Errorf("EMAIL_REPLY_TO must be a valid mailbox")
+		}
 	}
 	u, err := url.Parse(cfg.InvitationURL)
 	if err != nil || u.Hostname() == "" {
@@ -51,22 +57,26 @@ func (cfg Config) Validate() error {
 }
 
 type Job struct {
-	ID                uuid.UUID
-	LeaseID           uuid.UUID
-	InvitationID      uuid.UUID
-	OrganizationID    uuid.UUID
-	Email             string
-	OrganizationName  string
-	Role              string
-	ExpiresAt         time.Time
-	Attempts          int
-	FirstAttemptAt    time.Time
-	Payload           []byte
-	ClerkInvitationID string
+	ID               uuid.UUID
+	LeaseID          uuid.UUID
+	InvitationID     uuid.UUID
+	NotificationID   uuid.UUID
+	RecipientSubject string
+	Title            string
+	Body             string
+	OrganizationID   uuid.UUID
+	Email            string
+	OrganizationName string
+	Role             string
+	ExpiresAt        time.Time
+	Attempts         int
+	FirstAttemptAt   time.Time
+	Payload          []byte
 }
 
 type Message struct {
 	From    string   `json:"from"`
+	ReplyTo string   `json:"reply_to,omitempty"`
 	To      []string `json:"to"`
 	Subject string   `json:"subject"`
 	HTML    string   `json:"html"`

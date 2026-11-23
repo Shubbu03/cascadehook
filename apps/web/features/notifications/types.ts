@@ -8,7 +8,7 @@ export const notificationCategories = {
 } as const;
 
 export type NotificationCategory = keyof typeof notificationCategories;
-export type NotificationState = "all" | "unread" | "read" | "archived";
+export type NotificationState = "unread" | "archived";
 export type NotificationFilters = {
   projectId?: string;
   category?: NotificationCategory;
@@ -45,7 +45,7 @@ export function notificationTarget(item: InboxNotification) {
     : null;
   switch (item.target.type) {
     case "members":
-      return organization + "/settings";
+      return organization + "/settings?section=team";
     case "project":
       return project;
     case "api_key":

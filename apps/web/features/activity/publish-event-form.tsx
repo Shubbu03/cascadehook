@@ -1,5 +1,9 @@
 "use client";
 
+import { Input, Textarea } from "@/components/input";
+
+import { Button } from "@/components/button";
+
 import { useAuth, useClerk } from "@clerk/nextjs";
 import { ArrowRightIcon } from "@phosphor-icons/react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -16,16 +20,17 @@ import {
   type PublicationErrors,
   type PublicationReceipt,
 } from "./publication";
+import { queryKeys } from "@/lib/query-keys";
 
 type PublishState =
-  | { status: "draft" }
-  | { status: "pending"; publication: Publication }
-  | { status: "error"; publication: Publication; message: string }
+  | { status: "draft"; }
+  | { status: "pending"; publication: Publication; }
+  | { status: "error"; publication: Publication; message: string; }
   | {
-      status: "accepted";
-      publication: Publication;
-      receipt: PublicationReceipt;
-    };
+    status: "accepted";
+    publication: Publication;
+    receipt: PublicationReceipt;
+  };
 const initialPayload =
   '{\n  "order_id": "ord_001",\n  "message": "Hello from Cascadehook"\n}';
 
@@ -96,11 +101,11 @@ export function PublishEventForm({
         state.status === "error"
           ? state.publication
           : preparePublication(
-              type,
-              payload,
-              requestKey || "dashboard-" + crypto.randomUUID(),
-              eventTypes,
-            );
+            type,
+            payload,
+            requestKey || "dashboard-" + crypto.randomUUID(),
+            eventTypes,
+          );
     } catch (error) {
       if (error instanceof PublicationError) setErrors(error.errors);
       else
@@ -133,11 +138,11 @@ export function PublishEventForm({
       setState({ status: "accepted", publication, receipt });
       void Promise.allSettled(
         [
-          ["events", userId, project.id],
-          ["deliveries", userId, project.id],
+          queryKeys.events(userId, project.id),
+          queryKeys.deliveries(userId, project.id),
           ["project-overview", userId, project.id],
-          ["usage", userId, "project", project.id],
-          ["usage", userId, "organization", project.organization_id],
+          queryKeys.projectUsage(userId, project.id),
+          queryKeys.organizationUsage(userId, project.organization_id),
         ].map((queryKey) =>
           client.invalidateQueries({ queryKey, refetchType: "all" }),
         ),
@@ -162,14 +167,14 @@ export function PublishEventForm({
 
   return (
     <form
-      className="event-publish-form"
+      data-ui="event-publish-form" className="min-w-0 [&_p]:text-[12px] [&_p]:leading-[1.7]"
       onSubmit={submit}
       aria-busy={busy}
       noValidate
     >
-      <label className="form-field" htmlFor={id + "-type"}>
+      <label className="grid gap-2 [&_>_span]:text-[13px] [&_>_span]:font-medium [&_>_label]:text-[13px] [&_>_label]:font-medium mb-3.5" htmlFor={id + "-type"}>
         <span>Event type</span>
-        <input
+        <Input className="in-data-[ui~='workspace-create-dialog']:bg-surface-hover in-data-[ui~='workspace-create-dialog']:border-0 in-data-[ui~='workspace-create-dialog']:border-none in-data-[ui~='workspace-create-dialog']:border-current in-data-[ui~='dashboard-main']:min-h-10 in-data-[ui~='dashboard-main']:text-[14px] in-data-[ui~='dashboard-main']:py-2.25 in-data-[ui~='dashboard-main']:px-3 in-data-[ui~='workspace-create-dialog']:focus-visible:outline-hidden in-data-[ui~='workspace-create-dialog']:focus-visible:shadow-[inset_0_-2px_var(--accent)] max-[37.5rem]:in-data-[ui~='dashboard-main']:text-[16px] w-full min-h-11.5 rounded-md text-foreground text-[16px] py-2.75 px-3 placeholder:text-muted font-mono"
           id={id + "-type"}
           value={type}
           onChange={(event) => setType(event.target.value)}
@@ -193,13 +198,13 @@ export function PublishEventForm({
         </datalist>
       )}
       {errors.type && (
-        <p id={id + "-type-error"} className="form-error" role="alert">
+        <p id={id + "-type-error"} className="text-[13px] my-3 [[data-ui~='event-publish-form']_>_&]:-mt-1 [[data-ui~='event-publish-form']_>_&]:mb-4.5 text-danger" role="alert">
           {errors.type}
         </p>
       )}
-      <label className="form-field" htmlFor={id + "-payload"}>
+      <label className="grid gap-2 [&_>_span]:text-[13px] [&_>_span]:font-medium [&_>_label]:text-[13px] [&_>_label]:font-medium mb-3.5" htmlFor={id + "-payload"}>
         <span>JSON payload</span>
-        <textarea
+        <Textarea className="w-full resize-y rounded-md text-foreground font-normal text-[14px] leading-[1.7] font-mono p-3 max-[32.5rem]:text-[16px] min-h-40 tab-2 bg-surface-hover"
           id={id + "-payload"}
           value={payload}
           onChange={(event) => setPayload(event.target.value)}
@@ -215,17 +220,17 @@ export function PublishEventForm({
       </label>
       <p
         id={id + "-payload-help"}
-        className={errors.payload ? "form-error" : "field-help"}
+        className={(errors.payload) ? "text-[13px] my-3 [[data-ui~='event-publish-form']_>_&]:-mt-1 [[data-ui~='event-publish-form']_>_&]:mb-4.5 text-danger" : "text-[12px] text-muted leading-[1.7] [[data-ui~='event-publish-form']_>_&]:-mt-1 [[data-ui~='event-publish-form']_>_&]:mb-4.5"}
         role={errors.payload ? "alert" : undefined}
       >
         {errors.payload ??
           "Sent as the event’s data. Maximum complete event size: 256 KiB."}
       </p>
-      <label className="form-field event-publish-key" htmlFor={id + "-key"}>
+      <label className="grid mt-5 gap-2 [&_>_span]:text-[13px] [&_>_span]:font-medium [&_>_label]:text-[13px] [&_>_label]:font-medium mb-3.5" htmlFor={id + "-key"}>
         <span>
-          Idempotency key <span className="workspace-muted">(optional)</span>
+          Idempotency key <span className="text-muted text-[13px]">(optional)</span>
         </span>
-        <input
+        <Input className="in-data-[ui~='workspace-create-dialog']:bg-surface-hover in-data-[ui~='workspace-create-dialog']:border-0 in-data-[ui~='workspace-create-dialog']:border-none in-data-[ui~='workspace-create-dialog']:border-current in-data-[ui~='dashboard-main']:min-h-10 in-data-[ui~='dashboard-main']:text-[14px] in-data-[ui~='dashboard-main']:py-2.25 in-data-[ui~='dashboard-main']:px-3 in-data-[ui~='workspace-create-dialog']:focus-visible:outline-hidden in-data-[ui~='workspace-create-dialog']:focus-visible:shadow-[inset_0_-2px_var(--accent)] max-[37.5rem]:in-data-[ui~='dashboard-main']:text-[16px] w-full min-h-11.5 rounded-md text-foreground text-[16px] py-2.75 px-3 placeholder:text-muted font-mono"
           id={id + "-key"}
           value={requestKey}
           onChange={(event) => setRequestKey(event.target.value)}
@@ -242,17 +247,17 @@ export function PublishEventForm({
         />
       </label>
       {errors.idempotencyKey && (
-        <p id={id + "-key-error"} className="form-error" role="alert">
+        <p id={id + "-key-error"} className="text-[13px] my-3 [[data-ui~='event-publish-form']_>_&]:-mt-1 [[data-ui~='event-publish-form']_>_&]:mb-4.5 text-danger" role="alert">
           {errors.idempotencyKey}
         </p>
       )}
       {blockedReason && (
-        <p className="notice notice-warning" role="status">
+        <p className="rounded-lg bg-warning-subtle text-warning text-[13px] leading-[1.7] my-4 py-3.5 px-4.25 border border-solid border-border" role="status">
           {blockedReason}
         </p>
       )}
       {state.status === "error" && (
-        <div className="event-publish-error" role="alert">
+        <div className="rounded-[7px] bg-danger-subtle text-danger p-4 my-5 [&_p+p]:pt-2 [&_p]:text-inherit [&_p]:m-0" role="alert">
           <p>{state.message}</p>
           <p>
             Retry keeps the same payload and key to prevent duplicate events. If
@@ -261,25 +266,25 @@ export function PublishEventForm({
         </div>
       )}
       {state.status === "accepted" && (
-        <div className="event-publish-result" role="status">
+        <div className="rounded-[7px] bg-accent-subtle p-4 my-5 [&_h3]:text-[14px] [&_p]:mt-1.5 [&_p]:mb-3 [&_p]:text-foreground" role="status">
           <h3>Event accepted</h3>
           <p>
             {state.receipt.delivery_count === 0
               ? "No enabled, subscribed endpoints matched. This event will not be delivered."
               : state.receipt.delivery_count +
-                (state.receipt.delivery_count === 1
-                  ? " delivery created. View deliveries for the outcome."
-                  : " deliveries created. View deliveries for their outcomes.")}
+              (state.receipt.delivery_count === 1
+                ? " delivery created. View deliveries for the outcome."
+                : " deliveries created. View deliveries for their outcomes.")}
           </p>
-          <div className="form-actions">
+          <div data-ui="form-actions" className="flex items-center flex-wrap in-data-[ui~='confirmation-dialog']:mt-6 in-data-[ui~='workspace-create-dialog']:flex-row-reverse in-data-[ui~='workspace-create-dialog']:mt-6 mt-3 gap-4">
             <Link
-              className="text-link"
+              className="inline-flex items-center font-medium gap-2 [&:hover]:underline [&:hover]:underline-offset-4 in-data-[ui~='project-overview']:text-[12px] text-[12px] text-accent [[data-ui~='dashboard-main']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='dashboard-main']_>_section_>_&:first-child]:text-[12px] [[data-ui~='project-content']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='project-content']_>_section_>_&:first-child]:text-[12px]"
               href={href + "/events/" + state.receipt.id}
             >
               View event <ArrowRightIcon size={14} aria-hidden="true" />
             </Link>
             <Link
-              className="text-link"
+              className="inline-flex items-center font-medium gap-2 [&:hover]:underline [&:hover]:underline-offset-4 in-data-[ui~='project-overview']:text-[12px] text-[12px] text-accent [[data-ui~='dashboard-main']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='dashboard-main']_>_section_>_&:first-child]:text-[12px] [[data-ui~='project-content']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='project-content']_>_section_>_&:first-child]:text-[12px]"
               href={
                 href +
                 "/deliveries?event_id=" +
@@ -291,11 +296,11 @@ export function PublishEventForm({
           </div>
         </div>
       )}
-      <div className="form-actions event-publish-actions">
+      <div data-ui="form-actions" className="flex items-center flex-wrap gap-2.5 in-data-[ui~='confirmation-dialog']:mt-6 in-data-[ui~='workspace-create-dialog']:flex-row-reverse in-data-[ui~='workspace-create-dialog']:mt-6 [[data-ui~='event-publish-form']_>_&]:mt-5">
         {state.status !== "accepted" && (
-          <button
+          <Button
             type="submit"
-            className="button button-primary"
+            data-ui="button"
             disabled={busy || Boolean(blockedReason)}
           >
             {busy
@@ -303,30 +308,30 @@ export function PublishEventForm({
               : state.status === "error"
                 ? "Retry same request"
                 : "Publish event"}
-          </button>
+          </Button>
         )}
         {(state.status === "accepted" || state.status === "error") && (
-          <button
+          <Button
             type="button"
-            className="button button-secondary"
+            data-ui="button" variant="secondary"
             onClick={newEvent}
           >
             New event
-          </button>
+          </Button>
         )}
         {onClose && (
-          <button
+          <Button
             type="button"
-            className="button button-quiet"
+            data-ui="button" variant="quiet"
             onClick={onClose}
             disabled={busy}
           >
             Close
-          </button>
+          </Button>
         )}
       </div>
       {!locked && (
-        <p className="field-help event-publish-routing">
+        <p className="text-[12px] text-muted leading-[1.7] [[data-ui~='event-publish-form']_>_&]:mt-3 [[data-ui~='event-publish-form']_>_&]:mb-0">
           Publishes to all enabled endpoints subscribed to this event type.
         </p>
       )}

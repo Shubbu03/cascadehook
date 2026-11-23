@@ -1,0 +1,2 @@
+ALLOWED_ORIGINS=http://localhost:3000
+TOOL_URL=http://localhost:3000/tools/webhook-tester

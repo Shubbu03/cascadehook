@@ -2,7 +2,8 @@
   "pages": [
     "---Getting started---", "index", "quickstart",
     "---Build your integration---", "concepts", "receivers", "security",
+    "---Guides---", "...guides",
     "---Project API---", "api",
-    "---Resources---", "plans", "agents", "troubleshooting"
+    "---Resources---", "plans", "support", "agents", "troubleshooting"
   ]
 }

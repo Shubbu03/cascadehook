@@ -17,10 +17,23 @@ Active project names are unique within an organization, ignoring case and
 surrounding whitespace. Different organizations can use the same name.
 Project IDs remain stable when a project is renamed.
 
-## API key environments
+## API key scopes
 
-Development and Live are labels on project API keys. They currently grant the
-same project permissions and do not create isolated environments.
+Each project API key has a scope chosen when it is created:
+
+| Scope | Allows |
+| --- | --- |
+| `full` | Every project API route, including endpoints, replay, and API keys |
+| `publish` | `POST /v1/events` and `GET /v1/project-status` |
+| `read` | GET routes, except `/v1/api-keys` |
+
+Scope can't be changed later. Rotation keeps it. Give each deployed
+application a `publish` key, and keep `full` keys for setup and automation that
+manages configuration.
+
+Development and Live are labels on project API keys. They don't change a key's
+access or create isolated environments. Use a separate project for each
+environment you want to keep apart.
 
 ## Endpoints
 

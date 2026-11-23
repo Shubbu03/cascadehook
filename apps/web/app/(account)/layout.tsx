@@ -1,3 +1,4 @@
+import { controlStyles } from "@/components/input";
 import { ClerkProvider } from "@clerk/nextjs";
 import { connection } from "next/server";
 import { Suspense } from "react";
@@ -20,7 +21,7 @@ export default function AccountLayout({
   );
 }
 
-async function ConfiguredAccount({ children }: { children: React.ReactNode }) {
+async function ConfiguredAccount({ children }: { children: React.ReactNode; }) {
   await connection();
   if (!isAuthConfigured()) return children;
 
@@ -46,7 +47,7 @@ async function ConfiguredAccount({ children }: { children: React.ReactNode }) {
       }}
       appearance={{
         cssLayerName: "clerk",
-        elements: { formFieldInput: "account-input" },
+        elements: { formFieldInput: controlStyles },
         variables: {
           colorPrimary: "var(--accent)",
           colorPrimaryForeground: "var(--accent-foreground)",

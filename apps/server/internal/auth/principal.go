@@ -16,6 +16,8 @@ type Principal struct {
 	ProjectID uuid.UUID
 	APIKeyID  uuid.UUID
 	UserID    uuid.UUID
+	// Scope is set only for API-key callers.
+	Scope KeyScope
 }
 
 func (principal Principal) Valid() bool {

@@ -12,14 +12,18 @@ server environment or secret manager as `CASCADEHOOK_API_KEY`.
 Authorization: Bearer YOUR_PROJECT_API_KEY
 ```
 
-Project keys grant broad project access, including endpoint and API key
-management. Development and Live labels currently have the same permissions.
-Choose a suitable expiry and share keys only with trusted integrations.
+Each key has a scope: `full` allows every route, `publish` allows
+`POST /v1/events` and `GET /v1/project-status`, and `read` allows GET routes
+except `/v1/api-keys`. A request outside the key's scope returns
+`403 insufficient_scope`. Development and Live labels don't change access.
+Use the narrowest scope that works, choose a suitable expiry, and share keys
+only with trusted integrations.
 
 ## Check the project first
 
 Call `GET /v1/project-status` before making changes. Compare the returned
-`project_id` to the intended project and inspect suspension state.
+`project_id` to the intended project, check `api_key_scope`, and inspect
+suspension state.
 Stop if the identity differs or authentication fails.
 
 ## JSON requests

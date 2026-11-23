@@ -14,11 +14,7 @@ import (
 // AdmitProjectRequest uses a separate row from project configuration, avoiding
 // a configuration lock for every request. PostgreSQL serializes competing
 // UPSERTs for the same project; credentials and API replicas share one balance.
-func (s *Store) AdmitProjectRequest(
-	ctx context.Context,
-	projectID uuid.UUID,
-	budget limits.Budget,
-) (bool, error) {
+func (s *Store) AdmitProjectRequest(ctx context.Context, projectID uuid.UUID, budget limits.Budget) (bool, error) {
 	if err := budget.Validate(); err != nil {
 		return false, err
 	}

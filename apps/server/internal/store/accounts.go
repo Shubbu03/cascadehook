@@ -147,6 +147,9 @@ func (s *Store) CreateOrganization(ctx context.Context, userID uuid.UUID, name s
 		return accounts.Organization{}, fmt.Errorf("begin organization creation: %w", err)
 	}
 	defer rollbackTransaction(tx)
+	if err := setAuditActor(ctx, tx, auth.Principal{UserID: userID}); err != nil {
+		return accounts.Organization{}, err
+	}
 	if err := lockActiveUsers(ctx, tx, userID); err != nil {
 		return accounts.Organization{}, err
 	}
@@ -206,11 +209,10 @@ func (s *Store) RenameOrganization(
 
 // Active-user locks precede organization writes. A separate query after the
 // parent lock observes role changes committed while that lock waited.
-func lockOrganizationAccess(
-	ctx context.Context,
-	tx pgx.Tx,
-	userID, organizationID uuid.UUID,
-) (accounts.Role, error) {
+func lockOrganizationAccess(ctx context.Context, tx pgx.Tx, userID, organizationID uuid.UUID) (accounts.Role, error) {
+	if err := setAuditActor(ctx, tx, auth.Principal{UserID: userID}); err != nil {
+		return "", err
+	}
 	if err := lockActiveUsers(ctx, tx, userID); err != nil {
 		return "", err
 	}

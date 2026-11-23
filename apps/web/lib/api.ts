@@ -94,7 +94,9 @@ function problemMessage(status: number, code?: string) {
     api_key_rotation_pending:
       "This key already has a replacement. Use the replacement or create a new key.",
     last_usable_api_key:
-      "Create a usable replacement before revoking this key.",
+      "Create another full-access key before revoking this one.",
+    invalid_api_key_scope: "Choose Full access, Publish only, or Read only.",
+    insufficient_scope: "This API key's scope doesn't allow this action.",
     invalid_invitation_email: "Enter a plain email address.",
     invitation_pending:
       "An invitation for this email is already pending. Revoke it before creating another.",
@@ -150,6 +152,41 @@ function problemMessage(status: number, code?: string) {
       "This notification is no longer available. Refresh your inbox to see the latest updates.",
     invalid_notification_update:
       "This notification couldn't be updated. Refresh your inbox and try again.",
+    invalid_project_details: "Use a description of up to 500 characters and a valid environment.",
+    invalid_delivery_policy: "Use 1–8 attempts, a timeout of 1–30 seconds, and increasing retry delays of 1–64,800 seconds.",
+    email_not_configured: "Email delivery isn’t configured for this installation.",
+    email_test_rate_limited: "Wait one minute before requesting another test email.",
+    invalid_notification_preferences:
+      "These notification preferences couldn't be saved. Refresh the page and try again.",
+    empty_update: "Change at least one setting before saving.",
+    invalid_json: "The request couldn't be read. Refresh the page and try again.",
+    unsupported_media_type:
+      "The request couldn't be read. Refresh the page and try again.",
+    invalid_pagination: "This page is no longer available. Refresh the list.",
+    invalid_replay_cycle:
+      "This delivery changed while you were reviewing it. Refresh before replaying.",
+    insufficient_permissions:
+      "Your organization role doesn't allow this action. Ask an owner or admin.",
+    account_resource_not_found:
+      "This resource no longer exists or you no longer have access to it.",
+    project_not_found:
+      "This project no longer exists or you no longer have access to it.",
+    endpoint_not_found:
+      "This endpoint no longer exists. Refresh the endpoint list.",
+    event_not_found:
+      "This event no longer exists or has passed its retention period.",
+    delivery_not_found:
+      "This delivery no longer exists or has passed its retention period.",
+    api_key_not_found: "This API key no longer exists. Refresh the key list.",
+    member_not_found:
+      "This person is no longer a member of the organization. Refresh the member list.",
+    user_not_found: "No account was found for this person.",
+    sign_in_not_configured:
+      "Sign-in isn't available right now. Please try again later.",
+    request_controls_unavailable:
+      "The service is temporarily busy. Please try again shortly.",
+    internal_error:
+      "Something went wrong on our side. Please try again shortly.",
   };
   if (code && endpointMessages[code]) return endpointMessages[code];
   if (status === 401)
@@ -166,6 +203,10 @@ function problemMessage(status: number, code?: string) {
     return "This action conflicts with a recent change. Refresh and try again.";
   if (status === 404 || status === 410)
     return "This resource is no longer available to your account.";
+  if (status === 400 || status === 405 || status === 422)
+    return "This request wasn't accepted. Refresh the page and try again.";
+  if (status >= 500)
+    return "Something went wrong on our side. Please try again shortly.";
   return "We couldn't reach your workspace. Please try again shortly.";
 }
 

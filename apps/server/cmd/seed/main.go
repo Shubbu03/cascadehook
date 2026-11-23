@@ -8,13 +8,12 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-	"os/signal"
-	"syscall"
 	"time"
 
 	"cascadehook/internal/accounts"
 	"cascadehook/internal/auth"
 	"cascadehook/internal/config"
+	"cascadehook/internal/process"
 	"cascadehook/internal/store"
 )
 
@@ -27,7 +26,7 @@ func main() {
 
 func run() error {
 	// Keep operational logs on stderr; stdout is reserved for the credential.
-	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stderr, nil)).With("service", "seed"))
+	process.StartLogging("seed", os.Stderr)
 	flags := flag.NewFlagSet("seed", flag.ContinueOnError)
 	organization := flags.String("organization", "Development", "name of the new development organization")
 	project := flags.String("project", "Development", "name of the new development project")
@@ -64,10 +63,7 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	logger := slog.New(slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{
-		Level: cfg.LogLevel,
-	})).With("service", "seed")
-	slog.SetDefault(logger)
+	logger := process.Logger("seed", os.Stderr, cfg.LogLevel)
 
 	key, err := auth.NewAPIKey(auth.EnvironmentDevelopment)
 	if err != nil {
@@ -76,7 +72,7 @@ func run() error {
 	params.KeyPrefix = key.Prefix
 	params.KeyHash = key.Hash
 
-	signalCtx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	signalCtx, stop := process.SignalContext()
 	defer stop()
 	ctx, cancel := context.WithTimeout(signalCtx, 30*time.Second)
 	defer cancel()

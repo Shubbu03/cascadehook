@@ -3,6 +3,10 @@ title: Build a receiver
 description: Working Node.js and Bun receivers that verify signatures before accepting events.
 ---
 
+A receiver must verify the signature over the raw body, answer the ownership
+challenge, store the event durably, and only then return a `2xx` response. The
+examples below do all four.
+
 The examples share one receiver implementation with runtime-specific adapters.
 Save `receiver-core.mjs` and one adapter in the same directory. No packages
 are required.

@@ -10,15 +10,14 @@ import (
 	"io"
 	"log/slog"
 	"os"
-	"os/signal"
 	"strings"
-	"syscall"
 	"time"
 
 	"github.com/google/uuid"
 
 	"cascadehook/internal/accounts"
 	"cascadehook/internal/config"
+	"cascadehook/internal/process"
 	"cascadehook/internal/store"
 )
 
@@ -30,7 +29,7 @@ func main() {
 }
 
 func run() error {
-	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stderr, nil)).With("service", "tenantctl"))
+	process.StartLogging("tenantctl", os.Stderr)
 	if len(os.Args) < 2 {
 		return fmt.Errorf("usage: tenantctl <status|recover-owner|set-limits> --organization UUID [options]")
 	}
@@ -82,7 +81,7 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	signalCtx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	signalCtx, stop := process.SignalContext()
 	defer stop()
 	ctx, cancel := context.WithTimeout(signalCtx, 30*time.Second)
 	defer cancel()
@@ -100,12 +99,7 @@ func run() error {
 		if parseErr != nil || userID == uuid.Nil {
 			return fmt.Errorf("--user must be a nonzero local account UUID")
 		}
-		output, err = db.RecoverOrganizationOwner(
-			ctx,
-			id,
-			userID,
-			*operator,
-		)
+		output, err = db.RecoverOrganizationOwner(ctx, id, userID, *operator)
 	case "set-limits":
 		var limits accounts.Quotas
 		decoder := json.NewDecoder(strings.NewReader(*limitsJSON))
@@ -128,15 +122,7 @@ func run() error {
 		return err
 	}
 	if action != "status" {
-		slog.Info(
-			"tenant change confirmed",
-			"action",
-			action,
-			"organization_id",
-			id,
-			"operator",
-			*operator,
-		)
+		slog.Info("tenant change confirmed", "action", action, "organization_id", id, "operator", *operator)
 	}
 	if err := json.NewEncoder(os.Stdout).Encode(output); err != nil {
 		return fmt.Errorf("write output; inspect tenant status before retrying a change: %w", err)

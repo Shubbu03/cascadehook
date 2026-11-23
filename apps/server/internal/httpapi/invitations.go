@@ -21,12 +21,7 @@ func (api *api) invitationCollection(w http.ResponseWriter, r *http.Request, use
 		if !ok {
 			return
 		}
-		invitations, err := api.db.ListInvitations(
-			r.Context(),
-			user.ID,
-			organizationID,
-			options,
-		)
+		invitations, err := api.db.ListInvitations(r.Context(), user.ID, organizationID, options)
 		if err != nil {
 			api.accountProblem(w, r, err)
 			return
@@ -60,7 +55,7 @@ func (api *api) invitationCollection(w http.ResponseWriter, r *http.Request, use
 		if body.Role == "" {
 			body.Role = accounts.Member
 		}
-		_, hash, err := accounts.NewInvitationToken()
+		hash, err := accounts.NewInvitationHash()
 		if err != nil {
 			api.accountProblem(w, r, err)
 			return
@@ -82,24 +77,17 @@ func (api *api) invitationCollection(w http.ResponseWriter, r *http.Request, use
 			}{Invitation: invitation},
 		)
 	default:
-		w.Header().Set("Allow", "GET, HEAD, POST")
-		writeProblem(
-			w,
-			r,
-			http.StatusMethodNotAllowed,
-			"method_not_allowed",
-		)
+		methodNotAllowed(w, r, "GET, HEAD, POST")
 	}
 }
 
 func (api *api) resendInvitation(w http.ResponseWriter, r *http.Request, user accounts.User) {
 	if r.Method != http.MethodPost {
-		w.Header().Set("Allow", "POST")
-		writeProblem(w, r, 405, "method_not_allowed")
+		methodNotAllowed(w, r, "POST")
 		return
 	}
 	if !api.emailEnabled {
-		writeProblem(w, r, 503, "invitation_email_not_configured")
+		writeProblem(w, r, http.StatusServiceUnavailable, "invitation_email_not_configured")
 		return
 	}
 	organizationID, ok := readResourceID(w, r, "organization_id")
@@ -119,8 +107,7 @@ func (api *api) resendInvitation(w http.ResponseWriter, r *http.Request, user ac
 
 func (api *api) acceptInvitationByID(w http.ResponseWriter, r *http.Request, user accounts.User) {
 	if r.Method != http.MethodPost {
-		w.Header().Set("Allow", "POST")
-		writeProblem(w, r, 405, "method_not_allowed")
+		methodNotAllowed(w, r, "POST")
 		return
 	}
 	id, ok := readResourceID(w, r, "invitation_id")
@@ -128,7 +115,7 @@ func (api *api) acceptInvitationByID(w http.ResponseWriter, r *http.Request, use
 		return
 	}
 	if api.clerkBackend == nil {
-		writeProblem(w, r, 503, "invitation_identity_lookup_not_configured")
+		writeProblem(w, r, http.StatusServiceUnavailable, "invitation_identity_lookup_not_configured")
 		return
 	}
 	hash, err := api.db.InvitationHash(r.Context(), user.ID, id)
@@ -143,7 +130,8 @@ func (api *api) acceptInvitationByID(w http.ResponseWriter, r *http.Request, use
 	}
 	emails, err := api.clerkBackend.VerifiedEmails(r.Context(), subject)
 	if err != nil {
-		writeProblem(w, r, 503, "invitation_identity_lookup_unavailable")
+		api.logger.Warn("invitation verified-email lookup failed", "error", err)
+		writeProblem(w, r, http.StatusServiceUnavailable, "invitation_identity_lookup_unavailable")
 		return
 	}
 	member, err := api.db.AcceptInvitation(r.Context(), user.ID, hash, emails)
@@ -164,13 +152,7 @@ func (api *api) acceptInvitationByID(w http.ResponseWriter, r *http.Request, use
 
 func (api *api) revokeInvitation(w http.ResponseWriter, r *http.Request, user accounts.User) {
 	if r.Method != http.MethodDelete {
-		w.Header().Set("Allow", "DELETE")
-		writeProblem(
-			w,
-			r,
-			http.StatusMethodNotAllowed,
-			"method_not_allowed",
-		)
+		methodNotAllowed(w, r, "DELETE")
 		return
 	}
 	organizationID, ok := readResourceID(w, r, "organization_id")
@@ -181,83 +163,9 @@ func (api *api) revokeInvitation(w http.ResponseWriter, r *http.Request, user ac
 	if !ok {
 		return
 	}
-	if err := api.db.RevokeInvitation(
-		r.Context(),
-		user.ID,
-		organizationID,
-		id,
-	); err != nil {
+	if err := api.db.RevokeInvitation(r.Context(), user.ID, organizationID, id); err != nil {
 		api.accountProblem(w, r, err)
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
-}
-
-func (api *api) acceptInvitation(w http.ResponseWriter, r *http.Request, user accounts.User) {
-	if r.Method != http.MethodPost {
-		w.Header().Set("Allow", "POST")
-		writeProblem(
-			w,
-			r,
-			http.StatusMethodNotAllowed,
-			"method_not_allowed",
-		)
-		return
-	}
-	if !accountQueryEmpty(w, r) {
-		return
-	}
-	var body struct {
-		Token string `json:"token"`
-	}
-	if err := readJSON(w, r, &body); err != nil {
-		jsonProblem(w, r, err)
-		return
-	}
-	hash, err := accounts.InvitationDigest(body.Token)
-	if err != nil {
-		api.accountProblem(w, r, err)
-		return
-	}
-	if api.clerkBackend == nil {
-		writeProblem(
-			w,
-			r,
-			http.StatusServiceUnavailable,
-			"invitation_identity_lookup_not_configured",
-		)
-		return
-	}
-	subject, err := api.db.InvitationIdentity(r.Context(), user.ID, hash)
-	if err != nil {
-		api.accountProblem(w, r, err)
-		return
-	}
-	emails, err := api.clerkBackend.VerifiedEmails(r.Context(), subject)
-	if err != nil {
-		api.logger.Warn("invitation verified-email lookup failed", "error", err)
-		writeProblem(
-			w,
-			r,
-			http.StatusServiceUnavailable,
-			"invitation_identity_lookup_unavailable",
-		)
-		return
-	}
-	member, err := api.db.AcceptInvitation(
-		r.Context(),
-		user.ID,
-		hash,
-		emails,
-	)
-	if err != nil {
-		api.accountProblem(w, r, err)
-		return
-	}
-	writeJSON(
-		w,
-		r,
-		http.StatusOK,
-		member,
-	)
 }

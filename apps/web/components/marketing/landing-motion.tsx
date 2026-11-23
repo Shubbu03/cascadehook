@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, type ReactNode } from "react";
 
-export function LandingMotion({ children }: { children: ReactNode }) {
+export function LandingMotion({ children }: { children: ReactNode; }) {
   const page = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -42,7 +42,7 @@ export function LandingMotion({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <div className="landing-page" ref={page}>
+    <div className={"[--landing-header-height:96px] min-h-svh bg-background text-foreground max-[53.125rem]:[--landing-header-height:88px] max-[37.5rem]:[--landing-header-height:80px] motion-safe:[&_[data-motion=\"reveal\"][data-visible=\"true\"]]:animate-landing-content-reveal"} ref={page}>
       {children}
     </div>
   );

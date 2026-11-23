@@ -3,6 +3,12 @@ title: Verify webhook signatures
 description: Authenticate the raw request body before accepting a webhook.
 ---
 
+To verify a Cascadehook webhook, compute HMAC-SHA256 over
+`Webhook-Id.Webhook-Timestamp.raw body` with the Base64-decoded signing secret,
+compare the result in constant time with each `v1,` value in
+`Webhook-Signature`, and reject timestamps more than five minutes from your
+clock. Do all of this before parsing the body.
+
 ## Separate your credentials
 
 The project API key authorizes outbound calls to Cascadehook. An endpoint's
@@ -36,6 +42,11 @@ Do not reserialize JSON before verification.
 Use the [shared receiver implementation](/docs/receivers#shared-source) as
 the executable reference for secret decoding, signed-message construction,
 signature parsing, and ownership challenges.
+
+If a check fails, paste the request into the
+[webhook signature verifier](https://cascadehook.com/tools/webhook-signature-verifier).
+It runs in your browser, tells you whether the signature is valid, and points
+out common mistakes such as a re-encoded body.
 
 ## Replay protection and deduplication
 

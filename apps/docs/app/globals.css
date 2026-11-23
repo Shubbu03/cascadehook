@@ -137,23 +137,6 @@ body {
   font: 500 11px var(--font-plex-mono), monospace;
   letter-spacing: .02em;
 }
-.docs-not-found {
-  width: min(100% - 48px, 620px);
-  margin: auto;
-  padding-block: 80px;
-}
-.docs-not-found h1 {
-  font-size: 32px;
-  letter-spacing: -.04em;
-}
-.docs-not-found > p:not(.docs-eyebrow) {
-  margin-block: 18px 28px;
-  color: var(--color-fd-muted-foreground);
-  line-height: 1.8;
-}
-.docs-not-found a {
-  color: var(--color-fd-primary);
-}
 
 .docs-skip-link {
   position: fixed;

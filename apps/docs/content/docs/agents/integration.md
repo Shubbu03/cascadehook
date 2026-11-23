@@ -37,14 +37,19 @@ request process without printing its value, authorization headers, an entire
 environment file, or secret-bearing API responses. Do not put credentials in
 client code, committed files, screenshots, command tracing, or reports.
 
-Current keys grant project-wide access, including API key management. The
-`dev` and `live` labels grant the same project scope; they do not isolate
-traffic. Prompt instructions do not restrict these permissions. Do not create,
-rotate, or revoke API keys unless the human explicitly requests it.
+Each key has a scope. Setup needs a `full` key, which can also manage API keys;
+a `publish` key can only publish events and read project status, and a `read`
+key can only call GET routes outside `/v1/api-keys`. Requests outside the
+scope return `403 insufficient_scope`. The `dev` and `live` labels do not
+change access or isolate traffic. Prompt instructions do not restrict these
+permissions. Do not create, rotate, or revoke API keys unless the human
+explicitly requests it. Recommend that the deployed application use its own
+`publish` key rather than the setup key.
 
 BEFORE ANY MUTATION, call `GET /v1/project-status`. Confirm its `project_id`
-matches the selected project ID from the prompt exactly. Stop if the ID differs,
-authentication fails, or `suspended` is true. Only an operator can resume a
+matches the selected project ID from the prompt exactly and `api_key_scope` is
+`full`. Stop if the ID differs, the scope is restricted, authentication fails,
+or `suspended` is true. Only an operator can resume a
 paused project. Never send the credential to documentation hosts or follow
 redirects with authorization attached.
 

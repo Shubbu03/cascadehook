@@ -1,5 +1,11 @@
 "use client";
 
+import { Status } from "@/components/status";
+
+import { Input } from "@/components/input";
+
+import { Button } from "@/components/button";
+
 import { TableSkeleton } from "@/features/workspace/skeletons";
 import { Select } from "@/components/select";
 import { useAuth } from "@clerk/nextjs";
@@ -14,16 +20,22 @@ import { ConfirmDialog } from "@/components/confirm-dialog";
 import { CopyButton } from "@/components/copy-button";
 import { OneTimeSecret, useOneTimeSecret } from "@/components/one-time-secret";
 import { LoadMore, QueryState, RefreshButton } from "@/components/query-state";
-import { projectPath, stateClass } from "@/features/activity/types";
+import { projectPath, stateTone } from "@/features/activity/types";
 import { projectHref, useProject } from "@/features/projects/project-workspace";
+import { apiKeyKeys, apiKeyListQuery } from "@/features/projects/section-queries";
 import { AccessRedirect } from "@/features/workspace/access-redirect";
 import { useSessionUserId } from "@/features/workspace/session";
-import type { Page } from "@/features/workspace/types";
 import { apiRequest } from "@/lib/api";
-import { formatTime } from "@/lib/format";
+import { useFormatTime } from "@/lib/display-preferences";
 import { notify } from "@/lib/notify";
 import { publicationExample } from "@/lib/example";
-import { validateKeyReceipt, type APIKey, type KeyReceipt } from "./types";
+import {
+  scopeLabels,
+  validateKeyReceipt,
+  type APIKey,
+  type KeyReceipt,
+} from "./types";
+import { dataTable, emptyState, errorText, filterBar, filterField, formField, leadText } from "@/components/styles";
 
 export function APIKeyList() {
   const { project, canManage } = useProject();
@@ -35,6 +47,7 @@ export function APIKeyList() {
 }
 
 function KeyManagement() {
+  const formatTime = useFormatTime();
   const { project, availabilityKnown, suspended } = useProject();
   const { getToken } = useAuth();
   const userId = useSessionUserId();
@@ -52,24 +65,12 @@ function KeyManagement() {
   const example = publicationExample.replace(
     "https://YOUR_API_HOST",
     process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "") ||
-      "https://YOUR_API_HOST",
+    "https://YOUR_API_HOST",
   );
-  const prefix = ["api-keys", userId, project.id];
-  const list = useInfiniteQuery({
-    queryKey: [...prefix, environment, status],
-    initialPageParam: null as string | null,
-    queryFn: ({ pageParam, signal }) =>
-      apiRequest<Page<APIKey>>(path, getToken, {
-        signal,
-        params: {
-          limit: 20,
-          ...(pageParam ? { cursor: pageParam } : {}),
-          ...(environment ? { environment } : {}),
-          ...(status ? { status } : {}),
-        },
-      }),
-    getNextPageParam: (page) => page.next_cursor ?? undefined,
-  });
+  const prefix = apiKeyKeys(userId, project.id);
+  const list = useInfiniteQuery(
+    apiKeyListQuery(userId, project.id, { environment, status }, getToken),
+  );
   const revoke = useMutation({
     mutationFn: (key: APIKey) =>
       apiRequest<void>(path + "/" + encodeURIComponent(key.id), getToken, {
@@ -94,8 +95,8 @@ function KeyManagement() {
 
   async function issue(
     options:
-      | { name: string; environment: string; expires_at?: string }
-      | { rotate: APIKey },
+      | { name: string; environment: string; scope: string; expires_at?: string; }
+      | { rotate: APIKey; },
   ) {
     setConfirm(null);
     await disclosure.run(async () => {
@@ -119,8 +120,8 @@ function KeyManagement() {
           label: "API key",
           note: receipt.previous_key_revokes_at
             ? "The previous key stops working at " +
-              formatTime(receipt.previous_key_revokes_at) +
-              ". Update your integration before then."
+            formatTime(receipt.previous_key_revokes_at) +
+            ". Update your integration before then."
             : undefined,
         };
       } finally {
@@ -150,6 +151,7 @@ function KeyManagement() {
     void issue({
       name,
       environment: String(form.get("environment")),
+      scope: String(form.get("scope")),
       ...(expires ? { expires_at: new Date(expires).toISOString() } : {}),
     });
   }
@@ -161,9 +163,9 @@ function KeyManagement() {
         actions={
           <>
             <RefreshButton pending={list.isFetching} refresh={list.refetch} />
-            <button
+            <Button
               type="button"
-              className="button button-small button-primary"
+              data-ui="button" size="small" className="leading-[1.4]"
               disabled={!canIssue}
               onClick={() => {
                 setCreating(!creating);
@@ -171,7 +173,7 @@ function KeyManagement() {
               }}
             >
               Create key
-            </button>
+            </Button>
           </>
         }
       />
@@ -182,75 +184,88 @@ function KeyManagement() {
         />
       )}
       {disclosure.state.status === "error" && (
-        <p role="alert" className="form-error">
+        <p role="alert" className={errorText}>
           {disclosure.state.message} The operation may have completed. Check the
           key list before retrying.
         </p>
       )}
       {revoke.isError && (
-        <p role="alert" className="form-error">
+        <p role="alert" className={errorText}>
           {revoke.error.message}
         </p>
       )}
       {creating && disclosure.state.status !== "revealed" && (
         <form
-          className="settings-form"
+          className="max-w-125 rounded-[9px] bg-surface p-5.5 my-6 border border-solid border-border in-data-[ui~='dashboard-main']:max-w-140 in-data-[ui~='dashboard-main']:rounded-none in-data-[ui~='dashboard-main']:bg-transparent in-data-[ui~='dashboard-main']:p-0 in-data-[ui~='dashboard-main']:my-6 in-data-[ui~='dashboard-main']:border-0 in-data-[ui~='dashboard-main']:border-none in-data-[ui~='dashboard-main']:border-current"
           onSubmit={create}
           aria-busy={disclosure.state.status === "pending"}
         >
-          <label className="form-field">
+          <label className={formField}>
             <span>Name</span>
-            <input
+            <Input className="in-data-[ui~='workspace-create-dialog']:bg-surface-hover in-data-[ui~='workspace-create-dialog']:border-0 in-data-[ui~='workspace-create-dialog']:border-none in-data-[ui~='workspace-create-dialog']:border-current in-data-[ui~='dashboard-main']:min-h-10 in-data-[ui~='dashboard-main']:text-[14px] in-data-[ui~='dashboard-main']:py-2.25 in-data-[ui~='dashboard-main']:px-3 in-data-[ui~='workspace-create-dialog']:focus-visible:outline-hidden in-data-[ui~='workspace-create-dialog']:focus-visible:shadow-[inset_0_-2px_var(--accent)] max-[37.5rem]:in-data-[ui~='dashboard-main']:text-[16px] w-full min-h-11.5 rounded-md text-foreground text-[16px] py-2.75 px-3 placeholder:text-muted"
               name="name"
               placeholder="e.g. Billing production"
               required
               disabled={busy}
             />
           </label>
-          <label className="filter-field">
+          <label className="grid gap-1.75 [&_>_span]:text-[12px] [&_>_span]:font-medium in-data-[ui~='dashboard-main']:flex-[0_1_auto] in-data-[ui~='dashboard-main']:gap-1.5">
+            <span>Access</span>
+            <Select className="in-data-[ui~='dashboard-main']:w-auto in-data-[ui~='dashboard-main']:min-w-37.5 in-data-[ui~='dashboard-main']:min-h-9 in-data-[ui~='dashboard-main']:pr-10.5 in-data-[ui~='dashboard-main']:pl-3.5 in-data-[ui~='dashboard-main']:py-1.75 in-data-[ui~='dashboard-main']:text-[13px]/5 max-[37.5rem]:in-data-[ui~='dashboard-main']:w-full max-[37.5rem]:in-data-[ui~='dashboard-main']:min-w-0 max-[37.5rem]:in-data-[ui~='dashboard-main']:text-[16px] min-h-10.5 rounded-md text-foreground text-[14px] max-w-full py-2.25 px-2.75 max-[32.5rem]:text-[16px]" name="scope" defaultValue="publish" disabled={busy}>
+              <option value="publish">Publish only</option>
+              <option value="read">Read only</option>
+              <option value="full">Full access</option>
+            </Select>
+          </label>
+          <p className="text-[12px] text-muted leading-[1.7] mt-3 mb-4.5">
+            Publish only can send events and check project status. Read only can
+            view endpoints, events, and deliveries. Full access can also change
+            endpoints, replay deliveries, and manage API keys.
+          </p>
+          <label className="grid gap-1.75 [&_>_span]:text-[12px] [&_>_span]:font-medium in-data-[ui~='dashboard-main']:flex-[0_1_auto] in-data-[ui~='dashboard-main']:gap-1.5">
             <span>Environment label</span>
-            <Select name="environment" defaultValue="dev" disabled={busy}>
+            <Select className="in-data-[ui~='dashboard-main']:w-auto in-data-[ui~='dashboard-main']:min-w-37.5 in-data-[ui~='dashboard-main']:min-h-9 in-data-[ui~='dashboard-main']:pr-10.5 in-data-[ui~='dashboard-main']:pl-3.5 in-data-[ui~='dashboard-main']:py-1.75 in-data-[ui~='dashboard-main']:text-[13px]/5 max-[37.5rem]:in-data-[ui~='dashboard-main']:w-full max-[37.5rem]:in-data-[ui~='dashboard-main']:min-w-0 max-[37.5rem]:in-data-[ui~='dashboard-main']:text-[16px] min-h-10.5 rounded-md text-foreground text-[14px] max-w-full py-2.25 px-2.75 max-[32.5rem]:text-[16px]" name="environment" defaultValue="dev" disabled={busy}>
               <option value="dev">Development</option>
               <option value="live">Live</option>
             </Select>
           </label>
-          <p className="field-help">
-            Both labels grant the same access to this project.
+          <p className="text-[12px] text-muted leading-[1.7] mt-3 mb-4.5">
+            The label is for your reference only. Access is set above.
           </p>
-          <label className="form-field">
+          <label className={formField}>
             <span>Expiry (optional, your local time)</span>
-            <input type="datetime-local" name="expires" disabled={busy} />
+            <Input className="in-data-[ui~='workspace-create-dialog']:bg-surface-hover in-data-[ui~='workspace-create-dialog']:border-0 in-data-[ui~='workspace-create-dialog']:border-none in-data-[ui~='workspace-create-dialog']:border-current in-data-[ui~='dashboard-main']:min-h-10 in-data-[ui~='dashboard-main']:text-[14px] in-data-[ui~='dashboard-main']:py-2.25 in-data-[ui~='dashboard-main']:px-3 in-data-[ui~='workspace-create-dialog']:focus-visible:outline-hidden in-data-[ui~='workspace-create-dialog']:focus-visible:shadow-[inset_0_-2px_var(--accent)] max-[37.5rem]:in-data-[ui~='dashboard-main']:text-[16px] w-full min-h-11.5 rounded-md text-foreground text-[16px] py-2.75 px-3 placeholder:text-muted" type="datetime-local" name="expires" disabled={busy} />
           </label>
           {validation && (
-            <p className="form-error" role="alert">
+            <p className="text-danger text-[13px] my-3 mb-4" role="alert">
               {validation}
             </p>
           )}
-          <div className="form-actions">
-            <button
+          <div data-ui="form-actions" className="flex items-center flex-wrap gap-2.5 in-data-[ui~='workspace-create-dialog']:flex-row-reverse in-data-[ui~='workspace-create-dialog']:mt-6">
+            <Button
               type="submit"
-              className="button button-primary"
+              data-ui="button"
               disabled={!canIssue}
             >
               {disclosure.state.status === "pending"
                 ? "Creating…"
                 : "Create key"}
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
-              className="button button-quiet"
+              data-ui="button" variant="quiet"
               disabled={busy}
               onClick={() => setCreating(false)}
             >
               Cancel
-            </button>
+            </Button>
           </div>
         </form>
       )}
-      <div className="activity-filters">
-        <label className="filter-field">
+      <div data-ui="activity-filters" className={filterBar}>
+        <label className={filterField}>
           <span>Environment</span>
-          <Select
+          <Select className="in-data-[ui~='dashboard-main']:w-auto in-data-[ui~='dashboard-main']:min-w-37.5 in-data-[ui~='dashboard-main']:min-h-9 in-data-[ui~='dashboard-main']:pr-10.5 in-data-[ui~='dashboard-main']:pl-3.5 in-data-[ui~='dashboard-main']:py-1.75 in-data-[ui~='dashboard-main']:text-[13px]/5 max-[37.5rem]:in-data-[ui~='dashboard-main']:w-full max-[37.5rem]:in-data-[ui~='dashboard-main']:min-w-0 max-[37.5rem]:in-data-[ui~='dashboard-main']:text-[16px] max-[37.5rem]:w-full max-[37.5rem]:text-[16px] min-h-10.5 rounded-md text-foreground text-[14px] max-w-full py-2.25 px-2.75 max-[32.5rem]:text-[16px]"
             value={environment}
             onChange={(event) => setEnvironment(event.target.value)}
           >
@@ -259,9 +274,9 @@ function KeyManagement() {
             <option value="live">Live</option>
           </Select>
         </label>
-        <label className="filter-field">
+        <label className={filterField}>
           <span>Status</span>
-          <Select
+          <Select className="in-data-[ui~='dashboard-main']:w-auto in-data-[ui~='dashboard-main']:min-w-37.5 in-data-[ui~='dashboard-main']:min-h-9 in-data-[ui~='dashboard-main']:pr-10.5 in-data-[ui~='dashboard-main']:pl-3.5 in-data-[ui~='dashboard-main']:py-1.75 in-data-[ui~='dashboard-main']:text-[13px]/5 max-[37.5rem]:in-data-[ui~='dashboard-main']:w-full max-[37.5rem]:in-data-[ui~='dashboard-main']:min-w-0 max-[37.5rem]:in-data-[ui~='dashboard-main']:text-[16px] max-[37.5rem]:w-full max-[37.5rem]:text-[16px] min-h-10.5 rounded-md text-foreground text-[14px] max-w-full py-2.25 px-2.75 max-[32.5rem]:text-[16px]"
             value={status}
             onChange={(event) => setStatus(event.target.value)}
           >
@@ -274,8 +289,8 @@ function KeyManagement() {
       </div>
       <QueryState query={list} loading={<TableSkeleton columns={4} label="Loading API keys…" />}>
         {items.length ? (
-          <div className="data-table-wrap">
-            <table className="data-table">
+          <div className="max-w-full overflow-x-auto rounded-[9px] bg-surface border border-solid border-border">
+            <table data-ui="data-table" className={dataTable}>
               <caption className="sr-only">Project API keys</caption>
               <thead>
                 <tr>
@@ -290,29 +305,31 @@ function KeyManagement() {
                   <tr key={key.id}>
                     <td>
                       <strong>{key.name}</strong>
-                      <code className="table-secondary">{key.prefix}…</code>
-                      <span className="table-secondary">
+                      <code className="block mt-1 text-[11px] text-muted">{key.prefix}…</code>
+                      <span className="block mt-1 text-[11px] text-muted">
                         {key.environment === "dev" ? "Development" : "Live"}
+                        {" · "}
+                        {scopeLabels[key.scope] ?? key.scope}
                       </span>
                     </td>
                     <td>
-                      <span className={"status " + stateClass(key.status)}>
+                      <Status tone={stateTone(key.status)}>
                         {key.status}
-                      </span>
+                      </Status>
                     </td>
                     <td>
                       {formatTime(key.expires_at)}
                       {key.revokes_at && (
-                        <span className="table-secondary">
+                        <span className="block mt-1 text-[11px] text-muted">
                           Revokes {formatTime(key.revokes_at)}
                         </span>
                       )}
                     </td>
                     <td>
-                      <div className="form-actions">
+                      <div data-ui="form-actions" className="flex items-center flex-wrap in-data-[ui~='workspace-create-dialog']:flex-row-reverse in-data-[ui~='workspace-create-dialog']:mt-6 gap-3.5">
                         <button
                           type="button"
-                          className="text-link"
+                          className="inline-flex items-center font-medium gap-2 [&:hover]:underline [&:hover]:underline-offset-4 text-[12px] [[data-ui~='dashboard-main']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='dashboard-main']_>_section_>_&:first-child]:text-[12px] [[data-ui~='project-content']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='project-content']_>_section_>_&:first-child]:text-[12px]"
                           disabled={
                             !canIssue ||
                             key.status !== "active" ||
@@ -327,7 +344,7 @@ function KeyManagement() {
                         </button>
                         <button
                           type="button"
-                          className="text-link text-danger"
+                          className="text-danger inline-flex items-center font-medium gap-2 [&:hover]:underline [&:hover]:underline-offset-4 text-[12px] [[data-ui~='dashboard-main']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='dashboard-main']_>_section_>_&:first-child]:text-[12px] [[data-ui~='project-content']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='project-content']_>_section_>_&:first-child]:text-[12px]"
                           disabled={busy || key.status !== "active"}
                           onClick={() => {
                             revoke.reset();
@@ -344,7 +361,7 @@ function KeyManagement() {
             </table>
           </div>
         ) : (
-          <div className="empty-state">
+          <div data-ui="empty-state" className={emptyState}>
             <h3>
               No API keys
               {environment || status ? " match these filters" : " yet"}
@@ -354,9 +371,9 @@ function KeyManagement() {
         )}
         <LoadMore query={list} />
       </QueryState>
-      <details className="settings-section publication-guide">
+      <details data-ui="settings-section" className="mt-9 pt-7 border-t border-t-border [&_>_h3]:text-[19px] [&_>_h3]:mb-4 [&_>_h2]:mb-4 [&_>_h2]:text-[19px] in-data-[ui~='dashboard-main']:mt-7.5 in-data-[ui~='dashboard-main']:pt-6 [[data-ui~='dashboard-main']_&_>_h3]:text-[17px]">
         <summary>Publish an event</summary>
-        <p className="section-description">
+        <p className={leadText}>
           Replace YOUR_PROJECT_API_KEY and use a new Idempotency-Key for each
           new event. Enable a verified endpoint subscribed to invoice.paid to
           create a delivery.
@@ -366,7 +383,7 @@ function KeyManagement() {
           label="Copy example"
           successMessage="Publication example copied."
         />
-        <pre className="payload-view">
+        <pre className="max-h-150 mt-4 rounded-[9px] bg-surface overflow-auto text-[12px] leading-[1.8] tab-2 p-5 border border-solid border-border">
           <code>{example}</code>
         </pre>
       </details>
@@ -391,7 +408,7 @@ function KeyManagement() {
           <p>{confirm.key.name}</p>
           <p>
             {confirm.action === "rotate"
-              ? "Save the replacement immediately. The previous key remains valid for five minutes."
+              ? "Save the replacement immediately. It keeps the same access, and the previous key remains valid for five minutes."
               : "Integrations using this key will lose access immediately."}
           </p>
         </ConfirmDialog>

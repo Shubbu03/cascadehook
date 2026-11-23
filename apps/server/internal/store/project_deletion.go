@@ -25,11 +25,7 @@ func (s *Store) RequestProjectDeletion(
 		return accounts.ProjectDeletion{}, fmt.Errorf("begin project deletion request: %w", err)
 	}
 	defer rollbackTransaction(tx)
-	role, err := lockHumanProjectAccess(
-		ctx,
-		tx,
-		auth.Principal{ProjectID: projectID, UserID: userID},
-	)
+	role, err := lockHumanProjectAccess(ctx, tx, auth.Principal{ProjectID: projectID, UserID: userID})
 	if err != nil {
 		return accounts.ProjectDeletion{}, err
 	}

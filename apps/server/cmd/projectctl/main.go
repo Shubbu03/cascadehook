@@ -9,14 +9,13 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-	"os/signal"
-	"syscall"
 	"time"
 
 	"github.com/google/uuid"
 
 	"cascadehook/internal/config"
 	"cascadehook/internal/controls"
+	"cascadehook/internal/process"
 	"cascadehook/internal/store"
 )
 
@@ -34,7 +33,7 @@ func main() {
 }
 
 func run() error {
-	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stderr, nil)).With("service", "projectctl"))
+	process.StartLogging("projectctl", os.Stderr)
 	cmd, err := parseCommand(os.Args[1:])
 	if errors.Is(err, flag.ErrHelp) {
 		return nil
@@ -46,10 +45,8 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	logger := slog.New(slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{Level: cfg.LogLevel})).
-		With("service", "projectctl")
-	slog.SetDefault(logger)
-	signalCtx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	logger := process.Logger("projectctl", os.Stderr, cfg.LogLevel)
+	signalCtx, stop := process.SignalContext()
 	defer stop()
 	ctx, cancel := context.WithTimeout(signalCtx, 30*time.Second)
 	defer cancel()

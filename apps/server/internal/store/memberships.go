@@ -86,12 +86,7 @@ func (s *Store) AddMembership(
 		return accounts.Membership{}, fmt.Errorf("begin membership creation: %w", err)
 	}
 	defer rollbackTransaction(tx)
-	targetErr := lockActiveUsers(
-		ctx,
-		tx,
-		actorID,
-		params.UserID,
-	)
+	targetErr := lockActiveUsers(ctx, tx, actorID, params.UserID)
 	if targetErr != nil && !errors.Is(targetErr, accounts.ErrUserNotFound) {
 		return accounts.Membership{}, targetErr
 	}
@@ -109,12 +104,7 @@ func (s *Store) AddMembership(
 	if err := checkUserOrganizationQuota(ctx, tx, params.UserID); err != nil {
 		return accounts.Membership{}, err
 	}
-	if err := checkResourceQuota(
-		ctx,
-		tx,
-		params.OrganizationID,
-		"members",
-	); err != nil {
+	if err := checkResourceQuota(ctx, tx, params.OrganizationID, "members"); err != nil {
 		return accounts.Membership{}, err
 	}
 	var member accounts.Membership
@@ -165,12 +155,7 @@ func (s *Store) ChangeMembershipRole(
 		return accounts.Membership{}, fmt.Errorf("begin membership update: %w", err)
 	}
 	defer rollbackTransaction(tx)
-	targetErr := lockActiveUsers(
-		ctx,
-		tx,
-		actorID,
-		params.UserID,
-	)
+	targetErr := lockActiveUsers(ctx, tx, actorID, params.UserID)
 	if targetErr != nil && !errors.Is(targetErr, accounts.ErrUserNotFound) {
 		return accounts.Membership{}, targetErr
 	}
@@ -238,12 +223,7 @@ func (s *Store) RemoveMembership(ctx context.Context, actorID, organizationID, u
 		return fmt.Errorf("begin membership removal: %w", err)
 	}
 	defer rollbackTransaction(tx)
-	targetErr := lockActiveUsers(
-		ctx,
-		tx,
-		actorID,
-		userID,
-	)
+	targetErr := lockActiveUsers(ctx, tx, actorID, userID)
 	if targetErr != nil && !errors.Is(targetErr, accounts.ErrUserNotFound) {
 		return targetErr
 	}
@@ -311,11 +291,5 @@ func retainOrganizationOwner(ctx context.Context, tx pgx.Tx, organizationID, use
 }
 
 func scanMembership(row pgx.Row, member *accounts.Membership) error {
-	return row.Scan(
-		&member.OrganizationID,
-		&member.UserID,
-		&member.Role,
-		&member.CreatedAt,
-		&member.UpdatedAt,
-	)
+	return row.Scan(&member.OrganizationID, &member.UserID, &member.Role, &member.CreatedAt, &member.UpdatedAt)
 }

@@ -11,6 +11,10 @@ import (
 func cleanupMetadata(ctx context.Context, tx pgx.Tx, reference time.Time, limit int, preview bool) (int64, error) {
 	selections := []lifecycleCleanupSelection{
 		{retentionSelection: retentionSelection{
+			query: `SELECT a.id FROM audit_entries a WHERE a.created_at<$1 ORDER BY a.created_at,a.id LIMIT $2`,
+			table: "audit_entries", lockAlias: "a", match: `t.id=c.id`, args: []any{reference.Add(-AuditRetentionDays * 24 * time.Hour), limit},
+		}},
+		{retentionSelection: retentionSelection{
 			query: `SELECT r.id FROM billing_webhook_receipts r WHERE r.received_at < $1 ORDER BY r.received_at LIMIT $2`,
 			table: "billing_webhook_receipts", lockAlias: "r", match: `t.id=c.id`, args: []any{reference.Add(-90 * 24 * time.Hour), limit},
 		}},
@@ -61,12 +65,7 @@ func cleanupMetadata(ctx context.Context, tx pgx.Tx, reference time.Time, limit 
 			args: []any{reference.Add(-90 * 24 * time.Hour), reference, limit},
 		}},
 	}
-	count, err := cleanupLifecycleSelections(
-		ctx,
-		tx,
-		selections,
-		preview,
-	)
+	count, err := cleanupLifecycleSelections(ctx, tx, selections, preview)
 	if err != nil {
 		return 0, fmt.Errorf("clean expired security metadata: %w", err)
 	}

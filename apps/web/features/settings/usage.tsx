@@ -5,17 +5,15 @@ import { useAuth } from "@clerk/nextjs";
 import { useQuery } from "@tanstack/react-query";
 import { PageHeader } from "@/components/page-header";
 import { QueryState, RefreshButton } from "@/components/query-state";
-import { projectPath } from "@/features/activity/types";
 import { projectHref, useProject } from "@/features/projects/project-workspace";
+import { organizationUsageQuery, projectUsageQuery } from "@/features/projects/section-queries";
 import { AccessRedirect } from "@/features/workspace/access-redirect";
 import { useSessionUserId } from "@/features/workspace/session";
-import { apiRequest } from "@/lib/api";
 import {
   OrganizationUsageSummary,
   Quota,
   UsageActivity,
 } from "./usage-summary";
-import type { Usage } from "./types";
 
 export function ProjectUsage() {
   const { project, canManage } = useProject();
@@ -30,22 +28,10 @@ function UsageContent() {
   const { project } = useProject();
   const userId = useSessionUserId();
   const { getToken } = useAuth();
-  const projectUsage = useQuery({
-    queryKey: ["usage", userId, "project", project.id],
-    queryFn: ({ signal }) =>
-      apiRequest<Usage>(projectPath(project.id, "usage"), getToken, { signal }),
-  });
-  const organization = useQuery({
-    queryKey: ["usage", userId, "organization", project.organization_id],
-    queryFn: ({ signal }) =>
-      apiRequest<Usage>(
-        "/v1/organizations/" +
-          encodeURIComponent(project.organization_id) +
-          "/usage",
-        getToken,
-        { signal },
-      ),
-  });
+  const projectUsage = useQuery(projectUsageQuery(userId, project.id, getToken));
+  const organization = useQuery(
+    organizationUsageQuery(userId, project.organization_id, getToken),
+  );
   return (
     <section>
       <PageHeader
@@ -67,8 +53,8 @@ function UsageContent() {
       <QueryState query={projectUsage} loading={<UsageSkeleton />}>
         {projectUsage.data && (
           <>
-            <h2 className="settings-section-title">This project</h2>
-            <div className="usage-grid">
+            <h2 className="mt-9 text-[19px] in-data-[ui~='dashboard-main']:mt-7 in-data-[ui~='dashboard-main']:text-[17px]">This project</h2>
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,210px),1fr))] gap-4 my-6 in-data-[ui~='dashboard-main']:grid-cols-[repeat(auto-fit,minmax(min(100%,220px),1fr))] in-data-[ui~='dashboard-main']:gap-3.5 in-data-[ui~='dashboard-main']:my-5">
               <Quota
                 label="Endpoints"
                 value={projectUsage.data.endpoints}

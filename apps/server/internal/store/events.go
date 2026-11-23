@@ -15,6 +15,7 @@ import (
 
 	"cascadehook/internal/auth"
 	"cascadehook/internal/controls"
+	"cascadehook/internal/deliveries"
 	"cascadehook/internal/events"
 )
 
@@ -83,13 +84,7 @@ func (s *Store) PublishEvent(ctx context.Context, projectID uuid.UUID, body []by
 		WHERE k.project_id = $1 AND k.idempotency_key = $2 AND e.purge_started_at IS NULL`,
 		projectID,
 		key,
-	).Scan(
-		&result.ID,
-		&result.Type,
-		&result.CreatedAt,
-		&result.DeliveryCount,
-		&storedHash,
-	)
+	).Scan(&result.ID, &result.Type, &result.CreatedAt, &result.DeliveryCount, &storedHash)
 	if err == nil {
 		if !bytes.Equal(storedHash, digest[:]) {
 			return events.Accepted{}, events.ErrIdempotencyConflict
@@ -105,12 +100,7 @@ func (s *Store) PublishEvent(ctx context.Context, projectID uuid.UUID, body []by
 	if suspended {
 		return events.Accepted{}, controls.ErrSuspended
 	}
-	if err := reservePayloadStorage(
-		ctx,
-		tx,
-		projectID,
-		len(body),
-	); err != nil {
+	if err := reservePayloadStorage(ctx, tx, projectID, len(body)); err != nil {
 		return events.Accepted{}, err
 	}
 
@@ -131,13 +121,7 @@ func (s *Store) PublishEvent(ctx context.Context, projectID uuid.UUID, body []by
 	if err != nil {
 		return events.Accepted{}, fmt.Errorf("create event: %w", err)
 	}
-	result.DeliveryCount, err = fanOutEvent(
-		ctx,
-		tx,
-		projectID,
-		id,
-		eventType,
-	)
+	result.DeliveryCount, err = fanOutEvent(ctx, tx, projectID, id, eventType)
 	if err != nil {
 		return events.Accepted{}, err
 	}
@@ -206,15 +190,19 @@ func fanOutEvent(ctx context.Context, tx pgx.Tx, projectID, eventID uuid.UUID, e
 		}
 		deliveryIDs[i] = pgtype.UUID{Bytes: [16]byte(id), Valid: true}
 	}
+	fallback := deliveries.DefaultPolicy()
 	result, err := tx.Exec(
 		ctx,
-		`INSERT INTO deliveries (id, project_id, event_id, endpoint_id)
-		SELECT jobs.id, $1, $2, jobs.endpoint_id
-		FROM unnest($3::uuid[], $4::uuid[]) AS jobs(id, endpoint_id)`,
+		`INSERT INTO deliveries (id, project_id, event_id, endpoint_id,max_attempts,timeout_seconds,retry_delays_seconds)
+		SELECT jobs.id, $1, $2, jobs.endpoint_id,coalesce(policy.max_attempts,$5),
+			coalesce(policy.timeout_seconds,$6),coalesce(policy.retry_delays_seconds,$7::integer[])
+		FROM unnest($3::uuid[], $4::uuid[]) AS jobs(id, endpoint_id)
+		LEFT JOIN project_delivery_policies policy ON policy.project_id = $1`,
 		projectID,
 		eventID,
 		deliveryIDs,
 		endpointIDs,
+		fallback.MaxAttempts, fallback.TimeoutSeconds, fallback.RetryDelaysSeconds,
 	)
 	if err != nil {
 		return 0, fmt.Errorf("create event deliveries: %w", err)

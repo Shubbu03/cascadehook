@@ -1,5 +1,7 @@
 "use client";
 
+import { Button } from "@/components/button";
+
 import { ArrowClockwiseIcon } from "@phosphor-icons/react";
 import { ConnectionError } from "@/features/workspace/connection-error";
 import { TableSkeleton } from "@/features/workspace/skeletons";
@@ -66,16 +68,16 @@ export function LoadMore({
 }) {
   if (!query.hasNextPage) return null;
   return (
-    <button
+    <Button
       type="button"
-      className="button button-quiet list-load-more"
+      data-ui="button" variant="quiet" className="mt-4 [[data-ui~='delivery-history']_>_&]:mt-1 [[data-ui~='delivery-history']_>_&]:mb-4 [[data-ui~='delivery-history']_>_&]:mx-5"
       disabled={query.isFetching}
       onClick={() => {
         void query.fetchNextPage();
       }}
     >
       {query.isFetchingNextPage ? "Loading…" : label}
-    </button>
+    </Button>
   );
 }
 
@@ -87,9 +89,9 @@ export function RefreshButton({
   refresh: () => unknown;
 }) {
   return (
-    <button
+    <Button
       type="button"
-      className="button button-small button-quiet"
+      data-ui="button" variant="quiet" size="small" className="leading-[1.4]"
       disabled={pending}
       onClick={() => {
         void refresh();
@@ -97,6 +99,6 @@ export function RefreshButton({
     >
       <ArrowClockwiseIcon size={16} aria-hidden="true" />
       {pending ? "Refreshing…" : "Refresh"}
-    </button>
+    </Button>
   );
 }

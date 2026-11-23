@@ -41,23 +41,21 @@ func (s *Store) GetUsage(ctx context.Context, organizationID, projectID uuid.UUI
 		return accounts.Usage{}, fmt.Errorf("read usage limits: %w", err)
 	}
 	usage.Period = period.Format("2006-01")
-	usage.ResetsAt = time.Date(
-		period.Year(),
-		period.Month()+1,
-		1,
-		0,
-		0,
-		0,
-		0,
-		time.UTC,
-	)
+	usage.ResetsAt = time.Date(period.Year(), period.Month()+1, 1, 0, 0, 0, 0, time.UTC)
 	if projectID != uuid.Nil {
 		usage.ProjectID = &projectID
 	}
 	// SQL only selects from fixed table alternatives; resource IDs are bound.
-	query := `SELECT coalesce(sum(events),0), coalesce(sum(deliveries),0), coalesce(sum(payload_bytes),0),
-		coalesce(sum(attempts),0), coalesce(sum(replays),0), coalesce(sum(succeeded),0), coalesce(sum(failed),0)
-		FROM organization_usage_months WHERE organization_id = $1 AND period = $2`
+	// Attempt outcomes are recorded per project only. The organization total is
+	// what deleted projects folded into retired_* plus every remaining project.
+	query := `WITH live AS (SELECT coalesce(sum(u.attempts),0) AS attempts,
+			coalesce(sum(u.succeeded),0) AS succeeded, coalesce(sum(u.failed),0) AS failed
+			FROM project_usage_months u JOIN projects p ON p.id = u.project_id
+			WHERE p.organization_id = $1 AND u.period = $2)
+		SELECT coalesce(o.events,0), coalesce(o.deliveries,0), coalesce(o.payload_bytes,0),
+		coalesce(o.retired_attempts,0) + live.attempts, coalesce(o.replays,0),
+		coalesce(o.retired_succeeded,0) + live.succeeded, coalesce(o.retired_failed,0) + live.failed
+		FROM live LEFT JOIN organization_usage_months o ON o.organization_id = $1 AND o.period = $2`
 	id := organizationID
 	if projectID != uuid.Nil {
 		query = `SELECT coalesce(sum(events),0), coalesce(sum(deliveries),0), coalesce(sum(payload_bytes),0),
@@ -65,12 +63,7 @@ func (s *Store) GetUsage(ctx context.Context, organizationID, projectID uuid.UUI
 			FROM project_usage_months WHERE project_id = $1 AND period = $2`
 		id = projectID
 	}
-	err = tx.QueryRow(
-		ctx,
-		query,
-		id,
-		period,
-	).Scan(
+	err = tx.QueryRow(ctx, query, id, period).Scan(
 		&usage.Counters.Events,
 		&usage.Counters.Deliveries,
 		&usage.Counters.PayloadBytes,
@@ -93,12 +86,7 @@ func (s *Store) GetUsage(ctx context.Context, organizationID, projectID uuid.UUI
 		AND ($2::uuid IS NULL OR p.id = $2)`,
 		organizationID,
 		nullableUUID(projectID),
-	).Scan(
-		&usage.Projects,
-		&usage.StoredBytes,
-		&usage.Endpoints,
-		&usage.APIKeys,
-	)
+	).Scan(&usage.Projects, &usage.StoredBytes, &usage.Endpoints, &usage.APIKeys)
 	if err != nil {
 		return accounts.Usage{}, fmt.Errorf("read resource usage: %w", err)
 	}

@@ -1,6 +1,6 @@
 "use client";
 
-import { PageSkeleton, UsageSkeleton } from "@/features/workspace/skeletons";
+import { UsageSkeleton } from "@/features/workspace/skeletons";
 import { useAuth } from "@clerk/nextjs";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
@@ -15,6 +15,8 @@ import { useSessionUserId } from "@/features/workspace/session";
 import { apiRequest } from "@/lib/api";
 import type { Usage } from "./types";
 import { OrganizationUsageSummary, UsageActivity } from "./usage-summary";
+import { dashboardMain } from "@/components/styles";
+import { queryKeys } from "@/lib/query-keys";
 
 export function OrganizationUsage({
   organizationId,
@@ -27,14 +29,14 @@ export function OrganizationUsage({
     organizationQuery(userId, organizationId, getToken),
   );
   return (
-    <main id="main-content" className="dashboard-main">
+    <main id="main-content" data-ui="dashboard-main" className={dashboardMain}>
       <Link
         href={organizationHref(organizationId)}
-        className="text-link workspace-muted"
+        className="inline-flex items-center text-[13px] font-medium text-muted gap-2 [&:hover]:underline [&:hover]:underline-offset-4 [[data-ui~='dashboard-main']_>_section_>_&:first-child]:mb-4.5 [[data-ui~='dashboard-main']_>_section_>_&:first-child]:text-[12px]"
       >
         ← Projects
       </Link>
-      <QueryState query={organization} loading={<PageSkeleton variant="usage" />}>
+      <QueryState query={organization} loading={<section><PageHeader title="Organization usage" /><UsageSkeleton /></section>}>
         {organization.data &&
           (organization.data.role === "member" ? (
             <AccessRedirect href={organizationHref(organizationId)} />
@@ -54,7 +56,7 @@ function OrganizationUsageContent({
   const userId = useSessionUserId();
   const { getToken } = useAuth();
   const usage = useQuery({
-    queryKey: ["usage", userId, "organization", organizationId],
+    queryKey: queryKeys.organizationUsage(userId, organizationId),
     queryFn: ({ signal }) =>
       apiRequest<Usage>(
         "/v1/organizations/" + encodeURIComponent(organizationId) + "/usage",

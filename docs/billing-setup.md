@@ -31,7 +31,7 @@ DODO_GROWTH_MONTHLY_PRODUCT_ID=<pdt_…>
 DODO_GROWTH_ANNUAL_PRODUCT_ID=<pdt_…>
 ```
 
-Apply migration `00023` before deploying the API and janitor. On the VM these variables go in `deploy/.env`; Compose passes billing keys only to the API. Use the root `.env` for local operator commands. The worker does not need payment credentials.
+Apply migration `00031` before deploying the API and janitor. On the VM these variables go in `deploy/.env`; Compose passes billing keys only to the API. Use the root `.env` for local operator commands. The worker does not need payment credentials.
 
 6. Manually verify the test-mode flow: owner checkout, successful/failed payment, duplicate webhook, renewal, cancellation, scheduled plan/interval change, refund, and portal access. Admins can read billing; only owners can change it. Closing checkout cannot unlock access. Check Dodo delivery logs when a payment is complete but a plan is pending.
 7. After verification, create the same four products in **live mode** and replace all keys, product IDs, webhook secret, and environment together. Test and live identifiers are separate. Never change an existing product's price in place: founding subscribers keep their original rate for 12 continuous months. A future price change needs a versioned catalog and migration policy first.
