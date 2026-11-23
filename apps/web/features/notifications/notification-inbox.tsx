@@ -53,7 +53,7 @@ function InboxContent({ organization }: { organization: Organization; }) {
           <GearSixIcon size={16} aria-hidden="true" />Notification preferences
         </Link>} />
       <div className="flex items-end justify-between flex-wrap mb-5 gap-4 max-[37.5rem]:items-stretch">
-        <div className={"flex items-center shrink-0 w-fit rounded-[7px] bg-background gap-1 p-0.75 border border-solid border-border [&_button]:min-h-7.5 [&_button]:rounded-sm [&_button]:bg-transparent [&_button]:text-muted [&_button]:text-[12px] [&_button]:font-medium [&_button]:whitespace-nowrap [&_button]:py-1 [&_button]:px-3 [&_button]:border-0 [&_button]:border-none [&_button]:border-current [&_button:hover]:text-foreground [&_button[aria-pressed=\"true\"]]:bg-surface-hover [&_button[aria-pressed=\"true\"]]:text-foreground pointer-coarse:[&_button]:min-h-10"} role="group" aria-label="Notification state">
+        <div className={"flex items-center shrink-0 w-fit rounded-[7px] bg-background gap-1 p-0.75 border border-solid border-border [&_button]:min-h-7.5 [&_button]:rounded-sm [&_button]:bg-transparent [&_button]:text-muted [&_button]:text-[12px] [&_button]:font-medium [&_button]:whitespace-nowrap [&_button]:py-1 [&_button]:px-3 [&_button]:border-0 [&_button]:border-none [&_button]:border-current [&_button:hover]:text-foreground [&_button[aria-pressed='true']]:bg-surface-hover [&_button[aria-pressed='true']]:text-foreground pointer-coarse:[&_button]:min-h-10"} role="group" aria-label="Notification state">
           {states.map((tab) => <button key={tab.value} type="button" aria-pressed={state === tab.value}
             onClick={() => setState(tab.value)}>{tab.label}</button>)}
         </div>

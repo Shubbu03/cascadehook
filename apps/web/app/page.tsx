@@ -1,16 +1,16 @@
 import type { Metadata } from "next";
 import { JsonLd } from "@/components/json-ld";
+import { faqStructuredData } from "@/components/marketing/faq-list";
 import { LandingPage } from "@/components/marketing/landing-page";
+import { homeDescription, homeFaq, homeTitle } from "@/features/marketing/home-content";
 import { pageMetadata, siteName, siteURL } from "@/lib/site";
 import { supportEmail } from "@/lib/support";
 
-const description =
-  "Send events to your customers without building the delivery infrastructure. Signed webhooks, automatic retries, and a clear record of every attempt.";
 
 export const metadata: Metadata = pageMetadata({
   path: "/",
-  title: "Cascadehook — Webhooks, taken care of.",
-  description,
+  title: homeTitle,
+  description: homeDescription,
   absoluteTitle: true,
   markdown: true,
 });
@@ -44,13 +44,14 @@ const structuredData = {
       "@type": "SoftwareApplication",
       name: siteName,
       url: siteURL,
-      description,
+      description: homeDescription,
       applicationCategory: "DeveloperApplication",
       operatingSystem: "Web",
       // The terms state the service is currently available without a paid subscription.
       offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
       publisher: { "@id": organizationID },
     },
+    faqStructuredData(homeFaq),
   ],
 };
 

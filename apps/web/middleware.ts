@@ -13,17 +13,19 @@ const clerkHandler = clerkMiddleware();
 function markdownTarget(request: NextRequest) {
   const { pathname } = request.nextUrl;
   if (pathname === "/index.md") return "/md";
+  if (pathname === "/compare.md") return "/md/compare";
   if (pathname === "/tools.md" || (pathname.startsWith("/tools/") && pathname.endsWith(".md"))) {
     return "/md" + pathname.slice(0, -".md".length);
   }
   if (!prefersMarkdown(request.headers.get("accept"))) return undefined;
   if (pathname === "/") return "/md";
+  if (pathname === "/compare") return "/md/compare";
   if (pathname === "/tools" || pathname.startsWith("/tools/")) return "/md" + pathname;
   return undefined;
 }
 
 function isMarkdownCapable(pathname: string) {
-  return pathname === "/" || pathname === "/tools" || pathname.startsWith("/tools/") || pathname === "/index.md" || pathname === "/tools.md";
+  return pathname === "/" || pathname === "/compare" || pathname === "/compare.md" || pathname === "/tools" || pathname.startsWith("/tools/") || pathname === "/index.md" || pathname === "/tools.md";
 }
 
 export default function middleware(request: NextRequest, event: NextFetchEvent) {
@@ -42,6 +44,8 @@ export const config = {
   matcher: [
     "/",
     "/index.md",
+    "/compare",
+    "/compare.md",
     "/tools",
     "/tools.md",
     "/tools/:path*",

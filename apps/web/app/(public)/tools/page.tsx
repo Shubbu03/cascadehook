@@ -2,6 +2,7 @@ import { ArrowRightIcon, SealCheckIcon, TableIcon, TrayArrowDownIcon } from "@ph
 import type { Metadata } from "next";
 import Link from "next/link";
 import { references, tools } from "@/features/tools/catalog";
+import { ProductCallout } from "@/features/tools/tool-page-parts";
 import { pageMetadata } from "@/lib/site";
 
 export const metadata: Metadata = pageMetadata({
@@ -65,6 +66,7 @@ export default function Page() {
           ))}
         </ul>
       </section>
+      <ProductCallout />
     </div>
   );
 }
