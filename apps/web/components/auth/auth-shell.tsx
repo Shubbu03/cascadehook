@@ -14,14 +14,14 @@ export function AuthShell({
 
   return (
     <div className="grid grid-cols-[minmax(300px,2fr)_minmax(0,3fr)] min-h-svh max-[53.125rem]:grid-cols-[1fr]">
-      <aside className="flex flex-col items-start border-r border-r-border py-11 px-[clamp(32px,4vw,68px)] [&_h2]:text-[clamp(42px,4.7vw,65px)] [&_h2]:tracking-[-0.055em] [&_h2]:leading-[1.08] [&_h2_span]:text-accent max-[65.625rem]:px-8 max-[53.125rem]:hidden">
+      <aside className="flex flex-col items-start border-r border-r-border py-11 px-[clamp(32px,4vw,68px)] [&_h1]:text-[clamp(42px,4.7vw,65px)] [&_h1]:tracking-[-0.055em] [&_h1]:leading-[1.08] [&_h1_span]:text-accent max-[65.625rem]:px-8 max-[53.125rem]:hidden">
         {brand}
         <div className="my-auto py-16 [&_p]:[max-width:320px] [&_p]:mt-5 [&_p]:text-[16px] [&_p]:leading-[1.65] [&_p]:text-muted">
-          <h2>
+          <h1>
             Welcome.
             <br />
             <span>Let’s build.</span>
-          </h2>
+          </h1>
           <p>
             Sign in or create an account to manage your webhook deliveries.
           </p>
