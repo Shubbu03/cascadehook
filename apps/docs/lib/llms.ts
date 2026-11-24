@@ -30,7 +30,8 @@ Every link below is a Markdown page. Any docs page also returns Markdown when yo
 ## Product
 
 - [Cascadehook overview](${siteURL}/index.md): What Cascadehook does, how delivery and retries work, its limits, and how to start.
-- [Free webhook tools](${siteURL}/tools.md): Browser-based signature verifiers for Standard Webhooks, Stripe, GitHub, Shopify, and Slack.
+- [Cascadehook compared](${siteURL}/compare.md): Cascadehook vs Svix, Hookdeck Outpost, Convoy, and building webhook delivery yourself.
+- [Free webhook tools](${siteURL}/tools.md): A live webhook tester, plus browser-based signature verifiers for Standard Webhooks, Stripe, GitHub, Shopify, and Slack.
 - [Webhook signature schemes compared](${siteURL}/tools/webhook-signature-comparison.md): Headers, signed message, key handling, timestamp tolerance, and retry policy for each provider.
 
 ## Documentation

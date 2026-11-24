@@ -26,7 +26,7 @@ export function OnboardingForm({
   return (
     <main id="main-content" className="w-[min(460px,calc(100%-40px))] mx-auto">
       <ol
-        className={"flex items-center justify-center mt-0 mb-7 list-none gap-8 p-0 mx-0 [&_li]:flex [&_li]:items-center [&_li]:text-muted [&_li]:text-[13px] [&_li]:gap-2.25 [&_li_>_span]:grid [&_li_>_span]:place-items-center [&_li_>_span]:rounded-full [&_li_>_span]:font-mono [&_li_>_span]:text-[11px] [&_li_>_span]:size-6.25 [&_li_>_span]:border [&_li_>_span]:border-solid [&_li_>_span]:border-border **:aria-[aria-current=\"step\"]:text-foreground [&_[aria-current=\"step\"]_>_span]:bg-accent-subtle [&_[aria-current=\"step\"]_>_span]:text-accent [&_[aria-current=\"step\"]_>_span]:border-accent [&_[data-complete=\"true\"]_>_span]:bg-accent-subtle [&_[data-complete=\"true\"]_>_span]:text-accent [&_[data-complete=\"true\"]_>_span]:border-accent"}
+        className={"flex items-center justify-center mt-0 mb-7 list-none gap-8 p-0 mx-0 [&_li]:flex [&_li]:items-center [&_li]:text-muted [&_li]:text-[13px] [&_li]:gap-2.25 [&_li_>_span]:grid [&_li_>_span]:place-items-center [&_li_>_span]:rounded-full [&_li_>_span]:font-mono [&_li_>_span]:text-[11px] [&_li_>_span]:size-6.25 [&_li_>_span]:border [&_li_>_span]:border-solid [&_li_>_span]:border-border **:aria-[current='step']:text-foreground [&_[aria-current='step']_>_span]:bg-accent-subtle [&_[aria-current='step']_>_span]:text-accent [&_[aria-current='step']_>_span]:border-accent [&_[data-complete='true']_>_span]:bg-accent-subtle [&_[data-complete='true']_>_span]:text-accent [&_[data-complete='true']_>_span]:border-accent"}
         aria-label="Setup progress"
         role="list"
       >

@@ -188,7 +188,7 @@ export function OverviewSetup({
             {completed} of {checks.length} complete
           </span>
         </span>
-        <span className={"flex w-33 ml-auto gap-1 [&_>_span]:h-1 [&_>_span]:flex-1 [&_>_span]:rounded-xs [&_>_span]:bg-border *:data-[complete=\"true\"]:bg-success @max-[45rem]/project-overview:hidden"} aria-hidden="true">
+        <span className={"flex w-33 ml-auto gap-1 [&_>_span]:h-1 [&_>_span]:flex-1 [&_>_span]:rounded-xs [&_>_span]:bg-border *:data-[complete='true']:bg-success @max-[45rem]/project-overview:hidden"} aria-hidden="true">
           {checks.map((check) => (
             <span key={check.id} data-complete={check.state === "complete"} />
           ))}
@@ -239,7 +239,7 @@ export function OverviewSetup({
               data-state={check.state}
               aria-current={next?.id === check.id ? "step" : undefined}
             >
-              <span className={"grid place-items-center rounded-full text-muted text-[10px] tabular-nums size-5.25 border border-solid border-border [[data-ui~='overview-checklist']_[aria-current=\"step\"]_&]:text-accent [[data-ui~='overview-checklist']_[aria-current=\"step\"]_&]:bg-accent-subtle [[data-ui~='overview-checklist']_[aria-current=\"step\"]_&]:border-accent [[data-ui~='overview-checklist']_[data-state=\"complete\"]_&]:text-success [[data-ui~='overview-checklist']_[data-state=\"complete\"]_&]:bg-success-subtle [[data-ui~='overview-checklist']_[data-state=\"complete\"]_&]:border-transparent"} aria-hidden="true">
+              <span className={"grid place-items-center rounded-full text-muted text-[10px] tabular-nums size-5.25 border border-solid border-border [[data-ui~='overview-checklist']_[aria-current='step']_&]:text-accent [[data-ui~='overview-checklist']_[aria-current='step']_&]:bg-accent-subtle [[data-ui~='overview-checklist']_[aria-current='step']_&]:border-accent [[data-ui~='overview-checklist']_[data-state='complete']_&]:text-success [[data-ui~='overview-checklist']_[data-state='complete']_&]:bg-success-subtle [[data-ui~='overview-checklist']_[data-state='complete']_&]:border-transparent"} aria-hidden="true">
                 {check.state === "complete" ? <CheckIcon size={13} /> : index + 1}
               </span>
               <span className="text-[12px] wrap-anywhere">

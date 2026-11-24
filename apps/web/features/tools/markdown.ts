@@ -23,7 +23,8 @@ export function verifierMarkdown(content: VerifierContent) {
     "## Related",
     `- [Webhook signature schemes compared](${siteURL}/tools/webhook-signature-comparison.md)`
       + `\n- [All webhook tools](${siteURL}/tools.md)`
-      + `\n- [${siteName}](${siteURL}/index.md) sends webhooks signed with Standard Webhooks, retries failures for up to 72 hours, and keeps every attempt for replay.`,
+      + `\n- [${siteName}](${siteURL}/index.md) sends webhooks signed with Standard Webhooks, retries failures for up to 72 hours, and keeps every attempt for replay.`
+      + `\n- [How Cascadehook compares](${siteURL}/compare.md) with Svix, Hookdeck Outpost, Convoy, and building it yourself.`,
     content.trademark
       ? `${content.trademark.name} is a trademark of ${content.trademark.owner.replace(/\.$/, "")}. ${siteName} isn't affiliated with or endorsed by ${content.trademark.name}.`
       : "",
@@ -38,6 +39,8 @@ export function toolsIndexMarkdown() {
     tools.map((tool) => `- [${tool.title}](${siteURL}${tool.href}.md): ${tool.description}`).join("\n"),
     "## Reference",
     references.map((reference) => `- [${reference.title}](${siteURL}${reference.href}.md): ${reference.description}`).join("\n"),
+    "## Sending webhooks from your own app?",
+    `[${siteName}](${siteURL}/index.md) signs every delivery with Standard Webhooks, retries failures for up to 72 hours, and keeps every attempt for replay. Free during early access. See [how it compares](${siteURL}/compare.md) with Svix, Hookdeck Outpost, Convoy, and building it yourself.`,
   ].join("\n\n");
 }
 
@@ -56,6 +59,7 @@ export function webhookTesterMarkdown(content: WebhookTesterContent) {
     content.faq.map((item) => `### ${item.question}\n\n${item.answer}`).join("\n\n"),
     "## Related",
     tools.filter((tool) => tool.href !== content.path).map((tool) => `- [${tool.title}](${siteURL}${tool.href}.md)`).join("\n")
-      + `\n- [${siteName}](${siteURL}/index.md) sends webhooks signed with Standard Webhooks, retries failures for up to 72 hours, and keeps every attempt for replay.`,
+      + `\n- [${siteName}](${siteURL}/index.md) sends webhooks signed with Standard Webhooks, retries failures for up to 72 hours, and keeps every attempt for replay.`
+      + `\n- [How Cascadehook compares](${siteURL}/compare.md) with Svix, Hookdeck Outpost, Convoy, and building it yourself.`,
   ].join("\n\n");
 }

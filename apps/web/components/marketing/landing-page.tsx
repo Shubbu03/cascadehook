@@ -7,6 +7,10 @@ import { FooterWordmark } from "@/components/marketing/footer-wordmark";
 import { IntegrationCode } from "@/components/marketing/integration-code";
 import { LandingMotion } from "@/components/marketing/landing-motion";
 import { MarketingHeader } from "@/components/marketing/marketing-header";
+import { FaqList } from "@/components/marketing/faq-list";
+import { homeFaq } from "@/features/marketing/home-content";
+import { deliveryLimits, freeLimits } from "@/features/marketing/limits";
+import { supportEmail } from "@/lib/support";
 
 const signatureExample = [
   'const key = decodeSecret(signingSecret);',
@@ -21,11 +25,11 @@ export function LandingPage() {
       <main id="main-content" className="w-[min(1320px,calc(100%-clamp(40px,6vw,96px)))] mx-auto">
         <section className="grid grid-cols-[1.05fr_1fr] min-h-[calc(100svh-var(--landing-header-height))] content-center items-center pt-21.5 pb-19.5 border-b border-b-border gap-14 max-[68.75rem]:gap-9.5 max-[68.75rem]:py-16 max-[53.125rem]:grid-cols-[minmax(0,1fr)] max-[53.125rem]:gap-9 max-[53.125rem]:py-13 max-[37.5rem]:gap-8 max-[37.5rem]:py-9.5 [&_h1]:mt-6.75 [&_h1]:text-[clamp(48px,6vw,86px)] [&_h1]:font-normal [&_h1]:leading-[1.06] [&_h1]:tracking-[-0.055em] max-[53.125rem]:[&_h1]:text-[clamp(58px,9vw,76px)] max-[37.5rem]:[&_h1]:mt-5.25 max-[37.5rem]:[&_h1]:text-[clamp(43px,10.8vw,64px)] [&_h1_>_span]:block [&_h1_>_span]:text-accent" aria-labelledby="hero-heading">
           <div className="min-w-0 max-[53.125rem]:max-w-155">
-            <p data-ui="landing-eyebrow" className="text-accent text-[13px] leading-[1.6]">Outbound webhooks, without the upkeep.</p>
-            <h1 id="hero-heading">Webhooks,<span>taken care of.</span></h1>
+            <p data-ui="landing-eyebrow" className="text-accent text-[13px] leading-[1.6]">Webhook delivery for SaaS and API teams</p>
+            <h1 id="hero-heading">Outbound webhooks,<span>taken care of.</span></h1>
             <p className="max-w-125 mt-7 text-muted text-[16px] leading-[1.85] max-[37.5rem]:mt-5.75 max-[37.5rem]:text-[15px] max-[37.5rem]:leading-[1.8]">
-              Send events to your customers without building the delivery infrastructure.
-              Signed requests, automatic retries and a record of every attempt are built in.
+              Publish an event once. Cascadehook signs it, delivers it to every subscribed endpoint,
+              retries failures for up to 72 hours and records every attempt, so you don&apos;t have to build the delivery infrastructure.
             </p>
             <div className="flex items-center flex-wrap gap-y-3 gap-x-6 mt-8 max-[37.5rem]:gap-y-2.5 max-[37.5rem]:gap-x-5 max-[37.5rem]:mt-6">
               <Link href="/login" className="inline-flex items-center justify-center min-h-12 rounded-[100px] font-medium text-center whitespace-nowrap [transition:background-color_140ms,border-color_140ms] bg-foreground text-background gap-5 py-3 px-5.25 border border-solid border-transparent text-sm/normal max-[37.5rem]:text-[13px] max-[37.5rem]:gap-4.5 max-[37.5rem]:px-4.5 motion-reduce:transition-none motion-safe:[&_>_svg]:[transition:transform_180ms_ease-out] [&:hover]:bg-[color-mix(in_srgb,var(--foreground)_84%,var(--background))] motion-safe:[&:focus-visible_>_svg]:transform-[translateX(3px)] motion-safe:[@media(hover:_hover)_and_(pointer:_fine)]:[&:hover_>_svg]:transform-[translateX(3px)]">
@@ -45,7 +49,7 @@ export function LandingPage() {
               so they stay off your team&apos;s to-do list.
             </p>
           </div>
-          <ol className={"grid list-none m-0 p-0 [&_>_li]:grid [&_>_li]:grid-cols-[24px_minmax(0,1fr)] [&_>_li]:items-start [&_>_li]:border-b [&_>_li]:[border-bottom-style:solid] [&_>_li]:border-b-border [&_>_li]:gap-5 [&_>_li]:py-7.5 [&_h3]:text-[18px] [&_h3]:font-medium [&_h3]:leading-[1.4] [&_h3]:tracking-[-0.02em] [&_p]:mt-2.75 [&_p]:text-muted [&_p]:text-[14px] [&_p]:leading-[1.8] max-[37.5rem]:[&_>_li]:grid-cols-[20px_minmax(0,1fr)] max-[37.5rem]:[&_>_li]:gap-3.5 max-[37.5rem]:[&_>_li]:py-6 max-[37.5rem]:[&_h3]:text-[17px] max-[37.5rem]:[&_p]:text-[13px] [&_>_li:first-child]:pt-0 [&_>_li:last-child]:pb-0 [&_>_li:last-child]:border-b-0 motion-safe:[&[data-visible=\"true\"]_>_li]:animate-landing-content-reveal-staggered motion-safe:[&[data-visible=\"true\"]_>_li:nth-child(2)]:[animation-delay:110ms] motion-safe:[&[data-visible=\"true\"]_>_li:nth-child(3)]:[animation-delay:220ms]"} data-motion="stagger">
+          <ol className={"grid list-none m-0 p-0 [&_>_li]:grid [&_>_li]:grid-cols-[24px_minmax(0,1fr)] [&_>_li]:items-start [&_>_li]:border-b [&_>_li]:[border-bottom-style:solid] [&_>_li]:border-b-border [&_>_li]:gap-5 [&_>_li]:py-7.5 [&_h3]:text-[18px] [&_h3]:font-medium [&_h3]:leading-[1.4] [&_h3]:tracking-[-0.02em] [&_p]:mt-2.75 [&_p]:text-muted [&_p]:text-[14px] [&_p]:leading-[1.8] max-[37.5rem]:[&_>_li]:grid-cols-[20px_minmax(0,1fr)] max-[37.5rem]:[&_>_li]:gap-3.5 max-[37.5rem]:[&_>_li]:py-6 max-[37.5rem]:[&_h3]:text-[17px] max-[37.5rem]:[&_p]:text-[13px] [&_>_li:first-child]:pt-0 [&_>_li:last-child]:pb-0 [&_>_li:last-child]:border-b-0 motion-safe:[&[data-visible='true']_>_li]:animate-landing-content-reveal-staggered motion-safe:[&[data-visible='true']_>_li:nth-child(2)]:[animation-delay:110ms] motion-safe:[&[data-visible='true']_>_li:nth-child(3)]:[animation-delay:220ms]"} data-motion="stagger">
             <li>
               <span className="pt-1 text-accent font-mono text-[11px]" aria-hidden="true">01</span>
               <div>
@@ -96,6 +100,30 @@ export function LandingPage() {
             <IntegrationCode />
           </div>
         </section>
+        <section id="limits" className="grid grid-cols-[0.9fr_1.1fr] items-start gap-14 py-16 border-b border-b-border max-[68.75rem]:gap-9.5 max-[53.125rem]:grid-cols-[minmax(0,1fr)] max-[53.125rem]:gap-7.5 max-[37.5rem]:py-9.5" aria-labelledby="limits-heading" data-motion="reveal">
+          <div className="[&_h2]:mt-5.25 [&_h2]:text-[clamp(28px,3vw,36px)] [&_h2]:font-normal [&_h2]:leading-[1.2] [&_h2]:tracking-[-0.04em] max-[37.5rem]:[&_h2]:mt-4.25 max-[37.5rem]:[&_h2]:text-[29px]">
+            <p data-ui="landing-eyebrow" className="text-accent text-[13px] leading-[1.6]">Pricing</p>
+            <h2 id="limits-heading">Free during early access.</h2>
+            <p className="max-w-105 mt-5.5 text-muted text-[15px] leading-[1.85] max-[37.5rem]:text-[14px]">
+              Every organization gets these limits at no cost. Need more? <a href={`mailto:${supportEmail}`} className="text-foreground underline underline-offset-[3px]">Email us</a>.
+            </p>
+          </div>
+          <dl className="grid grid-cols-3 rounded-[14px] border border-solid border-border overflow-hidden max-[37.5rem]:grid-cols-2 max-[37.5rem]:[&_>_div:last-child]:col-span-2 [&_>_div]:border-b [&_>_div]:border-r [&_>_div]:border-solid [&_>_div]:border-border [&_>_div]:p-5 max-[37.5rem]:[&_>_div]:p-4 [&_dt]:text-muted [&_dt]:text-[12px] [&_dt]:leading-[1.5] [&_dd]:mt-1.5 [&_dd]:text-[22px] [&_dd]:tracking-[-0.02em] max-[37.5rem]:[&_dd]:text-[19px]">
+            {[...freeLimits, { label: "Attempts per delivery", value: `${deliveryLimits.attempts} over ${deliveryLimits.windowHours}h` }, { label: "Event payload", value: `${deliveryLimits.payloadKiB} KiB` }, { label: "Signing", value: "Standard Webhooks" }].map((limit) => (
+              <div key={limit.label} className="-mb-px -mr-px">
+                <dt>{limit.label}</dt>
+                <dd>{limit.value}</dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+        <section id="faq" className="grid grid-cols-[0.9fr_1.1fr] items-start gap-14 py-16 border-b border-b-border max-[68.75rem]:gap-9.5 max-[53.125rem]:grid-cols-[minmax(0,1fr)] max-[53.125rem]:gap-7.5 max-[37.5rem]:py-9.5" aria-labelledby="faq-heading" data-motion="reveal">
+          <div className="[&_h2]:mt-5.25 [&_h2]:text-[clamp(28px,3vw,36px)] [&_h2]:font-normal [&_h2]:leading-[1.2] [&_h2]:tracking-[-0.04em] max-[37.5rem]:[&_h2]:mt-4.25 max-[37.5rem]:[&_h2]:text-[29px]">
+            <p data-ui="landing-eyebrow" className="text-accent text-[13px] leading-[1.6]">FAQ</p>
+            <h2 id="faq-heading">Questions teams ask first.</h2>
+          </div>
+          <FaqList items={homeFaq} className="w-full max-w-none" />
+        </section>
         <section data-ui="landing-closing" className="flex items-center justify-between gap-7 py-15.5 max-[37.5rem]:flex-col max-[37.5rem]:items-start max-[37.5rem]:gap-5.75 max-[37.5rem]:py-9.5 [&_h2]:text-[clamp(27px,3.2vw,39px)] [&_h2]:font-normal [&_h2]:leading-tight [&_h2]:tracking-[-0.04em] [&_h2]:text-balance [&_p]:mt-3.75 [&_p]:text-muted [&_p]:text-[14px] [&_p]:leading-[1.7] max-[37.5rem]:[&_h2]:text-[29px] max-[37.5rem]:[&_p]:text-[13px]" aria-labelledby="closing-heading" data-motion="reveal">
           <div>
             <h2 id="closing-heading">Make room for your next feature.</h2>
@@ -118,7 +146,8 @@ export function LandingPage() {
               <DocsLink path="/docs/api">API reference</DocsLink>
               <Link href="/pricing">Pricing</Link>
               <Link href="/refunds">Refunds</Link>
-              <Link href="/tools/webhook-signature-verifier">Signature verifier</Link>
+              <Link href="/compare">Compare</Link>
+              <Link href="/tools">Free tools</Link>
               <Link href="/support">Support</Link>
               <Link href="/terms">Terms</Link>
               <Link href="/privacy">Privacy</Link>

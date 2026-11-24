@@ -13,9 +13,9 @@ export function AccountLoading() {
 
 export function WorkspaceLoading() {
   return (
-    <div data-ui="dashboard-shell skeleton-shell" className={"[--sidebar-width:224px] [--topbar-height:60px] grid grid-cols-[var(--sidebar-width)_minmax(0,1fr)] min-h-svh items-start data-[collapsed=\"true\"]:[--sidebar-width:68px] max-[56.25rem]:grid-cols-[minmax(0,1fr)]"}>
+    <div data-ui="dashboard-shell skeleton-shell" className={"[--sidebar-width:224px] [--topbar-height:60px] grid grid-cols-[var(--sidebar-width)_minmax(0,1fr)] min-h-svh items-start data-[collapsed='true']:[--sidebar-width:68px] max-[56.25rem]:grid-cols-[minmax(0,1fr)]"}>
       <aside data-ui="dashboard-sidebar" className="sticky top-0 flex flex-col h-dvh min-w-0 border-r border-r-border bg-surface max-[56.25rem]:hidden" aria-hidden="true">
-        <div data-ui="sidebar-brand" className={"flex items-center justify-between shrink-0 min-h-(--topbar-height,60px) gap-2.5 px-4 [[data-ui~='dashboard-shell'][data-collapsed=\"true\"]_[data-ui~='dashboard-sidebar']_&]:justify-center [[data-ui~='dashboard-shell'][data-collapsed=\"true\"]_[data-ui~='dashboard-sidebar']_&]:px-0"}>
+        <div data-ui="sidebar-brand" className={"flex items-center justify-between shrink-0 min-h-(--topbar-height,60px) gap-2.5 px-4 [[data-ui~='dashboard-shell'][data-collapsed='true']_[data-ui~='dashboard-sidebar']_&]:justify-center [[data-ui~='dashboard-shell'][data-collapsed='true']_[data-ui~='dashboard-sidebar']_&]:px-0"}>
           <Skeleton width={166} height={24} />
         </div>
         <div className="grid gap-5 py-7 px-5.5 [&_>_div]:flex [&_>_div]:items-center [&_>_div]:gap-3">

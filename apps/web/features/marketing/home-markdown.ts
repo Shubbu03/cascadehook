@@ -1,5 +1,7 @@
 import { siteURL } from "@/lib/site";
 import { supportEmail } from "@/lib/support";
+import { homeFaq } from "./home-content";
+import { deliveryLimits, freeLimits } from "./limits";
 
 // Markdown counterpart of components/marketing/landing-page.tsx. Limits mirror
 // deliveries/lease.go, delivery/outcome.go, and delivery/client.go in apps/server.
@@ -7,9 +9,9 @@ export function homeMarkdown() {
   const docs = (path: string) => `${siteURL}${path}.md`;
   return `# Cascadehook
 
-> Outbound webhooks for your application. Publish an event once; Cascadehook signs it, delivers it to every subscribed endpoint, retries failures, and records every attempt.
+> Outbound webhook delivery service for SaaS and API teams. Publish an event once; Cascadehook signs it, delivers it to every subscribed endpoint, retries failures, and records every attempt.
 
-Send events to your customers without building the delivery infrastructure. Signed requests, automatic retries, and a record of every attempt are built in.
+Send webhooks to your customers without building the delivery infrastructure. Signed requests, automatic retries, and a record of every attempt are built in.
 
 ## How it works
 
@@ -36,7 +38,15 @@ Send events to your customers without building the delivery infrastructure. Sign
 
 ## Pricing
 
-Cascadehook is currently available without a paid subscription. Usage limits apply, and the dashboard shows the allowances for your organization.
+Cascadehook is free during early access. Each organization gets:
+
+${[...freeLimits, { label: "Attempts per delivery", value: `${deliveryLimits.attempts} over ${deliveryLimits.windowHours} hours` }, { label: "Event payload", value: `${deliveryLimits.payloadKiB} KiB` }].map((limit) => `- ${limit.label}: ${limit.value}`).join("\n")}
+
+Email ${supportEmail} for higher limits.
+
+## FAQ
+
+${homeFaq.map((item) => `### ${item.question}\n\n${item.answer}`).join("\n\n")}
 
 ## Get started
 
@@ -45,6 +55,7 @@ Cascadehook is currently available without a paid subscription. Usage limits app
 - [Verify webhook signatures](${docs("/docs/security/signatures")})
 - [Project API reference](${docs("/docs/api")})
 - [Set up with an AI agent](${siteURL}/docs/agents.md)
+- [Cascadehook vs Svix, Hookdeck Outpost, Convoy, and building it yourself](${siteURL}/compare.md)
 - [Free webhook tools](${siteURL}/tools.md)
 - [Create an account](${siteURL}/login)
 
