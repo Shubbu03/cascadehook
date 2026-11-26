@@ -89,8 +89,6 @@ on the account. To protect the main site:
 
 [Dashboard setup](apps/web/README.md) · [Integration guide](apps/docs/content/docs/agents/integration.md)
 
-[Support and policy setup](docs/support-setup.md) · [Deferred billing draft](docs/billing-setup.md)
-
 ## License
 
 Licensed under the [Apache License 2.0](LICENSE).
