@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io/fs"
 	"os"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -135,7 +136,7 @@ func TestNotificationPreferencesAndEnqueue(t *testing.T) {
 	f := newNotificationFixture(t)
 	ctx := t.Context()
 	preferences, err := f.db.NotificationPreferences(ctx, f.user)
-	if err != nil || preferences.EmailEnabled || len(preferences.EmailCategories) != 6 {
+	if err != nil || preferences.EmailEnabled || !slices.Equal(preferences.EmailCategories, notifications.DefaultPreferences().EmailCategories) {
 		t.Fatalf("default preferences: %+v, %v", preferences, err)
 	}
 	f.emit(t, notifications.Delivery)
