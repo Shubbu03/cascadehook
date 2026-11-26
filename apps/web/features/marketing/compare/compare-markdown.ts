@@ -24,7 +24,7 @@ export function compareMarkdown() {
     buildChecklist.map((item) => `- ${item}`).join("\n"),
     `The [guide to sending webhooks from your app](${siteURL}/docs/guides/send-webhooks.md) walks through each piece.`,
     `## Try ${siteName}`,
-    `[Create a project](${siteURL}/login) or read the [quickstart](${siteURL}/docs/quickstart.md). It's free during early access.`,
+    `[Create a project](${siteURL}/login) or read the [quickstart](${siteURL}/docs/quickstart.md). The free plan needs no card.`,
     "## Sources",
     compareSources.map((source) => `- [${source.label}](${source.href})`).join("\n"),
     `${compareDisclosure} If something is wrong or out of date, email ${supportEmail}.`,

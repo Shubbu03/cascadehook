@@ -1,8 +1,5 @@
 import type { FaqItem } from "@/components/marketing/faq-list";
-import { deliveryLimits, freeLimits } from "./limits";
-
-const monthlyEvents = freeLimits[0].value;
-const monthlyDeliveries = freeLimits[1].value;
+import { cheapestPaidPlan, deliveryLimits, freePlan, monthlyDeliveries, monthlyPrice, pricingPath } from "./limits";
 
 export const homeTitle = "Cascadehook — Outbound Webhook Delivery Service";
 
@@ -28,7 +25,8 @@ export const homeFaq: FaqItem[] = [
   },
   {
     question: "How much does it cost?",
-    answer: `It's free during early access, with ${monthlyEvents} events and ${monthlyDeliveries} deliveries a month per organization. Email us if you need higher limits.`,
+    answer: `The free plan includes ${monthlyDeliveries(freePlan)} deliveries a month and needs no card. Paid plans start at ${monthlyPrice(cheapestPaidPlan)} a month for ${monthlyDeliveries(cheapestPaidPlan)} deliveries. Signing, retries, replay, and delivery history are included on every plan.`,
+    link: { href: pricingPath, label: "See pricing" },
   },
   {
     question: "What happens when an endpoint is down?",

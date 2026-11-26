@@ -1,8 +1,8 @@
 import { siteName } from "@/lib/site";
-import { deliveryLimits, freeLimits } from "../limits";
+import { cheapestPaidPlan, deliveryLimits, freePlan, monthlyDeliveries, monthlyPrice } from "../limits";
 
 export const comparePath = "/compare";
-export const compareUpdated = "2026-11-23";
+export const compareUpdated = "2026-11-24";
 // Update whenever competitor facts are re-checked against their docs and pricing pages.
 export const compareChecked = "November 23, 2026";
 
@@ -31,7 +31,7 @@ export const compareRows: Row[] = [
   {
     label: "Free tier",
     values: [
-      `${freeLimits[0].value} events a month during early access`,
+      `${monthlyDeliveries(freePlan)} deliveries a month; no card required`,
       "50,000 messages a month",
       "First 50,000 events free on the managed service; self-hosting is free",
       "Self-hosted Community edition is free; the cloud has a 14-day trial",
@@ -41,7 +41,7 @@ export const compareRows: Row[] = [
   {
     label: "Paid plans from",
     values: [
-      "No paid plans yet",
+      `${monthlyPrice(cheapestPaidPlan)} a month (${cheapestPaidPlan.name})`,
       "$20 a month (Basic)",
       "$10 per million events after the free 50,000 (Starter)",
       "$999 a month for self-hosted Premium; cloud prices aren't published",
@@ -103,7 +103,7 @@ export const compareRows: Row[] = [
 export const choices: { name: string; when: string }[] = [
   {
     name: siteName,
-    when: `You want a hosted service that's quick to adopt and strict by default: Standard Webhooks signatures, a signed ownership challenge before any endpoint can be enabled, deliveries only to public HTTPS addresses with redirects never followed, and every attempt kept for inspection and replay. It's free during early access. It's also young: there's no customer portal or SDK yet, and it delivers only to HTTPS endpoints.`,
+    when: `You want a hosted service that's quick to adopt and strict by default: Standard Webhooks signatures, a signed ownership challenge before any endpoint can be enabled, deliveries only to public HTTPS addresses with redirects never followed, and every attempt kept for inspection and replay. It has a free plan, and paid plans start at ${monthlyPrice(cheapestPaidPlan)} a month. It's also young: there's no customer portal or SDK yet, and it delivers only to HTTPS endpoints.`,
   },
   {
     name: "Svix",

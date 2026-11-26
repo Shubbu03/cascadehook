@@ -96,7 +96,7 @@ export function ComparePage() {
 
       <section aria-labelledby="try-heading" className="mt-12 max-w-185 rounded-[14px] border border-solid border-border bg-surface p-6 max-[37.5rem]:p-5">
         <h2 id="try-heading" className={heading}>Try {siteName}</h2>
-        <p className="mt-2 text-muted text-[14px] leading-[1.8]">Create a project, verify an endpoint, and publish your first event. It&apos;s free during early access.</p>
+        <p className="mt-2 text-muted text-[14px] leading-[1.8]">Create a project, verify an endpoint, and publish your first event. The free plan needs no card.</p>
         <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2">
           <Link href="/login" className="inline-flex min-h-11 items-center gap-2 text-[14px] font-medium text-accent hover:underline hover:underline-offset-4">
             Get started <ArrowRightIcon size={16} aria-hidden="true" />

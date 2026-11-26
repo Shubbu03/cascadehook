@@ -61,7 +61,7 @@ export function ProductCallout({ standardWebhooks = false }: { standardWebhooks?
       <div className="max-w-150">
         <h2 id="product-callout-heading" className="text-[17px] font-medium tracking-[-.015em]">Sending webhooks from your own app?</h2>
         <p className="mt-1.5 text-muted text-[14px] leading-[1.75]">
-          {siteName} signs every delivery {standardWebhooks ? "with this exact scheme" : "with Standard Webhooks"}, retries failures for up to 72 hours, and keeps every attempt for replay. Free during early access.
+          {siteName} signs every delivery {standardWebhooks ? "with this exact scheme" : "with Standard Webhooks"}, retries failures for up to 72 hours, and keeps every attempt for replay. There&apos;s a free plan, and no card is required.
         </p>
       </div>
       <div className="flex flex-wrap items-center gap-x-6 gap-y-1">

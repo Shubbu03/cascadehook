@@ -1,12 +1,11 @@
 "use client";
 
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode, type RefObject } from "react";
 
-export function LandingMotion({ children }: { children: ReactNode; }) {
-  const page = useRef<HTMLDivElement>(null);
-
+// Marks [data-motion] elements visible as they scroll in; the reveal animation itself is CSS on a parent.
+export function useRevealObserver(ref: RefObject<HTMLElement | null>) {
   useEffect(() => {
-    const root = page.current;
+    const root = ref.current;
     if (!root) return;
 
     const motionPreference = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -39,7 +38,12 @@ export function LandingMotion({ children }: { children: ReactNode; }) {
       observer?.disconnect();
       motionPreference.removeEventListener("change", observeSections);
     };
-  }, []);
+  }, [ref]);
+}
+
+export function LandingMotion({ children }: { children: ReactNode; }) {
+  const page = useRef<HTMLDivElement>(null);
+  useRevealObserver(page);
 
   return (
     <div className={"[--landing-header-height:96px] min-h-svh bg-background text-foreground max-[53.125rem]:[--landing-header-height:88px] max-[37.5rem]:[--landing-header-height:80px] motion-safe:[&_[data-motion='reveal'][data-visible='true']]:animate-landing-content-reveal"} ref={page}>
