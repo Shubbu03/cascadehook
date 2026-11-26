@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"cascadehook/internal/accounts"
@@ -16,6 +17,7 @@ type BillingProvider interface {
 	Subscription(context.Context, string) (billing.Subscription, error)
 	ValidateSubscription(billing.Subscription) (billing.Plan, string, error)
 	ConfirmPaidPeriod(context.Context, billing.Subscription) (bool, error)
+	PlanFor(product string) (billing.Plan, string, error)
 }
 
 type BillingRecord struct {
@@ -28,6 +30,8 @@ type BillingRecord struct {
 	CheckoutSession  string
 	ScheduledProduct string
 	SyncedAt         *time.Time
+	SyncError        string
+	Country          string
 }
 
 func readBilling(ctx context.Context, tx pgx.Tx, org uuid.UUID) (BillingRecord, error) {
@@ -35,11 +39,12 @@ func readBilling(ctx context.Context, tx pgx.Tx, org uuid.UUID) (BillingRecord, 
 	err := tx.QueryRow(ctx, `SELECT e.plan,e.retention_days,coalesce(b.billing_interval,''),coalesce(b.status,'free'),
  b.paid_through,o.billing_access_until,coalesce(b.cancel_at_period_end,false),coalesce(b.customer_id,''),
  coalesce(b.subscription_id,''),coalesce(b.checkout_id,'00000000-0000-0000-0000-000000000000'::uuid),
- coalesce(b.checkout_product_id,''),coalesce(b.checkout_url,''),b.synced_at,coalesce(b.checkout_session_id,''),coalesce(b.scheduled_product,''),b.scheduled_at
+ coalesce(b.checkout_product_id,''),coalesce(b.checkout_url,''),b.synced_at,coalesce(b.checkout_session_id,''),coalesce(b.scheduled_product,''),b.scheduled_at,
+ coalesce(b.sync_error,''),b.recurring_amount,coalesce(b.recurring_currency,''),b.discount_percent,b.discount_cycles_remaining,coalesce(b.billing_country,'')
  FROM organizations o JOIN organization_entitlements e ON e.id=o.id
  LEFT JOIN organization_billing b ON b.organization_id=o.id WHERE o.id=$1 AND o.deletion_requested_at IS NULL`, org).Scan(
 		&result.Plan, &result.RetentionDays, &result.Interval, &result.Status, &result.PaidThrough, &result.AccessUntil, &result.CancelAtPeriodEnd,
-		&result.CustomerID, &result.SubscriptionID, &result.CheckoutID, &result.CheckoutProduct, &result.CheckoutURL, &result.SyncedAt, &result.CheckoutSession, &result.ScheduledProduct, &result.ScheduledAt)
+		&result.CustomerID, &result.SubscriptionID, &result.CheckoutID, &result.CheckoutProduct, &result.CheckoutURL, &result.SyncedAt, &result.CheckoutSession, &result.ScheduledProduct, &result.ScheduledAt, &result.SyncError, &result.Amount, &result.Currency, &result.DiscountPercent, &result.DiscountCycles, &result.Country)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return result, accounts.ErrNotFound
 	}
@@ -47,6 +52,7 @@ func readBilling(ctx context.Context, tx pgx.Tx, org uuid.UUID) (BillingRecord, 
 		return result, fmt.Errorf("read organization billing: %w", err)
 	}
 	result.HasSubscription = result.SubscriptionID != ""
+	result.ActivationIssue = result.SyncError != ""
 	result.CheckoutPending = result.CheckoutID != uuid.Nil
 	terminal := !result.HasSubscription || result.Status == "cancelled" || result.Status == "expired" || result.Status == "failed" || result.Status == "refunded"
 	result.CanCheckout = terminal && (result.AccessUntil == nil || !result.AccessUntil.After(time.Now()))
@@ -164,8 +170,8 @@ func (s *Store) SyncBilling(ctx context.Context, org uuid.UUID, subscriptionID, 
 		return err
 	}
 	defer rollbackTransaction(tx)
-	var id uuid.UUID
-	err = tx.QueryRow(ctx, `SELECT id FROM organizations WHERE id=$1 AND deletion_requested_at IS NULL FOR UPDATE`, org).Scan(&id)
+	var billedPlan string
+	err = tx.QueryRow(ctx, `SELECT billing_plan FROM organizations WHERE id=$1 AND deletion_requested_at IS NULL FOR UPDATE`, org).Scan(&billedPlan)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil
 	}
@@ -203,7 +209,7 @@ func (s *Store) SyncBilling(ctx context.Context, org uuid.UUID, subscriptionID, 
 		return err
 	}
 	if sub.Metadata["cascadehook_organization"] != org.String() {
-		return billing.ErrMismatch
+		return fmt.Errorf("%w: subscription belongs to another organization", billing.ErrMismatch)
 	}
 	binding := record.SubscriptionID != sub.ID
 	if binding {
@@ -222,11 +228,11 @@ func (s *Store) SyncBilling(ctx context.Context, org uuid.UUID, subscriptionID, 
 		operation, parseErr := uuid.Parse(sub.Metadata["cascadehook_checkout"])
 		terminal := record.SubscriptionID == "" || record.Status == "expired" || record.Status == "cancelled" || record.Status == "failed" || record.Status == "refunded"
 		if parseErr != nil || record.CheckoutID == uuid.Nil || operation != record.CheckoutID || sub.Product != record.CheckoutProduct || !terminal {
-			return billing.ErrMismatch
+			return fmt.Errorf("%w: subscription %s does not match the pending checkout", billing.ErrMismatch, sub.ID)
 		}
 	}
 	if record.CustomerID != "" && record.CustomerID != sub.Customer.ID {
-		return billing.ErrMismatch
+		return fmt.Errorf("%w: subscription %s belongs to a different Dodo customer", billing.ErrMismatch, sub.ID)
 	}
 	if binding && sub.Status != "active" && sub.Status != "cancelled" {
 		return nil
@@ -237,7 +243,7 @@ func (s *Store) SyncBilling(ctx context.Context, org uuid.UUID, subscriptionID, 
 			return err
 		}
 		if !paid {
-			return billing.ErrMismatch
+			return billing.ErrPaymentPending
 		}
 	}
 	paid := record.PaidThrough
@@ -250,7 +256,7 @@ func (s *Store) SyncBilling(ctx context.Context, org uuid.UUID, subscriptionID, 
 	if sub.Status == "active" || (sub.Status == "cancelled" && paid == nil && !sub.PreviousBilling.IsZero()) {
 		at := sub.NextBilling
 		if at.After(time.Now().AddDate(2, 0, 0)) || sub.PreviousBilling.After(time.Now().Add(5*time.Minute)) {
-			return billing.ErrMismatch
+			return fmt.Errorf("%w: subscription %s has an implausible billing period", billing.ErrMismatch, sub.ID)
 		}
 		paid = &at
 	}
@@ -267,6 +273,11 @@ func (s *Store) SyncBilling(ctx context.Context, org uuid.UUID, subscriptionID, 
 		effective, _ = billing.FindPlan("free")
 	}
 	limits := effective.Limits
+	renewal, percent, cycles := sub.RenewalAmount()
+	country := ""
+	if len(sub.Billing.Country) == 2 {
+		country = strings.ToUpper(sub.Billing.Country)
+	}
 	_, err = tx.Exec(ctx, `UPDATE organizations SET billing_plan=$2,billing_access_until=$3,history_retention_days=$4,
  max_projects=$5,max_members=$6,max_endpoints_per_project=$7,max_keys_per_project=$8,
  max_monthly_events=$9,max_monthly_deliveries=$10,max_payload_bytes_per_project=$11,
@@ -276,12 +287,15 @@ func (s *Store) SyncBilling(ctx context.Context, org uuid.UUID, subscriptionID, 
 	if err != nil {
 		return err
 	}
-	_, err = tx.Exec(ctx, `INSERT INTO organization_billing(organization_id,customer_id,subscription_id,status,billing_interval,paid_through,cancel_at_period_end,synced_at)
- VALUES($1,$2,$3,$4,$5,$6,$7,clock_timestamp()) ON CONFLICT(organization_id) DO UPDATE SET
+	_, err = tx.Exec(ctx, `INSERT INTO organization_billing(organization_id,customer_id,subscription_id,status,billing_interval,paid_through,cancel_at_period_end,synced_at,recurring_amount,recurring_currency,discount_percent,discount_cycles_remaining,billing_country)
+ VALUES($1,$2,$3,$4,$5,$6,$7,clock_timestamp(),$8,nullif($9,''),nullif($10,0),$11,nullif($12,'')) ON CONFLICT(organization_id) DO UPDATE SET
  customer_id=EXCLUDED.customer_id,subscription_id=EXCLUDED.subscription_id,status=EXCLUDED.status,
  billing_interval=EXCLUDED.billing_interval,paid_through=EXCLUDED.paid_through,cancel_at_period_end=EXCLUDED.cancel_at_period_end,
- synced_at=clock_timestamp(),updated_at=clock_timestamp()`,
-		org, sub.Customer.ID, sub.ID, sub.Status, interval, paid, sub.CancelAtEnd)
+ recurring_amount=EXCLUDED.recurring_amount,recurring_currency=EXCLUDED.recurring_currency,
+ discount_percent=EXCLUDED.discount_percent,discount_cycles_remaining=EXCLUDED.discount_cycles_remaining,
+ billing_country=coalesce(EXCLUDED.billing_country,organization_billing.billing_country),
+ synced_at=clock_timestamp(),sync_error=NULL,sync_error_subscription=NULL,sync_error_at=NULL,updated_at=clock_timestamp()`,
+		org, sub.Customer.ID, sub.ID, sub.Status, interval, paid, sub.CancelAtEnd, renewal, sub.Currency, percent, cycles, country)
 	if err != nil {
 		return err
 	}
@@ -292,11 +306,24 @@ func (s *Store) SyncBilling(ctx context.Context, org uuid.UUID, subscriptionID, 
 	}
 	var scheduledProduct any
 	var scheduledAt any
-	if sub.ScheduledChange != nil {
+	// A cancelled subscription ends at the period end, so a change scheduled for that date never applies.
+	if sub.ScheduledChange != nil && !sub.CancelAtEnd {
 		scheduledProduct = sub.ScheduledChange.Product
 		scheduledAt = sub.ScheduledChange.EffectiveAt
 	}
 	if _, err = tx.Exec(ctx, `UPDATE organization_billing SET scheduled_product=$2,scheduled_at=$3 WHERE organization_id=$1`, org, scheduledProduct, scheduledAt); err != nil {
+		return err
+	}
+	prev := billingSnapshot{Subscription: record.SubscriptionID, Plan: billedPlan, Interval: record.Interval, Status: record.Status,
+		CancelAtEnd: record.CancelAtPeriodEnd, Scheduled: record.ScheduledProduct, ScheduledAt: record.ScheduledAt,
+		PaidThrough: record.PaidThrough, AccessUntil: record.AccessUntil}
+	next := billingSnapshot{Subscription: sub.ID, Plan: plan.ID, Interval: interval, Status: sub.Status, CancelAtEnd: sub.CancelAtEnd,
+		PaidThrough: paid, AccessUntil: access}
+	if product, ok := scheduledProduct.(string); ok {
+		at := sub.ScheduledChange.EffectiveAt
+		next.Scheduled, next.ScheduledAt = product, &at
+	}
+	if err = notifyBilling(ctx, tx, org, provider, prev, next, billingTransitions(prev, next, binding, time.Now())); err != nil {
 		return err
 	}
 	if eventID != "" {
@@ -348,7 +375,7 @@ func (s *Store) BillingChangeSubscription(ctx context.Context, user, org uuid.UU
 }
 
 // RevokeRefundedBilling can settle a refunded checkout before activation arrives.
-func (s *Store) RevokeRefundedBilling(ctx context.Context, org uuid.UUID, sub billing.Subscription) error {
+func (s *Store) RevokeRefundedBilling(ctx context.Context, org uuid.UUID, sub billing.Subscription, plan string) error {
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
 		return err
@@ -380,11 +407,11 @@ func (s *Store) RevokeRefundedBilling(ctx context.Context, org uuid.UUID, sub bi
 		}
 		operation, parseErr := uuid.Parse(sub.Metadata["cascadehook_checkout"])
 		if parseErr != nil || operation == uuid.Nil || operation != record.CheckoutID || sub.Product != record.CheckoutProduct || (record.CustomerID != "" && record.CustomerID != sub.Customer.ID) {
-			return billing.ErrMismatch
+			return fmt.Errorf("%w: refunded subscription %s does not match the pending checkout", billing.ErrMismatch, sub.ID)
 		}
 	}
 	if sub.Metadata["cascadehook_organization"] != org.String() {
-		return billing.ErrMismatch
+		return fmt.Errorf("%w: refunded subscription belongs to another organization", billing.ErrMismatch)
 	}
 	_, err = tx.Exec(ctx, `INSERT INTO billing_subscriptions(subscription_id,organization_id) VALUES($1,$2) ON CONFLICT DO NOTHING`, sub.ID, org)
 	if err != nil {
@@ -397,9 +424,120 @@ func (s *Store) RevokeRefundedBilling(ctx context.Context, org uuid.UUID, sub bi
 	if err != nil {
 		return err
 	}
-	_, err = tx.Exec(ctx, `UPDATE organizations SET billing_plan='starter',billing_access_until=clock_timestamp(),quota_version=quota_version+1 WHERE id=$1`, org)
+	// An expired access date drops admission to Free; the plan is kept for the record.
+	var refunded string
+	err = tx.QueryRow(ctx, `UPDATE organizations SET billing_plan=coalesce(nullif($2,''),billing_plan),billing_access_until=clock_timestamp(),quota_version=quota_version+1 WHERE id=$1 RETURNING billing_plan`, org, plan).Scan(&refunded)
 	if err != nil {
 		return err
 	}
+	if refunded == "starter" || refunded == "growth" {
+		next := billingSnapshot{Subscription: sub.ID, Plan: refunded, Status: "refunded"}
+		if err = notifyBilling(ctx, tx, org, nil, billingSnapshot{}, next, []billingNotice{{Kind: "refunded", Key: "billing:refunded:" + sub.ID}}); err != nil {
+			return err
+		}
+	}
 	return tx.Commit(ctx)
+}
+
+// RecordBillingSyncError keeps a rejected activation visible to the owner, the operator
+// status command, and the reconciler until a later sync succeeds.
+func (s *Store) RecordBillingSyncError(ctx context.Context, org uuid.UUID, subscription, reason string) error {
+	if len(reason) > 300 {
+		reason = reason[:300]
+	}
+	if reason == "" {
+		reason = "billing sync failed"
+	}
+	_, err := s.pool.Exec(ctx, `INSERT INTO organization_billing(organization_id,sync_error,sync_error_subscription,sync_error_at)
+ SELECT $1,$2,nullif($3,''),clock_timestamp() FROM organizations WHERE id=$1 AND deletion_requested_at IS NULL
+ ON CONFLICT(organization_id) DO UPDATE SET sync_error=EXCLUDED.sync_error,
+ sync_error_subscription=coalesce(EXCLUDED.sync_error_subscription,organization_billing.sync_error_subscription),
+ sync_error_at=EXCLUDED.sync_error_at,updated_at=clock_timestamp()`, org, reason, subscription)
+	return err
+}
+
+// TouchBillingSync limits provider calls from page loads to one per organization per minute.
+func (s *Store) TouchBillingSync(ctx context.Context, org uuid.UUID) (bool, error) {
+	result, err := s.pool.Exec(ctx, `UPDATE organization_billing SET sync_attempt_at=clock_timestamp() WHERE organization_id=$1
+ AND (sync_attempt_at IS NULL OR sync_attempt_at < clock_timestamp()-interval '1 minute')`, org)
+	if err != nil {
+		return false, err
+	}
+	return result.RowsAffected() == 1, nil
+}
+
+type BillingReconcileItem struct {
+	Organization    uuid.UUID
+	Subscription    string
+	CheckoutID      uuid.UUID
+	CheckoutSession string
+	SyncError       bool
+}
+
+// BillingReconcileCandidates lists rejected activations, checkouts older than 15 minutes,
+// and live subscriptions not synced for six hours, so a missed webhook is caught up.
+func (s *Store) BillingReconcileCandidates(ctx context.Context, limit int) ([]BillingReconcileItem, error) {
+	rows, err := s.pool.Query(ctx, `SELECT b.organization_id,coalesce(b.sync_error_subscription,b.subscription_id,''),
+ coalesce(b.checkout_id,'00000000-0000-0000-0000-000000000000'::uuid),coalesce(b.checkout_session_id,''),b.sync_error IS NOT NULL
+ FROM organization_billing b JOIN organizations o ON o.id=b.organization_id AND o.deletion_requested_at IS NULL
+ WHERE b.sync_error IS NOT NULL
+  OR (b.checkout_id IS NOT NULL AND b.checkout_session_id IS NOT NULL AND b.updated_at < clock_timestamp()-interval '15 minutes')
+  OR (b.subscription_id IS NOT NULL AND b.status IN ('active','on_hold','past_due','paused')
+      AND (b.synced_at IS NULL OR b.synced_at < clock_timestamp()-interval '6 hours'))
+ ORDER BY coalesce(b.synced_at,'-infinity') LIMIT $1`, limit)
+	if err != nil {
+		return nil, err
+	}
+	return pgx.CollectRows(rows, func(row pgx.CollectableRow) (BillingReconcileItem, error) {
+		var item BillingReconcileItem
+		err := row.Scan(&item.Organization, &item.Subscription, &item.CheckoutID, &item.CheckoutSession, &item.SyncError)
+		return item, err
+	})
+}
+
+// ReleaseExpiredBillingCheckout runs only after Dodo reports that the session expired
+// without a successful payment, and leaves an audit row like the operator command.
+func (s *Store) ReleaseExpiredBillingCheckout(ctx context.Context, org, checkout uuid.UUID, session string) error {
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer rollbackTransaction(tx)
+	var id uuid.UUID
+	err = tx.QueryRow(ctx, `SELECT id FROM organizations WHERE id=$1 AND deletion_requested_at IS NULL FOR UPDATE`, org).Scan(&id)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	result, err := tx.Exec(ctx, `UPDATE organization_billing SET checkout_id=NULL,checkout_product_id=NULL,checkout_url=NULL,checkout_session_id=NULL,updated_at=clock_timestamp()
+ WHERE organization_id=$1 AND checkout_id=$2 AND checkout_session_id=$3`, org, checkout, session)
+	if err != nil {
+		return err
+	}
+	if result.RowsAffected() != 1 {
+		return nil
+	}
+	action, err := uuid.NewV7()
+	if err != nil {
+		return err
+	}
+	if _, err = tx.Exec(ctx, `INSERT INTO billing_recovery_actions(id,organization_id,checkout_id,operator_label,provider_reference) VALUES($1,$2,$3,'system-reconciler',$4)`, action, org, checkout, session); err != nil {
+		return err
+	}
+	return tx.Commit(ctx)
+}
+
+// MarkFoundingCarried records that an organization redeemed the founding code for a second
+// billing interval, so the shared founding limit counts it once.
+func (s *Store) MarkFoundingCarried(ctx context.Context, org uuid.UUID) error {
+	_, err := s.pool.Exec(ctx, `UPDATE organization_billing SET founding_carried=true WHERE organization_id=$1`, org)
+	return err
+}
+
+func (s *Store) CountFoundingCarried(ctx context.Context) (int, error) {
+	var count int
+	err := s.pool.QueryRow(ctx, `SELECT count(*) FROM organization_billing WHERE founding_carried`).Scan(&count)
+	return count, err
 }

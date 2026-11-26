@@ -4,7 +4,6 @@ import {
   BookOpenIcon,
   BellSimpleIcon,
   ChartBarIcon,
-  CreditCardIcon,
   FolderSimpleIcon,
   GearSixIcon,
   KeyIcon,
@@ -97,6 +96,21 @@ export function SidebarNavigation({
   const canManage = role === "owner" || role === "admin";
   const billingUrl = organizationId && canManage ? billingHref(organizationId) : undefined;
   const prefetch = usePrefetch();
+  // Usage and billing share one owner/admin page: the plan, this month's usage, and plan changes.
+  const billingLink = billingUrl && organizationId && (
+    <Link
+      href={billingUrl}
+      className={sidebarLink}
+      aria-label="Usage and billing"
+      title="Usage and billing"
+      aria-current={pathname === billingUrl ? "page" : undefined}
+      onNavigate={onNavigate}
+      {...prefetchOnIntent(() => prefetch.organizationUsage(organizationId))}
+    >
+      <ChartBarIcon size={18} aria-hidden="true" />
+      <span>Usage &amp; billing</span>
+    </Link>
+  );
   const notificationsLink = organizationId && (
     <Link
       href={notificationInboxHref(organizationId)}
@@ -199,57 +213,15 @@ export function SidebarNavigation({
                 </Link>
               </li>
             )}
-            {organizationId && canManage && (
-              <li>
-                <Link
-                  href={
-                    "/dashboard/organizations/" +
-                    encodeURIComponent(organizationId) +
-                    "/usage"
-                  }
-                  className={sidebarLink}
-                  aria-label="Organization usage"
-                  title="Organization usage"
-                  aria-current={
-                    pathname ===
-                      "/dashboard/organizations/" +
-                      encodeURIComponent(organizationId) +
-                      "/usage"
-                      ? "page"
-                      : undefined
-                  }
-                  onNavigate={onNavigate}
-                  {...prefetchOnIntent(() =>
-                    prefetch.organizationUsage(organizationId),
-                  )}
-                >
-                  <ChartBarIcon size={18} aria-hidden="true" />
-                  <span>Usage</span>
-                </Link>
-              </li>
-            )}
+            {billingLink && <li>{billingLink}</li>}
           </ul>
         </div>
       )}
-      {projectId && notificationsLink && (
+      {projectId && (notificationsLink || billingLink) && (
         <div data-ui="sidebar-group" className="[[data-ui~='sidebar-group']+&]:mt-6">
           <p className={"mt-0 mb-2 text-muted text-[11px] mx-2.5 [[data-ui~='dashboard-shell'][data-collapsed=true]_[data-ui~='dashboard-sidebar']_&]:hidden"}>Organization</p>
           {notificationsLink}
-        </div>
-      )}
-      {billingUrl && (
-        <div data-ui="sidebar-group" className="[[data-ui~='sidebar-group']+&]:mt-6">
-          <Link
-            href={billingUrl}
-            className={sidebarLink}
-            aria-label="Billing"
-            title="Billing"
-            aria-current={pathname === billingUrl ? "page" : undefined}
-            onNavigate={onNavigate}
-          >
-            <CreditCardIcon size={18} aria-hidden="true" />
-            <span>Billing</span>
-          </Link>
+          {billingLink}
         </div>
       )}
       <div className="mt-auto pt-8">

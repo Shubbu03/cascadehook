@@ -54,7 +54,7 @@ export function OrganizationSettings({ organizationId }: { organizationId: strin
               <SettingsRow title="Your role"><span className="text-[12px] capitalize">{organization.data.role}</span></SettingsRow>
               <SettingsRow title="Created"><span className="text-[12px] text-muted">{formatTime(organization.data.created_at)}</span></SettingsRow>
               {organization.data.role !== "member" && <SettingsRow title="Usage & limits" description="Review shared event quotas and usage across the organization’s projects.">
-                <Link className={buttonStyles({ variant: "secondary", size: "small" })} href={"/dashboard/organizations/" + encodeURIComponent(organizationId) + "/usage"}>View usage →</Link>
+                <Link className={buttonStyles({ variant: "secondary", size: "small" })} href={billingHref(organizationId)}>View usage →</Link>
               </SettingsRow>}
               {organization.data.role !== "member" && <SettingsRow title="Billing" description="View the organization's plan and subscription.">
                 <Link className={buttonStyles({ variant: "secondary", size: "small" })} href={billingHref(organizationId)}>View billing →</Link>

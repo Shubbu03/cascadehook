@@ -14,11 +14,12 @@ type BillingRecoveryStatus struct {
 	SubscriptionID  string    `json:"subscription_id"`
 	CheckoutID      uuid.UUID `json:"checkout_id"`
 	CheckoutSession string    `json:"checkout_session"`
+	SyncError       string    `json:"sync_error,omitempty"`
 }
 
 func (s *Store) OperatorBillingStatus(ctx context.Context, org uuid.UUID) (BillingRecoveryStatus, error) {
 	record, err := s.GetBilling(ctx, org)
-	return BillingRecoveryStatus{OrganizationID: org, State: record.State, SubscriptionID: record.SubscriptionID, CheckoutID: record.CheckoutID, CheckoutSession: record.CheckoutSession}, err
+	return BillingRecoveryStatus{OrganizationID: org, State: record.State, SubscriptionID: record.SubscriptionID, CheckoutID: record.CheckoutID, CheckoutSession: record.CheckoutSession, SyncError: record.SyncError}, err
 }
 
 // Operator access and external evidence are required: local timeout does not expire a Dodo checkout.

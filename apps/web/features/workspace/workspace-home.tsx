@@ -1,7 +1,9 @@
 "use client";
 
 import { Button } from "@/components/button";
+import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import { billingStartHref, takeIntent } from "@/features/billing/intent";
 import { usePrefetch } from "@/features/projects/prefetch";
 
 import { ConnectionError } from "./connection-error";
@@ -22,6 +24,14 @@ export function WorkspaceHome() {
   useEffect(() => {
     if (organizationId) prefetchProjects(organizationId);
   }, [organizationId, prefetchProjects]);
+  const router = useRouter();
+  const hasOrganization = Boolean(organization.data);
+  // A plan chosen on the pricing page before sign-up resumes once an organization exists.
+  useEffect(() => {
+    if (!hasOrganization) return;
+    const intent = takeIntent();
+    if (intent) router.replace(billingStartHref(intent));
+  }, [hasOrganization, router]);
   const { createOrganization } = useWorkspaceCreation();
   const error =
     organization.error ??

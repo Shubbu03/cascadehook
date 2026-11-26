@@ -39,3 +39,19 @@ func TestNotificationMessageEscapesContentAndLinksPreferences(t *testing.T) {
 		t.Fatalf("wrong recipient: %v", message.To)
 	}
 }
+
+func TestBillingNotificationLinksToBillingPage(t *testing.T) {
+	job := Job{ID: uuid.New(), OrganizationID: uuid.New(), Email: "owner@example.com", Title: "Welcome to Starter", Body: "Thanks.", ResourceType: "billing"}
+	body, err := notificationMessage(Config{InvitationURL: "https://app.example.com/invitations/accept", From: "alerts@example.com"}, job)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var message Message
+	if err := json.Unmarshal(body, &message); err != nil {
+		t.Fatal(err)
+	}
+	link := "https://app.example.com/dashboard/organizations/" + job.OrganizationID.String() + "/billing"
+	if !strings.Contains(message.HTML, link) || !strings.Contains(message.Text, "Open Usage & billing: "+link) {
+		t.Fatal("billing email does not link to the billing page")
+	}
+}

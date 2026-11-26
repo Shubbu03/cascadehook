@@ -21,11 +21,12 @@ const (
 	Credentials Category = "credentials"
 	Usage       Category = "usage"
 	Delivery    Category = "delivery"
+	Billing     Category = "billing"
 )
 
 func (category Category) Valid() bool {
 	switch category {
-	case Team, Access, Project, Credentials, Usage, Delivery:
+	case Team, Access, Project, Credentials, Usage, Delivery, Billing:
 		return true
 	}
 	return false

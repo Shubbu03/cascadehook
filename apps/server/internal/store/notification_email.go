@@ -39,13 +39,13 @@ const notificationEmailEligible = `u.deletion_requested_at IS NULL AND o.deletio
 func claimNotificationEmail(ctx context.Context, tx pgx.Tx) (*mailoutbox.Job, error) {
 	var job mailoutbox.Job
 	err := tx.QueryRow(ctx, `SELECT e.id,e.organization_id,e.notification_id,u.identity_subject,
-		n.title,n.body,n.created_at+interval '23 hours',e.attempts,
+		n.title,n.body,n.resource_type,n.created_at+interval '23 hours',e.attempts,
 		coalesce(e.first_attempt_at,clock_timestamp()),e.payload_ciphertext`+notificationEmailJoins+`
 		WHERE e.state IN ('queued','sending') AND e.next_attempt_at <= clock_timestamp()
 		AND (e.leased_until IS NULL OR e.leased_until <= clock_timestamp()) AND `+notificationEmailEligible+`
 		ORDER BY e.next_attempt_at,e.id LIMIT 1 FOR UPDATE OF e SKIP LOCKED`).Scan(
 		&job.ID, &job.OrganizationID, &job.NotificationID, &job.RecipientSubject,
-		&job.Title, &job.Body, &job.ExpiresAt, &job.Attempts, &job.FirstAttemptAt, &job.Payload,
+		&job.Title, &job.Body, &job.ResourceType, &job.ExpiresAt, &job.Attempts, &job.FirstAttemptAt, &job.Payload,
 	)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil

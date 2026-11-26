@@ -11,7 +11,6 @@ import { EndpointDetail } from "@/features/endpoints/endpoint-detail";
 import { NotificationInbox } from "@/features/notifications/notification-inbox";
 import { ProjectWorkspace } from "@/features/projects/project-workspace";
 import { OrganizationSettings } from "@/features/settings/organization-settings";
-import { OrganizationUsage } from "@/features/settings/organization-usage";
 import { uuidPattern } from "@/lib/format";
 
 function useUuidParam(name: string) {
@@ -52,11 +51,6 @@ export function NotificationsRoute() {
 export function OrganizationSettingsRoute() {
   const organizationId = useUuidParam("organizationId");
   return <OrganizationSettings key={organizationId} organizationId={organizationId} />;
-}
-
-export function OrganizationUsageRoute() {
-  const organizationId = useUuidParam("organizationId");
-  return <OrganizationUsage key={organizationId} organizationId={organizationId} />;
 }
 
 export function OrganizationBillingRoute() {

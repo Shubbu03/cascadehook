@@ -5,6 +5,7 @@ export const notificationCategories = {
   team: "Team",
   access: "Access",
   project: "Project",
+  billing: "Billing",
 } as const;
 
 export type NotificationCategory = keyof typeof notificationCategories;
@@ -53,7 +54,9 @@ export function notificationTarget(item: InboxNotification) {
     case "endpoint":
       return project && item.target.id ? project + "/endpoints/" + encodeURIComponent(item.target.id) : null;
     case "usage":
-      return (project ?? organization) + "/usage";
+      return project ? project + "/usage" : organization + "/billing";
+    case "billing":
+      return organization + "/billing";
     default:
       return null;
   }

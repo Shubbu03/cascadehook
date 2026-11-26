@@ -359,5 +359,17 @@ func LoadBilling() (billing.Config, error) {
 		StarterMonthly: os.Getenv("DODO_STARTER_MONTHLY_PRODUCT_ID"), StarterAnnual: os.Getenv("DODO_STARTER_ANNUAL_PRODUCT_ID"),
 		GrowthMonthly: os.Getenv("DODO_GROWTH_MONTHLY_PRODUCT_ID"), GrowthAnnual: os.Getenv("DODO_GROWTH_ANNUAL_PRODUCT_ID"),
 	}
+	// Compose passes unset billing variables as empty strings, so empty means "no founding offer",
+	// matching the other Dodo variables.
+	cfg.FoundingMonthlyCode, cfg.FoundingAnnualCode = os.Getenv("DODO_FOUNDING_MONTHLY_CODE"), os.Getenv("DODO_FOUNDING_ANNUAL_CODE")
+	limit := 50
+	if raw := os.Getenv("BILLING_FOUNDING_LIMIT"); raw != "" {
+		parsed, err := strconv.Atoi(raw)
+		if err != nil || parsed < 1 || parsed > 10000 {
+			return cfg, fmt.Errorf("BILLING_FOUNDING_LIMIT must be between 1 and 10000")
+		}
+		limit = parsed
+	}
+	cfg.FoundingLimit = limit
 	return cfg, cfg.Validate()
 }

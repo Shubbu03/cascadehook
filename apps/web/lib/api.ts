@@ -68,6 +68,7 @@ function problemMessage(status: number, code?: string) {
     billing_checkout_unconfirmed: "Checkout could not be confirmed. Contact support before trying another purchase.",
     billing_unavailable: "The billing provider is temporarily unavailable. Your stored subscription has not been changed.",
     invalid_billing_plan: "Choose one of the available plans and billing intervals.",
+    invalid_payment_id: "That payment could not be found. Refresh the billing page.",
     invalid_event: "Enter a JSON payload with a valid event type.",
     invalid_event_type:
       "Use 3–128 lowercase letters, numbers, dots, underscores, or hyphens for the event type.",

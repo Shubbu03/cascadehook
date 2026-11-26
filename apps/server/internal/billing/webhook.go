@@ -17,10 +17,10 @@ type Event struct {
 	Type      string    `json:"type"`
 	Timestamp time.Time `json:"timestamp"`
 	Data      struct {
-		SubscriptionID string            `json:"subscription_id"`
-		RefundID       string            `json:"refund_id"`
-		PaymentID      string            `json:"payment_id"`
-		Metadata       map[string]string `json:"metadata"`
+		SubscriptionID string   `json:"subscription_id"`
+		RefundID       string   `json:"refund_id"`
+		PaymentID      string   `json:"payment_id"`
+		Metadata       Metadata `json:"metadata"`
 	} `json:"data"`
 }
 

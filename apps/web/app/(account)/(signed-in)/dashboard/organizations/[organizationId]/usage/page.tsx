@@ -1,11 +1,8 @@
-import type { Metadata } from "next";
-import { OrganizationUsageRoute } from "@/features/workspace/routes";
+import { redirect } from "next/navigation";
+import { billingHref } from "@/lib/plans";
 
-// The authenticated client workspace intentionally gates this page during SSR.
-export const instant = false;
-
-export const metadata: Metadata = { title: "Organization usage" };
-
-export default function Page() {
-  return <OrganizationUsageRoute />;
+// Organization usage now lives on the combined usage and billing page.
+export default async function Page({ params }: { params: Promise<{ organizationId: string }> }) {
+  const { organizationId } = await params;
+  redirect(billingHref(organizationId));
 }

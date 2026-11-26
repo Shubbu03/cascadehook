@@ -7,11 +7,11 @@ type Preferences struct {
 }
 
 func DefaultPreferences() Preferences {
-	return Preferences{EmailSeverities: []string{"info", "success", "warning", "error"}, EmailCategories: []Category{Delivery, Credentials, Usage, Team, Access, Project}}
+	return Preferences{EmailSeverities: []string{"info", "success", "warning", "error"}, EmailCategories: []Category{Delivery, Credentials, Usage, Team, Access, Project, Billing}}
 }
 
 func (preferences Preferences) Valid() bool {
-	if preferences.EmailCategories == nil || len(preferences.EmailCategories) > 6 {
+	if preferences.EmailCategories == nil || len(preferences.EmailCategories) > 7 {
 		return false
 	}
 	seen := make(map[Category]bool, len(preferences.EmailCategories))

@@ -4,8 +4,11 @@ import (
 	"encoding/base64"
 	"fmt"
 	"net/url"
+	"regexp"
 	"strings"
 )
+
+var discountCodePattern = regexp.MustCompile(`^[A-Za-z0-9_-]{3,64}$`)
 
 type Config struct {
 	APIKey         string `json:"-"`
@@ -16,6 +19,35 @@ type Config struct {
 	StarterAnnual  string
 	GrowthMonthly  string
 	GrowthAnnual   string
+	// Founding codes are optional. Dodo counts a code's cycles per billing period, so
+	// "12 months" needs a 12-cycle monthly code and a 1-cycle annual code.
+	FoundingMonthlyCode string
+	FoundingAnnualCode  string
+	FoundingLimit       int
+}
+
+func (c Config) FoundingEnabled() bool { return c.FoundingMonthlyCode != "" }
+
+// FoundingCarry returns the founding code to apply when a subscription with an active founding
+// discount moves to another billing interval. Within one interval Dodo keeps the discount itself.
+func (c Config) FoundingCarry(sub Subscription, fromInterval, toInterval string) string {
+	if !c.FoundingEnabled() || fromInterval == toInterval {
+		return ""
+	}
+	for _, discount := range sub.Discounts {
+		founding := strings.EqualFold(discount.Code, c.FoundingMonthlyCode) || strings.EqualFold(discount.Code, c.FoundingAnnualCode)
+		if founding && (discount.CyclesRemaining == nil || *discount.CyclesRemaining > 0) {
+			return c.FoundingCode(toInterval)
+		}
+	}
+	return ""
+}
+
+func (c Config) FoundingCode(interval string) string {
+	if interval == "annual" {
+		return c.FoundingAnnualCode
+	}
+	return c.FoundingMonthlyCode
 }
 
 func (c Config) Enabled() bool { return c.APIKey != "" }
@@ -41,6 +73,13 @@ func (c Config) Validate() error {
 	key, err := base64.StdEncoding.DecodeString(strings.TrimPrefix(c.WebhookKey, "whsec_"))
 	if err != nil || !strings.HasPrefix(c.WebhookKey, "whsec_") || len(key) < 16 {
 		return fmt.Errorf("DODO_PAYMENTS_WEBHOOK_KEY must be a whsec_ signing secret")
+	}
+	if (c.FoundingMonthlyCode == "") != (c.FoundingAnnualCode == "") {
+		return fmt.Errorf("set both DODO_FOUNDING_MONTHLY_CODE and DODO_FOUNDING_ANNUAL_CODE, or neither")
+	}
+	if c.FoundingEnabled() && (!discountCodePattern.MatchString(c.FoundingMonthlyCode) || !discountCodePattern.MatchString(c.FoundingAnnualCode) ||
+		strings.EqualFold(c.FoundingMonthlyCode, c.FoundingAnnualCode) || c.FoundingLimit < 1 || c.FoundingLimit > 10000) {
+		return fmt.Errorf("founding discount codes must be two distinct Dodo codes with a limit between 1 and 10000")
 	}
 	seen := map[string]bool{}
 	for _, id := range []string{c.StarterMonthly, c.StarterAnnual, c.GrowthMonthly, c.GrowthAnnual} {
