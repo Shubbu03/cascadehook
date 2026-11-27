@@ -74,7 +74,7 @@ export function SiteFooter() {
     <footer className="overflow-hidden border-t border-solid border-border">
       <div className={`${container} grid grid-cols-[minmax(0,1.4fr)_repeat(4,minmax(0,1fr))] gap-x-10 gap-y-12 pt-24 max-[68.75rem]:grid-cols-4 max-[53.125rem]:pt-18 max-[37.5rem]:grid-cols-2 max-[37.5rem]:gap-x-6 max-[37.5rem]:pt-14`}>
         <div className="min-w-0 max-[68.75rem]:col-span-4 max-[37.5rem]:col-span-2">
-          <span className="block w-fit [zoom:1.35] max-[37.5rem]:[zoom:1.15]"><Brand href={null} /></span>
+          <span className="block w-fit zoom-[1.35] max-[37.5rem]:zoom-[1.15]"><Brand href={null} /></span>
           <p className="mt-5 max-w-70 text-muted text-[14px] leading-[1.7]">Outbound webhooks, taken care of. Signed, retried, and on the record.</p>
         </div>
         {groups.map((group) => (
