@@ -20,8 +20,8 @@ style="width:100%;max-width:480px;background:#fff;border:1px solid #dedcd7;borde
 cascadehook<span style="color:#b45332">.</span></td></tr>
 <tr><td style="padding:24px"><h1 style="margin:0;font-size:22px;line-height:1.4">{{.Title}}</h1>
 <p style="margin:12px 0 24px;color:#626569;font-size:14px;line-height:1.7">{{.Body}}</p>
-<a href="{{.InboxURL}}" style="display:inline-block;padding:12px 18px;background:#b45332;color:#fff;
-border-radius:6px;font-size:14px;font-weight:600;text-decoration:none">View notifications</a></td></tr>
+<a href="{{.ActionURL}}" style="display:inline-block;padding:12px 18px;background:#b45332;color:#fff;
+border-radius:6px;font-size:14px;font-weight:600;text-decoration:none">{{.Action}}</a></td></tr>
 <tr><td style="padding:16px 24px;border-top:1px solid #eeede9;color:#626569;font-size:12px;line-height:1.7">
 You enabled email alerts in Cascadehook. <a href="{{.SettingsURL}}" style="color:#b45332">Manage email preferences</a>
 </td></tr></table></td></tr></table></body></html>`))
@@ -31,13 +31,17 @@ func notificationMessage(cfg Config, job Job) ([]byte, error) {
 	if err != nil || base.Host == "" {
 		return nil, fmt.Errorf("invalid application URL")
 	}
-	base.Path = "/dashboard/organizations/" + job.OrganizationID.String() + "/notifications"
-	inboxURL := base.String()
+	action, page := "View notifications", "/notifications"
+	if job.ResourceType == "billing" {
+		action, page = "Open Usage & billing", "/billing"
+	}
+	base.Path = "/dashboard/organizations/" + job.OrganizationID.String() + page
+	actionURL := base.String()
 	base.Path = "/account"
 	base.RawQuery = "section=notifications"
 	settingsURL := base.String()
-	data := struct{ Title, Body, InboxURL, SettingsURL string }{
-		Title: job.Title, Body: job.Body, InboxURL: inboxURL, SettingsURL: settingsURL,
+	data := struct{ Title, Body, Action, ActionURL, SettingsURL string }{
+		Title: job.Title, Body: job.Body, Action: action, ActionURL: actionURL, SettingsURL: settingsURL,
 	}
 	var html bytes.Buffer
 	if err := notificationTemplate.Execute(&html, data); err != nil {
@@ -47,8 +51,8 @@ func notificationMessage(cfg Config, job Job) ([]byte, error) {
 	return json.Marshal(Message{
 		From: cfg.From, ReplyTo: cfg.ReplyTo, To: []string{job.Email}, Subject: subject + " · Cascadehook",
 		HTML: html.String(),
-		Text: fmt.Sprintf("%s\n\n%s\n\nView notifications: %s\n\nManage email preferences: %s",
-			job.Title, job.Body, inboxURL, settingsURL),
+		Text: fmt.Sprintf("%s\n\n%s\n\n%s: %s\n\nManage email preferences: %s",
+			job.Title, job.Body, action, actionURL, settingsURL),
 		Tags: []Tag{{Name: "cascadehook_job", Value: job.ID.String()}},
 	})
 }

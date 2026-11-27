@@ -27,6 +27,7 @@ const categories: { id: NotificationCategory; title: string; description: string
   { id: "team", title: "Team activity", description: "Membership changes and invitation updates." },
   { id: "access", title: "Access changes", description: "Changes to your organization role and permissions." },
   { id: "project", title: "Project activity", description: "Project pauses and resumptions. Creation and name changes stay in-app." },
+  { id: "billing", title: "Billing", description: "Plan purchases, changes, cancellations, and payment problems. Only owners and admins receive these." },
 ];
 
 function useNotificationPreferences() {

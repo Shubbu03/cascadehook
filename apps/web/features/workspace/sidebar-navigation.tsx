@@ -17,10 +17,14 @@ import {
 } from "@phosphor-icons/react";
 import Link from "next/link";
 import { DocsLink } from "@/components/docs-link";
+import { billingHref } from "@/lib/plans";
 import type { OrganizationRole } from "./types";
 import { organizationHref } from "./queries";
 import { notificationInboxHref } from "@/features/notifications/types";
 import { prefetchOnIntent, usePrefetch, type ProjectSection } from "@/features/projects/prefetch";
+
+const sidebarLink =
+  "relative flex items-center w-full min-h-10 rounded-md bg-transparent text-muted text-left whitespace-nowrap [transition:background-color_0.12s,color_0.12s] p-2.5 gap-3 border-0 border-none border-current text-[13px]/5 [&:hover]:text-foreground [&:hover]:bg-surface-hover aria-[current]:text-accent aria-[current]:bg-[color-mix(in_srgb,var(--accent-subtle)_65%,transparent)] aria-[current]:font-medium [&[aria-current]::before]:absolute [&[aria-current]::before]:left-0 [&[aria-current]::before]:w-0.5 [&[aria-current]::before]:rounded-xs [&[aria-current]::before]:bg-accent [&[aria-current]::before]:content-[''] [&[aria-current]::before]:inset-y-2.5 [[data-ui~='dashboard-shell'][data-collapsed=true]_[data-ui~='dashboard-sidebar']_&]:justify-center [[data-ui~='dashboard-shell'][data-collapsed=true]_[data-ui~='dashboard-sidebar']_&]:px-0 [[data-ui~='dashboard-shell'][data-collapsed=true]_[data-ui~='dashboard-sidebar']_&_>_span]:hidden pointer-coarse:min-h-11 motion-reduce:transition-none";
 
 const groups = [
   {
@@ -90,11 +94,27 @@ export function SidebarNavigation({
     ? "/dashboard/projects/" + encodeURIComponent(projectId)
     : "";
   const canManage = role === "owner" || role === "admin";
+  const billingUrl = organizationId && canManage ? billingHref(organizationId) : undefined;
   const prefetch = usePrefetch();
+  // Usage and billing share one owner/admin page: the plan, this month's usage, and plan changes.
+  const billingLink = billingUrl && organizationId && (
+    <Link
+      href={billingUrl}
+      className={sidebarLink}
+      aria-label="Usage and billing"
+      title="Usage and billing"
+      aria-current={pathname === billingUrl ? "page" : undefined}
+      onNavigate={onNavigate}
+      {...prefetchOnIntent(() => prefetch.organizationUsage(organizationId))}
+    >
+      <ChartBarIcon size={18} aria-hidden="true" />
+      <span>Usage &amp; billing</span>
+    </Link>
+  );
   const notificationsLink = organizationId && (
     <Link
       href={notificationInboxHref(organizationId)}
-      className={"relative flex items-center w-full min-h-10 rounded-md bg-transparent text-muted text-left whitespace-nowrap [transition:background-color_0.12s,color_0.12s] p-2.5 gap-3 border-0 border-none border-current text-[13px]/5 [&:hover]:text-foreground [&:hover]:bg-surface-hover aria-[current]:text-accent aria-[current]:bg-[color-mix(in_srgb,var(--accent-subtle)_65%,transparent)] aria-[current]:font-medium [&[aria-current]::before]:absolute [&[aria-current]::before]:left-0 [&[aria-current]::before]:w-0.5 [&[aria-current]::before]:rounded-xs [&[aria-current]::before]:bg-accent [&[aria-current]::before]:content-[''] [&[aria-current]::before]:inset-y-2.5 [[data-ui~='dashboard-shell'][data-collapsed=true]_[data-ui~='dashboard-sidebar']_&]:justify-center [[data-ui~='dashboard-shell'][data-collapsed=true]_[data-ui~='dashboard-sidebar']_&]:px-0 [[data-ui~='dashboard-shell'][data-collapsed=true]_[data-ui~='dashboard-sidebar']_&_>_span]:hidden pointer-coarse:min-h-11 motion-reduce:transition-none"}
+      className={sidebarLink}
       aria-label="Notifications"
       title="Notifications"
       aria-current={
@@ -119,7 +139,7 @@ export function SidebarNavigation({
                   <li key={path}>
                     <Link
                       href={path ? href + "/" + path : href}
-                      className={"relative flex items-center w-full min-h-10 rounded-md bg-transparent text-muted text-left whitespace-nowrap [transition:background-color_0.12s,color_0.12s] p-2.5 gap-3 border-0 border-none border-current text-[13px]/5 [&:hover]:text-foreground [&:hover]:bg-surface-hover aria-[current]:text-accent aria-[current]:bg-[color-mix(in_srgb,var(--accent-subtle)_65%,transparent)] aria-[current]:font-medium [&[aria-current]::before]:absolute [&[aria-current]::before]:left-0 [&[aria-current]::before]:w-0.5 [&[aria-current]::before]:rounded-xs [&[aria-current]::before]:bg-accent [&[aria-current]::before]:content-[''] [&[aria-current]::before]:inset-y-2.5 [[data-ui~='dashboard-shell'][data-collapsed=true]_[data-ui~='dashboard-sidebar']_&]:justify-center [[data-ui~='dashboard-shell'][data-collapsed=true]_[data-ui~='dashboard-sidebar']_&]:px-0 [[data-ui~='dashboard-shell'][data-collapsed=true]_[data-ui~='dashboard-sidebar']_&_>_span]:hidden pointer-coarse:min-h-11 motion-reduce:transition-none"}
+                      className={sidebarLink}
                       aria-label={label}
                       title={label}
                       aria-current={
@@ -154,7 +174,7 @@ export function SidebarNavigation({
                     ? organizationHref(organizationId)
                     : "/dashboard"
                 }
-                className={"relative flex items-center w-full min-h-10 rounded-md bg-transparent text-muted text-left whitespace-nowrap [transition:background-color_0.12s,color_0.12s] p-2.5 gap-3 border-0 border-none border-current text-[13px]/5 [&:hover]:text-foreground [&:hover]:bg-surface-hover aria-[current]:text-accent aria-[current]:bg-[color-mix(in_srgb,var(--accent-subtle)_65%,transparent)] aria-[current]:font-medium [&[aria-current]::before]:absolute [&[aria-current]::before]:left-0 [&[aria-current]::before]:w-0.5 [&[aria-current]::before]:rounded-xs [&[aria-current]::before]:bg-accent [&[aria-current]::before]:content-[''] [&[aria-current]::before]:inset-y-2.5 [[data-ui~='dashboard-shell'][data-collapsed=true]_[data-ui~='dashboard-sidebar']_&]:justify-center [[data-ui~='dashboard-shell'][data-collapsed=true]_[data-ui~='dashboard-sidebar']_&]:px-0 [[data-ui~='dashboard-shell'][data-collapsed=true]_[data-ui~='dashboard-sidebar']_&_>_span]:hidden pointer-coarse:min-h-11 motion-reduce:transition-none"}
+                className={sidebarLink}
                 aria-label="Projects"
                 title="Projects"
                 aria-current={pathname === "/dashboard" ? "page" : undefined}
@@ -175,7 +195,7 @@ export function SidebarNavigation({
                     encodeURIComponent(organizationId) +
                     "/settings"
                   }
-                  className={"relative flex items-center w-full min-h-10 rounded-md bg-transparent text-muted text-left whitespace-nowrap [transition:background-color_0.12s,color_0.12s] p-2.5 gap-3 border-0 border-none border-current text-[13px]/5 [&:hover]:text-foreground [&:hover]:bg-surface-hover aria-[current]:text-accent aria-[current]:bg-[color-mix(in_srgb,var(--accent-subtle)_65%,transparent)] aria-[current]:font-medium [&[aria-current]::before]:absolute [&[aria-current]::before]:left-0 [&[aria-current]::before]:w-0.5 [&[aria-current]::before]:rounded-xs [&[aria-current]::before]:bg-accent [&[aria-current]::before]:content-[''] [&[aria-current]::before]:inset-y-2.5 [[data-ui~='dashboard-shell'][data-collapsed=true]_[data-ui~='dashboard-sidebar']_&]:justify-center [[data-ui~='dashboard-shell'][data-collapsed=true]_[data-ui~='dashboard-sidebar']_&]:px-0 [[data-ui~='dashboard-shell'][data-collapsed=true]_[data-ui~='dashboard-sidebar']_&_>_span]:hidden pointer-coarse:min-h-11 motion-reduce:transition-none"}
+                  className={sidebarLink}
                   aria-label="Organization and team"
                   title="Organization and team"
                   aria-current={
@@ -193,48 +213,21 @@ export function SidebarNavigation({
                 </Link>
               </li>
             )}
-            {organizationId && canManage && (
-              <li>
-                <Link
-                  href={
-                    "/dashboard/organizations/" +
-                    encodeURIComponent(organizationId) +
-                    "/usage"
-                  }
-                  className={"relative flex items-center w-full min-h-10 rounded-md bg-transparent text-muted text-left whitespace-nowrap [transition:background-color_0.12s,color_0.12s] p-2.5 gap-3 border-0 border-none border-current text-[13px]/5 [&:hover]:text-foreground [&:hover]:bg-surface-hover aria-[current]:text-accent aria-[current]:bg-[color-mix(in_srgb,var(--accent-subtle)_65%,transparent)] aria-[current]:font-medium [&[aria-current]::before]:absolute [&[aria-current]::before]:left-0 [&[aria-current]::before]:w-0.5 [&[aria-current]::before]:rounded-xs [&[aria-current]::before]:bg-accent [&[aria-current]::before]:content-[''] [&[aria-current]::before]:inset-y-2.5 [[data-ui~='dashboard-shell'][data-collapsed=true]_[data-ui~='dashboard-sidebar']_&]:justify-center [[data-ui~='dashboard-shell'][data-collapsed=true]_[data-ui~='dashboard-sidebar']_&]:px-0 [[data-ui~='dashboard-shell'][data-collapsed=true]_[data-ui~='dashboard-sidebar']_&_>_span]:hidden pointer-coarse:min-h-11 motion-reduce:transition-none"}
-                  aria-label="Organization usage"
-                  title="Organization usage"
-                  aria-current={
-                    pathname ===
-                      "/dashboard/organizations/" +
-                      encodeURIComponent(organizationId) +
-                      "/usage"
-                      ? "page"
-                      : undefined
-                  }
-                  onNavigate={onNavigate}
-                  {...prefetchOnIntent(() =>
-                    prefetch.organizationUsage(organizationId),
-                  )}
-                >
-                  <ChartBarIcon size={18} aria-hidden="true" />
-                  <span>Usage</span>
-                </Link>
-              </li>
-            )}
+            {billingLink && <li>{billingLink}</li>}
           </ul>
         </div>
       )}
-      {projectId && notificationsLink && (
+      {projectId && (notificationsLink || billingLink) && (
         <div data-ui="sidebar-group" className="[[data-ui~='sidebar-group']+&]:mt-6">
           <p className={"mt-0 mb-2 text-muted text-[11px] mx-2.5 [[data-ui~='dashboard-shell'][data-collapsed=true]_[data-ui~='dashboard-sidebar']_&]:hidden"}>Organization</p>
           {notificationsLink}
+          {billingLink}
         </div>
       )}
       <div className="mt-auto pt-8">
         <DocsLink
           path="/docs/quickstart"
-          className={"relative flex items-center w-full min-h-10 rounded-md bg-transparent text-muted text-left whitespace-nowrap [transition:background-color_0.12s,color_0.12s] p-2.5 gap-3 border-0 border-none border-current text-[13px]/5 [&:hover]:text-foreground [&:hover]:bg-surface-hover aria-[current]:text-accent aria-[current]:bg-[color-mix(in_srgb,var(--accent-subtle)_65%,transparent)] aria-[current]:font-medium [&[aria-current]::before]:absolute [&[aria-current]::before]:left-0 [&[aria-current]::before]:w-0.5 [&[aria-current]::before]:rounded-xs [&[aria-current]::before]:bg-accent [&[aria-current]::before]:content-[''] [&[aria-current]::before]:inset-y-2.5 [[data-ui~='dashboard-shell'][data-collapsed=true]_[data-ui~='dashboard-sidebar']_&]:justify-center [[data-ui~='dashboard-shell'][data-collapsed=true]_[data-ui~='dashboard-sidebar']_&]:px-0 [[data-ui~='dashboard-shell'][data-collapsed=true]_[data-ui~='dashboard-sidebar']_&_>_span]:hidden pointer-coarse:min-h-11 motion-reduce:transition-none"}
+          className={sidebarLink}
           aria-label="Quickstart"
           title="Quickstart"
           onClick={onNavigate}
@@ -245,7 +238,7 @@ export function SidebarNavigation({
         {projectId && (
           <DocsLink
             path="/docs/receivers"
-            className={"relative flex items-center w-full min-h-10 rounded-md bg-transparent text-muted text-left whitespace-nowrap [transition:background-color_0.12s,color_0.12s] p-2.5 gap-3 border-0 border-none border-current text-[13px]/5 [&:hover]:text-foreground [&:hover]:bg-surface-hover aria-[current]:text-accent aria-[current]:bg-[color-mix(in_srgb,var(--accent-subtle)_65%,transparent)] aria-[current]:font-medium [&[aria-current]::before]:absolute [&[aria-current]::before]:left-0 [&[aria-current]::before]:w-0.5 [&[aria-current]::before]:rounded-xs [&[aria-current]::before]:bg-accent [&[aria-current]::before]:content-[''] [&[aria-current]::before]:inset-y-2.5 [[data-ui~='dashboard-shell'][data-collapsed=true]_[data-ui~='dashboard-sidebar']_&]:justify-center [[data-ui~='dashboard-shell'][data-collapsed=true]_[data-ui~='dashboard-sidebar']_&]:px-0 [[data-ui~='dashboard-shell'][data-collapsed=true]_[data-ui~='dashboard-sidebar']_&_>_span]:hidden pointer-coarse:min-h-11 motion-reduce:transition-none"}
+            className={sidebarLink}
             aria-label="Receiver guide"
             title="Receiver guide"
             onClick={onNavigate}
@@ -254,7 +247,7 @@ export function SidebarNavigation({
             <span>Receiver guide</span>
           </DocsLink>
         )}
-        <Link href="/support" className={"relative flex items-center w-full min-h-10 rounded-md bg-transparent text-muted text-left whitespace-nowrap [transition:background-color_0.12s,color_0.12s] p-2.5 gap-3 border-0 border-none border-current text-[13px]/5 [&:hover]:text-foreground [&:hover]:bg-surface-hover aria-[current]:text-accent aria-[current]:bg-[color-mix(in_srgb,var(--accent-subtle)_65%,transparent)] aria-[current]:font-medium [&[aria-current]::before]:absolute [&[aria-current]::before]:left-0 [&[aria-current]::before]:w-0.5 [&[aria-current]::before]:rounded-xs [&[aria-current]::before]:bg-accent [&[aria-current]::before]:content-[''] [&[aria-current]::before]:inset-y-2.5 [[data-ui~='dashboard-shell'][data-collapsed=true]_[data-ui~='dashboard-sidebar']_&]:justify-center [[data-ui~='dashboard-shell'][data-collapsed=true]_[data-ui~='dashboard-sidebar']_&]:px-0 [[data-ui~='dashboard-shell'][data-collapsed=true]_[data-ui~='dashboard-sidebar']_&_>_span]:hidden pointer-coarse:min-h-11 motion-reduce:transition-none"} aria-label="Support" title="Support" onClick={onNavigate}>
+        <Link href="/support" className={sidebarLink} aria-label="Support" title="Support" onClick={onNavigate}>
           <LifebuoyIcon size={18} aria-hidden="true" />
           <span>Support</span>
         </Link>

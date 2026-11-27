@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"cascadehook/internal/auth"
+	"cascadehook/internal/billing"
 	"cascadehook/internal/clerk"
 	"cascadehook/internal/deliveries"
 	"cascadehook/internal/limits"
@@ -28,6 +29,7 @@ type Config struct {
 
 // APIConfig adds the HTTP listener settings used only by the API binary.
 type APIConfig struct {
+	Billing billing.Config
 	Config
 	HTTPAddr              string
 	SigningEncryptionKey  []byte `json:"-"`
@@ -161,6 +163,10 @@ func LoadAPI() (APIConfig, error) {
 		for _, party := range strings.Split(parties, ",") {
 			cfg.Clerk.AuthorizedParties = append(cfg.Clerk.AuthorizedParties, strings.TrimSpace(party))
 		}
+	}
+	cfg.Billing, err = LoadBilling()
+	if err != nil {
+		return APIConfig{}, err
 	}
 	cfg.RequestLimits, err = requestLimits()
 	if err != nil {
@@ -343,4 +349,27 @@ func boundedInt(name string, fallback, minimum, maximum int) (int, error) {
 		return 0, fmt.Errorf("%s must be between %d and %d", name, minimum, maximum)
 	}
 	return parsed, nil
+}
+
+// LoadBilling is shared by the API and the operator reconciliation command.
+func LoadBilling() (billing.Config, error) {
+	cfg := billing.Config{
+		APIKey: os.Getenv("DODO_PAYMENTS_API_KEY"), WebhookKey: os.Getenv("DODO_PAYMENTS_WEBHOOK_KEY"),
+		Environment: os.Getenv("DODO_PAYMENTS_ENVIRONMENT"), AppURL: os.Getenv("BILLING_APP_URL"),
+		StarterMonthly: os.Getenv("DODO_STARTER_MONTHLY_PRODUCT_ID"), StarterAnnual: os.Getenv("DODO_STARTER_ANNUAL_PRODUCT_ID"),
+		GrowthMonthly: os.Getenv("DODO_GROWTH_MONTHLY_PRODUCT_ID"), GrowthAnnual: os.Getenv("DODO_GROWTH_ANNUAL_PRODUCT_ID"),
+	}
+	// Compose passes unset billing variables as empty strings, so empty means "no founding offer",
+	// matching the other Dodo variables.
+	cfg.FoundingMonthlyCode, cfg.FoundingAnnualCode = os.Getenv("DODO_FOUNDING_MONTHLY_CODE"), os.Getenv("DODO_FOUNDING_ANNUAL_CODE")
+	limit := 50
+	if raw := os.Getenv("BILLING_FOUNDING_LIMIT"); raw != "" {
+		parsed, err := strconv.Atoi(raw)
+		if err != nil || parsed < 1 || parsed > 10000 {
+			return cfg, fmt.Errorf("BILLING_FOUNDING_LIMIT must be between 1 and 10000")
+		}
+		limit = parsed
+	}
+	cfg.FoundingLimit = limit
+	return cfg, cfg.Validate()
 }

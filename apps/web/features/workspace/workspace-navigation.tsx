@@ -1,5 +1,6 @@
 "use client";
 
+import { billingHref } from "@/lib/plans";
 import { useAuth } from "@clerk/nextjs";
 import {
   ChartBarIcon,
@@ -145,14 +146,10 @@ function OrganizationSwitcher({ selection }: { selection: Selection; }) {
         {active && active.role !== "member" && (
           <Link
             className={menuItem}
-            href={
-              "/dashboard/organizations/" +
-              encodeURIComponent(active.id) +
-              "/usage"
-            }
+            href={billingHref(active.id)}
           >
             <ChartBarIcon size={18} aria-hidden="true" />
-            Organization usage
+            Usage &amp; billing
           </Link>
         )}
         <button

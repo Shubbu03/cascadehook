@@ -1,7 +1,7 @@
 "use client";
 
 import {
-  ArrowCounterClockwiseIcon, ChartBarIcon, CheckCircleIcon,
+  ArrowCounterClockwiseIcon, ChartBarIcon, CheckCircleIcon, CreditCardIcon,
   CheckIcon, FolderSimpleIcon, KeyIcon, LightningIcon, ShieldCheckIcon, UsersIcon,
 } from "@phosphor-icons/react";
 import Link from "next/link";
@@ -11,7 +11,7 @@ import type { NotificationActions } from "./use-notification-actions";
 
 const categoryIcons = {
   delivery: LightningIcon, credentials: KeyIcon, usage: ChartBarIcon,
-  team: UsersIcon, access: ShieldCheckIcon, project: FolderSimpleIcon,
+  team: UsersIcon, access: ShieldCheckIcon, project: FolderSimpleIcon, billing: CreditCardIcon,
 };
 
 export function NotificationItem({ item, actions, projectName, onNavigate }: {

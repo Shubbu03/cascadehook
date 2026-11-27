@@ -6,7 +6,7 @@ import { useRef } from "react";
 import { DocsLink } from "@/components/docs-link";
 import { FreeBadge } from "./free-badge";
 
-export function MobileNav({ howItWorksHref }: { howItWorksHref: string; }) {
+export function MobileNav({ howItWorksHref, showPricing }: { howItWorksHref: string; showPricing: boolean }) {
   const details = useRef<HTMLDetailsElement>(null);
   function close() {
     if (details.current) details.current.open = false;
@@ -29,6 +29,7 @@ export function MobileNav({ howItWorksHref }: { howItWorksHref: string; }) {
         <a href={howItWorksHref} onClick={close}>
           How it works
         </a>
+        {showPricing && <Link href="/pricing" onClick={close}>Pricing</Link>}
         <DocsLink path="/docs" onClick={close}>
           Docs
         </DocsLink>

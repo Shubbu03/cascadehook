@@ -47,8 +47,10 @@ const footer = `
 export async function llmsIndex() {
   const tree = await docsLlms.index();
   // Fumadocs links each page to its HTML URL; agents want the Markdown copy.
+  // The sidebar's tool links are absolute because apps/web owns /tools.
   const body = tree
     .replace(/^# .*\n+/, "")
-    .replace(/\]\((\/docs[^)\s]*)\)/g, (_match, url: string) => `](${siteURL}${markdownPath(url)})`);
+    .replace(/\]\((\/docs[^)\s]*)\)/g, (_match, url: string) => `](${siteURL}${markdownPath(url)})`)
+    .replace(/\]\((https:\/\/cascadehook\.com\/tools[^)\s]*)\)/g, (_match, url: string) => `](${url}.md)`);
   return header + "\n" + body.trim() + "\n" + footer;
 }

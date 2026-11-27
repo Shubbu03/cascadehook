@@ -61,6 +61,7 @@ type Job struct {
 	LeaseID          uuid.UUID
 	InvitationID     uuid.UUID
 	NotificationID   uuid.UUID
+	ResourceType     string
 	RecipientSubject string
 	Title            string
 	Body             string

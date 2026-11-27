@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"cascadehook/internal/auth"
+	"cascadehook/internal/billing"
 	"cascadehook/internal/clerk"
 	"cascadehook/internal/config"
 	"cascadehook/internal/deliveries"
@@ -48,11 +49,18 @@ func Run(ctx context.Context, cfg config.APIConfig, db *store.Store, logger *slo
 	if cfg.Metrics.Enabled() {
 		metrics = telemetry.New("api", db.PoolStats)
 	}
+	billingProvider, err := billing.NewProvider(cfg.Billing)
+	if err != nil {
+		return err
+	}
+	if billingProvider != nil {
+		defer billingProvider.Close()
+	}
 	handler, err := NewHandler(HandlerOptions{
 		DB: db, Logger: logger, Vault: vault, Outbound: outbound, Sessions: sessions,
 		RequestLimits: cfg.RequestLimits, Metrics: metrics,
 		IdentityWebhook: identityWebhook, ClerkIssuer: cfg.Clerk.IssuerURL, ClerkBackend: clerkBackend,
-		Email: cfg.Email,
+		Email: cfg.Email, Billing: billingProvider, BillingConfig: cfg.Billing,
 	})
 	if err != nil {
 		return err
@@ -72,6 +80,10 @@ func Run(ctx context.Context, cfg config.APIConfig, db *store.Store, logger *slo
 		metrics,
 		logger,
 		func(serviceCtx context.Context) error {
+			if billingProvider != nil {
+				reconciler := &billingSync{db: db, provider: billingProvider, logger: logger}
+				go reconciler.run(serviceCtx)
+			}
 			listener, err := (&net.ListenConfig{}).Listen(serviceCtx, "tcp", cfg.HTTPAddr)
 			if err != nil {
 				return fmt.Errorf("listen on %s: %w", cfg.HTTPAddr, err)

@@ -4,6 +4,15 @@
     "---Build your integration---", "concepts", "receivers", "security",
     "---Guides---", "...guides",
     "---Project API---", "api",
-    "---Resources---", "support", "agents", "troubleshooting"
+    "---Resources---", "plans", "support", "agents", "troubleshooting",
+    "---Free tools---",
+    "external:[Webhook tester](https://cascadehook.com/tools/webhook-tester)",
+    "external:[Signature verifier](https://cascadehook.com/tools/webhook-signature-verifier)",
+    "external:[Stripe verifier](https://cascadehook.com/tools/stripe-webhook-signature-verifier)",
+    "external:[GitHub verifier](https://cascadehook.com/tools/github-webhook-signature-verifier)",
+    "external:[Shopify HMAC verifier](https://cascadehook.com/tools/shopify-webhook-hmac-verifier)",
+    "external:[Slack verifier](https://cascadehook.com/tools/slack-request-signature-verifier)",
+    "external:[Signature schemes compared](https://cascadehook.com/tools/webhook-signature-comparison)",
+    "external:[All tools](https://cascadehook.com/tools)"
   ]
 }

@@ -40,7 +40,7 @@ export function toolsIndexMarkdown() {
     "## Reference",
     references.map((reference) => `- [${reference.title}](${siteURL}${reference.href}.md): ${reference.description}`).join("\n"),
     "## Sending webhooks from your own app?",
-    `[${siteName}](${siteURL}/index.md) signs every delivery with Standard Webhooks, retries failures for up to 72 hours, and keeps every attempt for replay. Free during early access. See [how it compares](${siteURL}/compare.md) with Svix, Hookdeck Outpost, Convoy, and building it yourself.`,
+    `[${siteName}](${siteURL}/index.md) signs every delivery with Standard Webhooks, retries failures for up to 72 hours, and keeps every attempt for replay. There's a free plan, and no card is required. See [how it compares](${siteURL}/compare.md) with Svix, Hookdeck Outpost, Convoy, and building it yourself.`,
   ].join("\n\n");
 }
 

@@ -13,7 +13,7 @@ RUN --mount=type=cache,target=/go/pkg/mod \
     mkdir -p /out && CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH \
     go build -p=1 -trimpath -ldflags="-s -w" -o /out/ \
     ./cmd/api ./cmd/worker ./cmd/migrate ./cmd/janitor \
-    ./cmd/projectctl ./cmd/tenantctl ./cmd/secretctl
+    ./cmd/projectctl ./cmd/tenantctl ./cmd/secretctl ./cmd/billingctl
 
 FROM scratch
 COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt

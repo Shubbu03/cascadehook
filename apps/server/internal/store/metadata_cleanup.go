@@ -15,6 +15,10 @@ func cleanupMetadata(ctx context.Context, tx pgx.Tx, reference time.Time, limit 
 			table: "audit_entries", lockAlias: "a", match: `t.id=c.id`, args: []any{reference.Add(-AuditRetentionDays * 24 * time.Hour), limit},
 		}},
 		{retentionSelection: retentionSelection{
+			query: `SELECT r.id FROM billing_webhook_receipts r WHERE r.received_at < $1 ORDER BY r.received_at LIMIT $2`,
+			table: "billing_webhook_receipts", lockAlias: "r", match: `t.id=c.id`, args: []any{reference.Add(-90 * 24 * time.Hour), limit},
+		}},
+		{retentionSelection: retentionSelection{
 			query: `SELECT r.message_hash FROM identity_webhook_receipts r
 				WHERE r.received_at < $1 ORDER BY r.received_at LIMIT $2`,
 			table: "identity_webhook_receipts", lockAlias: "r", match: `t.message_hash = c.message_hash`,

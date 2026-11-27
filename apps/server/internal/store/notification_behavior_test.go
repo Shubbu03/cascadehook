@@ -21,6 +21,10 @@ import (
 func TestProjectNotificationsRecipientsAndIdempotentRename(t *testing.T) {
 	f := newNotificationFixture(t)
 	ctx := t.Context()
+	// Keep quota checks from masking the creation and duplicate-name behavior.
+	if _, err := f.db.pool.Exec(ctx, `UPDATE organizations SET max_projects=3 WHERE id=$1`, f.org); err != nil {
+		t.Fatal(err)
+	}
 	adminID := uuid.New()
 	if _, err := f.db.pool.Exec(ctx, `INSERT INTO users(id,identity_issuer,identity_subject)
 		VALUES($1,'https://test.clerk.accounts.dev','user_admin')`, adminID); err != nil {

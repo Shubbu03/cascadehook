@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 
 	"cascadehook/internal/accounts"
+	"cascadehook/internal/billing"
 	"cascadehook/internal/pagination"
 	"cascadehook/internal/store"
 )
@@ -235,6 +236,8 @@ func emptyAccountAction(w http.ResponseWriter, r *http.Request) bool {
 
 func (api *api) accountProblem(w http.ResponseWriter, r *http.Request, err error) {
 	switch {
+	case errors.Is(err, billing.ErrConflict):
+		writeProblem(w, r, http.StatusConflict, "billing_conflict")
 	case errors.Is(err, accounts.ErrInvitationRateLimited):
 		w.Header().Set("Retry-After", "5")
 		writeProblem(w, r, http.StatusTooManyRequests, "invitation_lookup_rate_limited")

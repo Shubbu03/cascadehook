@@ -6,11 +6,11 @@
 import { notFound, useParams } from "next/navigation";
 import { DeliveryDetail } from "@/features/activity/delivery-detail";
 import { EventDetail } from "@/features/activity/event-detail";
+import { OrganizationBilling } from "@/features/billing/organization-billing";
 import { EndpointDetail } from "@/features/endpoints/endpoint-detail";
 import { NotificationInbox } from "@/features/notifications/notification-inbox";
 import { ProjectWorkspace } from "@/features/projects/project-workspace";
 import { OrganizationSettings } from "@/features/settings/organization-settings";
-import { OrganizationUsage } from "@/features/settings/organization-usage";
 import { uuidPattern } from "@/lib/format";
 
 function useUuidParam(name: string) {
@@ -53,7 +53,7 @@ export function OrganizationSettingsRoute() {
   return <OrganizationSettings key={organizationId} organizationId={organizationId} />;
 }
 
-export function OrganizationUsageRoute() {
+export function OrganizationBillingRoute() {
   const organizationId = useUuidParam("organizationId");
-  return <OrganizationUsage key={organizationId} organizationId={organizationId} />;
+  return <OrganizationBilling key={organizationId} organizationId={organizationId} />;
 }
